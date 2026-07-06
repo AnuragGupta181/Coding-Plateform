@@ -60,4 +60,7 @@ const submissionSchema = new mongoose.Schema({
 // Unique compound index: one submission per user per test
 submissionSchema.index({ candidateEmail: 1, testId: 1 }, { unique: true });
 
+// Compound index for fast lookups of active submissions by test (used heavily in auto-submit)
+submissionSchema.index({ testId: 1, status: 1 });
+
 module.exports = mongoose.model('Submission', submissionSchema);

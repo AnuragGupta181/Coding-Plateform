@@ -12,4 +12,7 @@ const otpSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now, expires: 600 } // OTP expires in 10 minutes
 });
 
+// Compound index: fast OTP lookup by email+purpose (hot path on every login & signup)
+otpSchema.index({ email: 1, purpose: 1 });
+
 module.exports = mongoose.model('OTP', otpSchema);

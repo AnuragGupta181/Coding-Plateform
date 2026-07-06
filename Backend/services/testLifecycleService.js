@@ -42,21 +42,30 @@ async function completeTestAndAutoSubmit(testId, reason = 'manual') {
     return { found: false, alreadyCompleted: false, autoSubmittedCount: 0, test: null };
   }
 
-  // Find ALL active (in-progress) submissions for this test, regardless of test status.
-  // This handles force-complete from any state: scheduled, waiting, or active.
+  // Find ALL active submissions for this test
   const activeSubmissions = await Submission.find({ testId, status: 'active' });
 
-  for (const submission of activeSubmissions) {
-    submission.score = calculateScore(submission, test);
-    submission.status = 'completed';
-    submission.completedAt = new Date();
-    await submission.save();
+  if (activeSubmissions.length > 0) {
+    // Calculate scores in-memory (no DB hit per submission)
+    const bulkOps = activeSubmissions.map((submission) => ({
+      updateOne: {
+        filter: { _id: submission._id },
+        update: {
+          $set: {
+            score: calculateScore(submission, test),
+            status: 'completed',
+            completedAt: new Date()
+          }
+        }
+      }
+    }));
+
+    // Single bulk write — replaces N individual save() calls
+    await Submission.bulkWrite(bulkOps, { ordered: false });
   }
 
   const wasAlreadyCompleted = test.status === 'completed';
 
-  // Always write the final status to DB, even if status was already 'completed',
-  // so completedAt is always persisted properly.
   test.status = 'completed';
   if (!test.completedAt) {
     test.completedAt = new Date();
@@ -80,16 +89,16 @@ async function completeTestAndAutoSubmit(testId, reason = 'manual') {
 
 async function completeExpiredTests() {
   const activeTests = await Test.find({ status: 'active', startedAt: { $ne: null } });
-  const results = [];
 
-  for (const test of activeTests) {
-    if (!isTestExpired(test)) {
-      continue;
-    }
+  // Filter expired tests first (in-memory, no DB call)
+  const expiredTests = activeTests.filter(isTestExpired);
 
-    const result = await completeTestAndAutoSubmit(test._id, 'duration_expired');
-    results.push(result);
-  }
+  if (expiredTests.length === 0) return [];
+
+  // Process all expired tests concurrently instead of sequentially
+  const results = await Promise.all(
+    expiredTests.map((test) => completeTestAndAutoSubmit(test._id, 'duration_expired'))
+  );
 
   return results;
 }

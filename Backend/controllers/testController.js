@@ -1,23 +1,44 @@
 const Test = require('../models/test');
 const Submission = require('../models/submission');
 const { calculateScore } = require('../services/testLifecycleService');
+const cache = require('../services/redisClient');
 
+const TEST_CACHE_TTL = 600; // Cache test documents for 10 minutes
+
+// ── GET /api/tests (Available tests for candidates) ──────────────────────────
 exports.getAvailableTests = async (req, res) => {
   try {
+    // .lean() skips Mongoose document overhead — returns plain JS objects (~40% faster)
     const tests = await Test.find(
-      { status: { $in: ['scheduled', 'waiting'] } },
+      { status: { $in: ['scheduled', 'waiting', 'active'] } },
       'title description durationInMinutes status createdAt startedAt completedAt'
-    );
+    ).lean();
     res.json(tests);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
+// ── GET /api/test/:id ─────────────────────────────────────────────────────────
+// Hot path: called by every student when the exam starts.
+// Redis caches the test document so 1000 students only cause 1 DB read.
 exports.getTest = async (req, res) => {
   try {
-    const test = await Test.findById(req.params.id);
+    const { id } = req.params;
+    const cacheKey = `test:data:${id}`;
+
+    // 1. Try cache first
+    const cached = await cache.get(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
+    // 2. Cache miss — read from DB
+    const test = await Test.findById(id).lean();
     if (!test) return res.status(404).json({ message: 'Test not found' });
+
+    // 3. Store in cache for the next 999 students
+    await cache.set(cacheKey, test, TEST_CACHE_TTL);
 
     res.json(test);
   } catch (error) {
@@ -25,10 +46,13 @@ exports.getTest = async (req, res) => {
   }
 };
 
+// ── POST /api/test/start ──────────────────────────────────────────────────────
 exports.startSubmission = async (req, res) => {
   try {
     const { candidateEmail, candidateName, testId } = req.body;
-    const test = await Test.findById(testId);
+
+    // .lean() — we only need status field, don't need a Mongoose document
+    const test = await Test.findById(testId, 'status').lean();
 
     if (!test) {
       return res.status(404).json({ message: 'Test not found' });
@@ -38,11 +62,8 @@ exports.startSubmission = async (req, res) => {
       return res.status(403).json({ message: 'Test is not active' });
     }
 
-    // Atomic upsert — eliminates the race condition where two simultaneous
+    // Atomic upsert — eliminates race condition where two simultaneous
     // requests both pass the findOne check and both create a new submission.
-    // { new: true } returns the document after insert/update.
-    // { upsert: true } creates it if it doesn't exist.
-    // setOnInsert only applies fields when the document is newly created.
     const submission = await Submission.findOneAndUpdate(
       { candidateEmail, testId },
       {
@@ -66,7 +87,7 @@ exports.startSubmission = async (req, res) => {
   } catch (error) {
     // Handle the rare case of a duplicate key race at the DB index level
     if (error.code === 11000) {
-      const existing = await Submission.findOne({ candidateEmail, testId });
+      const existing = await Submission.findOne({ candidateEmail: req.body.candidateEmail, testId: req.body.testId });
       if (existing?.status === 'completed') {
         return res.status(403).json({ message: 'Test already submitted' });
       }
@@ -76,43 +97,57 @@ exports.startSubmission = async (req, res) => {
   }
 };
 
-
+// ── PATCH /api/submission/:submissionId/answer ────────────────────────────────
 exports.saveAnswer = async (req, res) => {
   try {
     const { submissionId } = req.params;
     const { questionId, answerIndex } = req.body;
 
-    const submission = await Submission.findById(submissionId);
-    if (!submission) return res.status(404).json({ message: 'Submission not found' });
-    if (submission.status === 'completed') return res.status(403).json({ message: 'Test already completed' });
+    // Atomic $set — no full document read needed. One targeted DB write.
+    const result = await Submission.findOneAndUpdate(
+      { _id: submissionId, status: 'active' },
+      { $set: { [`answers.${questionId}`]: answerIndex } },
+      { new: false } // We don't need the updated doc back, saves bandwidth
+    );
 
-    submission.answers.set(questionId, answerIndex);
-    await submission.save();
+    if (!result) {
+      const exists = await Submission.exists({ _id: submissionId });
+      if (!exists) return res.status(404).json({ message: 'Submission not found' });
+      return res.status(403).json({ message: 'Test already completed' });
+    }
 
-    res.json({ message: 'Answer saved successfully', submission });
+    res.json({ message: 'Answer saved successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
+// ── DELETE /api/submission/:submissionId/answer ───────────────────────────────
 exports.clearAnswer = async (req, res) => {
   try {
     const { submissionId } = req.params;
     const { questionId } = req.body;
 
-    const submission = await Submission.findById(submissionId);
-    if (!submission) return res.status(404).json({ message: 'Submission not found' });
-    if (submission.status === 'completed') return res.status(403).json({ message: 'Test already completed' });
+    // Atomic $unset — removes the single answer key without reading the full document.
+    const result = await Submission.findOneAndUpdate(
+      { _id: submissionId, status: 'active' },
+      { $unset: { [`answers.${questionId}`]: '' } },
+      { new: false }
+    );
 
-    submission.answers.delete(questionId);
-    await submission.save();
+    if (!result) {
+      const exists = await Submission.exists({ _id: submissionId });
+      if (!exists) return res.status(404).json({ message: 'Submission not found' });
+      return res.status(403).json({ message: 'Test already completed' });
+    }
 
-    res.json({ message: 'Answer cleared successfully', submission });
+    res.json({ message: 'Answer cleared successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
+// ── POST /api/submission/:submissionId/complete ───────────────────────────────
 exports.completeSubmission = async (req, res) => {
   try {
     const { submissionId } = req.params;
@@ -132,19 +167,26 @@ exports.completeSubmission = async (req, res) => {
   }
 };
 
+// ── POST /api/submission/:submissionId/violation ──────────────────────────────
 exports.logViolation = async (req, res) => {
   try {
     const { submissionId } = req.params;
     const { type, timestamp, count } = req.body;
 
-    const submission = await Submission.findById(submissionId);
-    if (!submission) return res.status(404).json({ message: 'Submission not found' });
-    if (submission.status === 'completed') return res.status(403).json({ message: 'Test already completed' });
+    // Atomic $push — appends to violations array without reading the full document.
+    const result = await Submission.findOneAndUpdate(
+      { _id: submissionId, status: 'active' },
+      { $push: { violations: { type, timestamp: new Date(timestamp), count } } },
+      { new: true, projection: { violations: { $slice: -1 } } }
+    );
 
-    submission.violations.push({ type, timestamp: new Date(timestamp), count });
-    await submission.save();
+    if (!result) {
+      const exists = await Submission.exists({ _id: submissionId });
+      if (!exists) return res.status(404).json({ message: 'Submission not found' });
+      return res.status(403).json({ message: 'Test already completed' });
+    }
 
-    res.json({ message: 'Violation logged', totalViolations: submission.violations.length });
+    res.json({ message: 'Violation logged' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
