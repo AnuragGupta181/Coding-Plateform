@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import toast from 'react-hot-toast';
 import useProtecting from '../hooks/useProtecting';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -144,10 +144,35 @@ const CodingTestRoom: React.FC = () => {
     initialViolations,
   });
 
+  const stateRef = useRef({ activeQuestion, currentCode, language });
+  useEffect(() => {
+    stateRef.current = { activeQuestion, currentCode, language };
+  }, [activeQuestion, currentCode, language]);
+
+  const handleTimeExpire = useCallback(() => {
+    setFinished(true); // Lock the UI instantly
+    if (!testId || !submissionId) return;
+
+    // Introduce Jitter to prevent Thundering Herd
+    const randomDelay = Math.random() * 15000;
+    setTimeout(async () => {
+      try {
+        const { activeQuestion: aq, currentCode: cc, language: lang } = stateRef.current;
+        // Auto-save whatever code is currently in the editor
+        if (aq && cc.trim()) {
+          await testService.submitCode(testId, aq._id, cc, lang, submissionId).catch(() => {});
+        }
+        await testService.completeSubmission(submissionId);
+      } catch (err) {
+        console.error('Auto-submit failed:', err);
+      }
+    }, randomDelay);
+  }, [testId, submissionId]);
+
   const { display: timerDisplay, isWarning } = useCountdown(
     testData?.durationInMinutes ?? 60,
     testData?.startedAt ?? null,
-    () => setFinished(true)
+    handleTimeExpire
   );
 
   const handleQuestionChange = (idx: number) => {
