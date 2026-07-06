@@ -3,6 +3,7 @@ const Test = require('../models/test');
 const eventController = require('./eventController');
 const { completeTestAndAutoSubmit } = require('../services/testLifecycleService');
 const { parseQuestionsFromBuffer } = require('../services/excelParserService');
+const cache = require('../services/redisClient');
 
 /**
  * POST /api/admin/parse-questions
@@ -94,6 +95,10 @@ exports.createCodingQuestion = async (req, res) => {
     }
 
     await test.save();
+
+    // Invalidate test cache so students get the updated question list
+    await cache.del(`test:data:${id}`);
+
     res.status(201).json({
       message: 'Coding question added.',
       question: test.codingQuestions[test.codingQuestions.length - 1]
@@ -115,6 +120,9 @@ exports.startTest = async (req, res) => {
 
     if (!test) return res.status(404).json({ message: 'Test not found' });
 
+    // Invalidate cache — test status has changed to 'active'
+    await cache.del(`test:data:${id}`);
+
     eventController.broadcastEvent(id, { type: 'START', testId: id, startedAt: test.startedAt });
 
     res.json({ message: 'Test started successfully', test });
@@ -135,6 +143,9 @@ exports.openWaitingRoom = async (req, res) => {
 
     if (!test) return res.status(404).json({ message: 'Test not found' });
 
+    // Invalidate cache — test status changed
+    await cache.del(`test:data:${id}`);
+
     res.json({ message: 'Waiting room opened', test });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -149,6 +160,9 @@ exports.completeTest = async (req, res) => {
     if (!result.found) {
       return res.status(404).json({ message: 'Test not found' });
     }
+
+    // Invalidate cache — test is now completed
+    await cache.del(`test:data:${id}`);
 
     res.json({
       message: result.alreadyCompleted ? 'Test already completed' : 'Test marked as completed',
@@ -169,6 +183,9 @@ exports.autoSubmitTest = async (req, res) => {
       return res.status(404).json({ message: 'Test not found' });
     }
 
+    // Invalidate cache
+    await cache.del(`test:data:${id}`);
+
     res.json({
       message: 'Active submissions auto-submitted and test completed',
       autoSubmittedCount: result.autoSubmittedCount,
@@ -181,7 +198,8 @@ exports.autoSubmitTest = async (req, res) => {
 
 exports.getTestHistory = async (req, res) => {
   try {
-    const tests = await Test.find().sort({ createdAt: -1 });
+    // .lean() — admin reads this list, doesn't mutate documents
+    const tests = await Test.find().sort({ createdAt: -1 }).lean();
     res.json(tests);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -191,16 +209,18 @@ exports.getTestHistory = async (req, res) => {
 exports.getWaitingQueues = async (req, res) => {
   try {
     const queueSnapshot = eventController.getWaitingQueueSnapshot();
-    const tests = await Test.find({ status: { $ne: 'completed' } }, 'title status');
 
-    const activeSubmissions = await Submission.aggregate([
-      { $match: { status: 'active' } },
-      { $group: { _id: '$testId', count: { $sum: 1 } } }
-    ]);
-
-    const completedSubmissions = await Submission.aggregate([
-      { $match: { status: 'completed' } },
-      { $group: { _id: '$testId', count: { $sum: 1 } } }
+    // Run all 3 DB queries in PARALLEL instead of sequentially (~3x faster)
+    const [tests, activeSubmissions, completedSubmissions] = await Promise.all([
+      Test.find({ status: { $ne: 'completed' } }, 'title status').lean(),
+      Submission.aggregate([
+        { $match: { status: 'active' } },
+        { $group: { _id: '$testId', count: { $sum: 1 } } }
+      ]),
+      Submission.aggregate([
+        { $match: { status: 'completed' } },
+        { $group: { _id: '$testId', count: { $sum: 1 } } }
+      ]),
     ]);
 
     const activeMap = new Map(activeSubmissions.map((item) => [String(item._id), item.count]));
@@ -225,11 +245,12 @@ exports.getWaitingQueues = async (req, res) => {
 exports.getTestResults = async (req, res) => {
   try {
     const { id } = req.params;
+    const mongoose = require('mongoose');
 
     // Aggregate to deduplicate: if a user somehow has multiple submissions
     // for the same test, only keep the one with the highest score.
     const submissions = await Submission.aggregate([
-      { $match: { testId: new (require('mongoose').Types.ObjectId)(id), status: 'completed' } },
+      { $match: { testId: new mongoose.Types.ObjectId(id), status: 'completed' } },
       { $sort: { score: -1, updatedAt: 1 } },
       {
         $group: {
