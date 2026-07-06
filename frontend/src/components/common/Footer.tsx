@@ -1,6 +1,5 @@
 import React from 'react';
 import { FadeInUp } from './FadeInUp';
-import BrandMark from './BrandMark';
 
 export const Footer: React.FC = () => {
   return (
