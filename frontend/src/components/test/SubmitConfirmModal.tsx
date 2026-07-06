@@ -18,7 +18,7 @@ interface SubmitConfirmModalProps {
 }
 
 const summaryRows = (summary: SubmitSummary) => [
-  { label: 'Total Questions', value: summary.total, className: 'text-cream-950', dot: 'bg-cream-400' },
+  { label: 'Total Questions', value: summary.total, className: 'text-foreground-bold', dot: 'bg-cream-400' },
   { label: 'Answered', value: summary.answered, className: 'text-emerald-800', dot: 'bg-emerald-500' },
   { label: 'Not Answered', value: summary.notAnswered, className: 'text-red-800', dot: 'bg-red-500' },
   { label: 'Marked for Review', value: summary.marked, className: 'text-amber-800', dot: 'bg-amber-500' },
@@ -39,19 +39,19 @@ const SubmitConfirmModal: React.FC<SubmitConfirmModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-cream-950/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-primary/60 backdrop-blur-sm"
         onClick={isSubmitting ? undefined : onCancel}
       />
 
       {/* Modal */}
-      <div className="relative bg-white border border-cream-200 rounded-sm shadow-2xl w-full max-w-md animate-in">
+      <div className="relative bg-white border border-border rounded-sm shadow-2xl w-full max-w-md animate-in">
         {/* Header */}
         <div className="px-8 pt-8 pb-6 border-b border-cream-100">
-          <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-cream-400 mb-2">Assessment Review</div>
-          <h3 className="text-2xl font-serif text-cream-950">
+          <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground mb-2">Assessment Review</div>
+          <h3 className="text-2xl font-sans text-foreground-bold">
             {testType === 'mixed' ? 'Proceed to Coding' : 'Confirm Submission'}
           </h3>
-          <p className="text-sm text-cream-500 mt-2 font-light">
+          <p className="text-sm text-muted-foreground mt-2 font-light">
             {testType === 'mixed'
               ? 'Please review your MCQ progress. Once you proceed to the coding section, you cannot return here.'
               : 'Please review your progress before submitting. This action cannot be undone.'}
@@ -66,7 +66,7 @@ const SubmitConfirmModal: React.FC<SubmitConfirmModalProps> = ({
                 <span className={`w-2.5 h-2.5 rounded-full ${row.dot}`} />
                 <span className="text-sm text-cream-700">{row.label}</span>
               </div>
-              <span className={`text-xl font-serif font-bold ${row.className}`}>
+              <span className={`text-xl font-sans font-bold ${row.className}`}>
                 {row.value}
               </span>
             </div>

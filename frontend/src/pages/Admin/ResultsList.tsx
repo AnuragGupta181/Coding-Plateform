@@ -53,14 +53,14 @@ const ResultsList: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen bg-cream-50 font-sans text-cream-900 pb-20">
-      <nav className="bg-white border-b border-cream-200 mb-6 md:mb-10">
+    <div className="min-h-screen bg-background font-sans text-foreground pb-20">
+      <nav className="bg-white border-b border-border mb-6 md:mb-10">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-20 flex justify-between items-center">
           <div className="flex items-center gap-2 md:gap-3">
-            <Link to="/admin" className="w-8 h-8 border border-cream-950 flex items-center justify-center text-cream-950 font-serif font-bold text-lg shrink-0">
+            <Link to="/admin" className="w-8 h-8 border border-cream-950 flex items-center justify-center text-foreground-bold font-sans font-bold text-lg shrink-0">
               N
             </Link>
-            <span className="text-base md:text-lg font-serif font-bold text-cream-950 tracking-wide truncate">NextGen Admin</span>
+            <span className="text-base md:text-lg font-sans font-bold text-foreground-bold tracking-wide truncate">NextGen Admin</span>
           </div>
         </div>
       </nav>
@@ -68,7 +68,7 @@ const ResultsList: React.FC = () => {
       <div className="max-w-6xl mx-auto px-4 md:px-6">
         <button 
           onClick={() => navigate('/admin?tab=history')}
-          className="group flex items-center gap-2 text-[10px] md:text-xs uppercase tracking-widest font-bold text-cream-500 hover:text-cream-950 transition-all whitespace-nowrap mb-8"
+          className="group flex items-center gap-2 text-[10px] md:text-xs uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground-bold transition-all whitespace-nowrap mb-8"
         >
           <span className="group-hover:-translate-x-1 transition-transform">&larr;</span>
           Back to Dashboard
@@ -77,17 +77,17 @@ const ResultsList: React.FC = () => {
 
       <header className="max-w-6xl mx-auto px-4 md:px-6 mb-8 md:mb-12 flex flex-col gap-6 md:flex-row md:justify-between md:items-end">
         <div>
-          <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-cream-400 mb-2">Performance Analytics</div>
-          <h1 className="text-3xl md:text-4xl font-serif text-cream-950">Assessment Results</h1>
-          <p className="text-sm md:text-base text-cream-600 mt-2 font-light italic">Detailed performance overview for all registered participants.</p>
+          <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground mb-2">Performance Analytics</div>
+          <h1 className="text-3xl md:text-4xl font-sans text-foreground-bold">Assessment Results</h1>
+          <p className="text-sm md:text-base text-muted-foreground mt-2 font-light italic">Detailed performance overview for all registered participants.</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 md:gap-4">
-          <span className="text-[10px] font-bold text-cream-500 uppercase tracking-widest shrink-0">Sort Metrics</span>
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest shrink-0">Sort Metrics</span>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SortOption)}
-            className="bg-white border border-cream-200 rounded-sm px-3 md:px-4 py-2 text-[10px] md:text-xs font-bold uppercase tracking-wide text-cream-900 focus:outline-none focus:border-cream-900 transition-colors flex-1"
+            className="bg-white border border-border rounded-sm px-3 md:px-4 py-2 text-[10px] md:text-xs font-bold uppercase tracking-wide text-foreground focus:outline-none focus:border-cream-900 transition-colors flex-1"
           >
             <option value="rank">By Rank</option>
             <option value="latest">By Date</option>
@@ -99,12 +99,12 @@ const ResultsList: React.FC = () => {
       <main className="max-w-6xl mx-auto px-4 md:px-6">
         {loading ? (
           <div className="flex flex-col items-center py-32">
-            <div className="w-10 h-10 border-2 border-cream-200 border-t-cream-900 rounded-full animate-spin"></div>
-            <p className="mt-6 text-[10px] text-cream-400 uppercase tracking-widest font-bold">Retrieving Data...</p>
+            <div className="w-10 h-10 border-2 border-border border-t-cream-900 rounded-full animate-spin"></div>
+            <p className="mt-6 text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Retrieving Data...</p>
           </div>
         ) : sortedResults.length === 0 ? (
-          <div className="bg-white border border-dashed border-cream-300 rounded-sm p-12 md:p-24 text-center shadow-sm">
-            <p className="text-cream-400 font-light italic text-sm md:text-base">No completed submissions recorded for this assessment.</p>
+          <div className="bg-white border border-dashed border-border-hover rounded-sm p-12 md:p-24 text-center shadow-sm">
+            <p className="text-muted-foreground font-light italic text-sm md:text-base">No completed submissions recorded for this assessment.</p>
           </div>
         ) : (
           <div className="grid gap-4 md:gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
@@ -112,16 +112,16 @@ const ResultsList: React.FC = () => {
               <div
                 key={sub._id}
                 onClick={() => navigate(`/admin/submission/${sub._id}`)}
-                className="group cursor-pointer bg-white border border-cream-200 p-5 md:p-8 rounded-sm shadow-sm hover:shadow-premium transition-all"
+                className="group cursor-pointer bg-white border border-border p-5 md:p-8 rounded-sm shadow-sm hover:shadow-premium transition-all"
               >
                 <div className="flex items-start justify-between mb-6 md:mb-8 gap-4">
                   <div className="min-w-0 flex-1">
-                    <div className="text-[9px] uppercase tracking-widest text-cream-400 font-bold mb-1">Candidate</div>
-                    <h2 className="text-lg md:text-xl font-serif text-cream-950 group-hover:text-cream-700 transition-colors truncate">{sub.candidateName}</h2>
-                    <p className="text-[10px] md:text-xs text-cream-500 font-light truncate">{sub.candidateEmail}</p>
+                    <div className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Candidate</div>
+                    <h2 className="text-lg md:text-xl font-sans text-foreground-bold group-hover:text-cream-700 transition-colors truncate">{sub.candidateName}</h2>
+                    <p className="text-[10px] md:text-xs text-muted-foreground font-light truncate">{sub.candidateEmail}</p>
                   </div>
                   <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-[10px] md:text-xs font-bold border transition-colors shrink-0 ${
-                    index === 0 && sortBy === 'rank' ? 'bg-cream-900 border-cream-900 text-cream-50' : 'bg-cream-50 border-cream-100 text-cream-400'
+                    index === 0 && sortBy === 'rank' ? 'bg-primary border-cream-900 text-primary-foreground' : 'bg-background border-cream-100 text-muted-foreground'
                   }`}>
                     {index + 1}
                   </div>
@@ -129,26 +129,26 @@ const ResultsList: React.FC = () => {
 
                 <div className="grid grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8 pt-6 md:pt-8 border-t border-cream-50">
                   <div>
-                    <div className="text-[9px] uppercase tracking-widest text-cream-400 font-bold mb-1">Score</div>
-                    <div className="text-2xl md:text-3xl font-serif text-cream-950">{sub.score}</div>
+                    <div className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Score</div>
+                    <div className="text-2xl md:text-3xl font-sans text-foreground-bold">{sub.score}</div>
                   </div>
                   <div>
-                    <div className="text-[9px] uppercase tracking-widest text-cream-400 font-bold mb-1">Status</div>
-                    <div className="text-[10px] md:text-xs font-bold text-cream-900 mt-2 uppercase tracking-tighter">Completed</div>
+                    <div className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Status</div>
+                    <div className="text-[10px] md:text-xs font-bold text-foreground mt-2 uppercase tracking-tighter">Completed</div>
                   </div>
                   <div>
-                    <div className="text-[9px] uppercase tracking-widest text-cream-400 font-bold mb-1">Violations</div>
-                    <div className={`text-2xl md:text-3xl font-serif ${(sub.violations?.length || 0) > 0 ? 'text-red-700' : 'text-cream-300'}`}>
+                    <div className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Violations</div>
+                    <div className={`text-2xl md:text-3xl font-sans ${(sub.violations?.length || 0) > 0 ? 'text-red-700' : 'text-cream-300'}`}>
                       {sub.violations?.length || 0}
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between pt-4 md:pt-6 border-t border-cream-50">
-                  <span className="text-[9px] md:text-[10px] text-cream-400 uppercase tracking-widest font-bold">
+                  <span className="text-[9px] md:text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
                     {new Date(sub.updatedAt).toLocaleDateString()}
                   </span>
-                  <span className="text-[9px] md:text-[10px] font-bold text-cream-950 uppercase tracking-widest group-hover:underline underline-offset-4">
+                  <span className="text-[9px] md:text-[10px] font-bold text-foreground-bold uppercase tracking-widest group-hover:underline underline-offset-4">
                     Review File &rarr;
                   </span>
                 </div>

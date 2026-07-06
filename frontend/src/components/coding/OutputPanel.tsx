@@ -11,23 +11,23 @@ interface RunOutputProps {
 export const RunOutput: React.FC<RunOutputProps> = ({ customInput, onCustomInputChange, isRunning, result }) => (
   <div className="flex gap-3 h-full">
     <div className="flex flex-col flex-1">
-      <label className="text-[10px] font-bold uppercase tracking-widest text-cream-400 mb-1">
+      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">
         Custom Input (stdin)
       </label>
       <textarea
         value={customInput}
         onChange={e => onCustomInputChange(e.target.value)}
         placeholder="Enter input here..."
-        className="flex-1 bg-cream-50 border border-cream-200 rounded-sm text-xs font-mono text-cream-900 p-2 resize-none focus:outline-none focus:border-cream-400 placeholder:text-cream-300"
+        className="flex-1 bg-background border border-border rounded-sm text-xs font-mono text-foreground p-2 resize-none focus:outline-none focus:border-cream-400 placeholder:text-cream-300"
       />
     </div>
 
     <div className="flex flex-col flex-1">
-      <label className="text-[10px] font-bold uppercase tracking-widest text-cream-400 mb-1">Output</label>
-      <div className="flex-1 bg-cream-50 border border-cream-200 rounded-sm p-2 overflow-auto">
+      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Output</label>
+      <div className="flex-1 bg-background border border-border rounded-sm p-2 overflow-auto">
         {isRunning ? (
-          <div className="flex items-center gap-2 text-cream-500 text-xs">
-            <span className="w-3 h-3 border border-cream-300 border-t-cream-900 rounded-full animate-spin" />
+          <div className="flex items-center gap-2 text-muted-foreground text-xs">
+            <span className="w-3 h-3 border border-border-hover border-t-cream-900 rounded-full animate-spin" />
             Executing...
           </div>
         ) : result ? (
@@ -35,7 +35,7 @@ export const RunOutput: React.FC<RunOutputProps> = ({ customInput, onCustomInput
             <div className={`text-[10px] font-bold uppercase ${result.stderr ? 'text-red-700' : 'text-emerald-700'}`}>
               {result.status}
             </div>
-            {result.stdout && <pre className="text-xs font-mono text-cream-900 whitespace-pre-wrap">{result.stdout}</pre>}
+            {result.stdout && <pre className="text-xs font-mono text-foreground whitespace-pre-wrap">{result.stdout}</pre>}
             {result.stderr && <pre className="text-xs font-mono text-red-700 whitespace-pre-wrap">{result.stderr}</pre>}
           </div>
         ) : (
@@ -56,8 +56,8 @@ interface SubmitResultProps {
 
 export const SubmitResult: React.FC<SubmitResultProps> = ({ isSubmitting, result }) => {
   if (isSubmitting) return (
-    <div className="flex items-center gap-2 text-cream-500 text-xs">
-      <span className="w-3 h-3 border border-cream-300 border-t-cream-900 rounded-full animate-spin" />
+    <div className="flex items-center gap-2 text-muted-foreground text-xs">
+      <span className="w-3 h-3 border border-border-hover border-t-cream-900 rounded-full animate-spin" />
       Running against test cases...
     </div>
   );
@@ -73,14 +73,14 @@ export const SubmitResult: React.FC<SubmitResultProps> = ({ isSubmitting, result
       <div className={`flex items-center gap-3 p-3 rounded-sm border ${
         allPassed ? 'border-emerald-200 bg-emerald-50' : 'border-red-200 bg-red-50'
       }`}>
-        <span className={`text-sm font-serif font-bold ${allPassed ? 'text-emerald-800' : 'text-red-800'}`}>
+        <span className={`text-sm font-sans font-bold ${allPassed ? 'text-emerald-800' : 'text-red-800'}`}>
           {allPassed ? 'All tests passed' : 'Some tests failed'}
         </span>
         <div className="ml-auto text-right">
           <p className={`text-sm font-bold ${allPassed ? 'text-emerald-800' : 'text-red-800'}`}>
             {result.verdict}
           </p>
-          <p className="text-[10px] text-cream-500 font-bold uppercase tracking-widest">
+          <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">
             Score: {result.score} / {result.maxScore} pts
           </p>
         </div>
@@ -97,7 +97,7 @@ export const SubmitResult: React.FC<SubmitResultProps> = ({ isSubmitting, result
                 {r.passed ? 'Passed' : 'Failed'}
               </span>
               {r.isHidden && (
-                <span className="ml-auto text-[10px] px-2 py-0.5 rounded-sm bg-cream-100 text-cream-600 font-bold uppercase tracking-widest">
+                <span className="ml-auto text-[10px] px-2 py-0.5 rounded-sm bg-muted text-muted-foreground font-bold uppercase tracking-widest">
                   Hidden
                 </span>
               )}
@@ -106,16 +106,16 @@ export const SubmitResult: React.FC<SubmitResultProps> = ({ isSubmitting, result
             {!r.isHidden && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                 <div>
-                  <span className="text-cream-500 font-bold uppercase tracking-wider text-[10px]">Input</span>
-                  <pre className="mt-1 bg-cream-50 border border-cream-100 p-2 rounded-sm text-cream-800 font-mono whitespace-pre-wrap">{r.input}</pre>
+                  <span className="text-muted-foreground font-bold uppercase tracking-wider text-[10px]">Input</span>
+                  <pre className="mt-1 bg-background border border-cream-100 p-2 rounded-sm text-cream-800 font-mono whitespace-pre-wrap">{r.input}</pre>
                 </div>
                 <div>
-                  <span className="text-cream-500 font-bold uppercase tracking-wider text-[10px]">Expected Output</span>
+                  <span className="text-muted-foreground font-bold uppercase tracking-wider text-[10px]">Expected Output</span>
                   <pre className="mt-1 bg-emerald-50/50 border border-emerald-100 p-2 rounded-sm text-emerald-800 font-mono whitespace-pre-wrap">{r.expectedOutput}</pre>
                 </div>
                 <div className="md:col-span-2">
-                  <span className="text-cream-500 font-bold uppercase tracking-wider text-[10px]">Actual Output</span>
-                  <pre className={`mt-1 bg-cream-50 border p-2 rounded-sm font-mono whitespace-pre-wrap ${r.passed ? 'border-cream-100 text-emerald-800' : 'border-red-200 text-red-700'}`}>
+                  <span className="text-muted-foreground font-bold uppercase tracking-wider text-[10px]">Actual Output</span>
+                  <pre className={`mt-1 bg-background border p-2 rounded-sm font-mono whitespace-pre-wrap ${r.passed ? 'border-cream-100 text-emerald-800' : 'border-red-200 text-red-700'}`}>
                     {r.actualOutput || (r.stderr ? 'Runtime Error / Compilation Error' : '(Empty)')}
                   </pre>
                   {!r.passed && r.stderr && (
@@ -127,7 +127,7 @@ export const SubmitResult: React.FC<SubmitResultProps> = ({ isSubmitting, result
               </div>
             )}
             {r.isHidden && !r.passed && (
-               <div className="text-cream-600 text-xs italic mt-2">
+               <div className="text-muted-foreground text-xs italic mt-2">
                  Details of hidden test cases are not shown.
                  {r.stderr && ' A runtime error occurred.'}
                </div>
@@ -158,14 +158,14 @@ const OutputPanel: React.FC<OutputPanelProps> = ({
   customInput, onCustomInputChange, isRunning, runResult,
   isSubmitting, submitResult,
 }) => (
-  <div className="h-56 shrink-0 border-t border-cream-200 flex flex-col bg-white">
-    <div className="flex border-b border-cream-200 shrink-0">
+  <div className="h-56 shrink-0 border-t border-border flex flex-col bg-white">
+    <div className="flex border-b border-border shrink-0">
       {(['output', 'submit'] as const).map(tab => (
         <button
           key={tab}
           onClick={() => onTabChange(tab)}
-          className={`px-4 py-2 text-xs font-bold uppercase tracking-widest border-r border-cream-200 last:border-r-0 transition-colors ${
-            activeTab === tab ? 'text-cream-950 bg-cream-50' : 'text-cream-400 hover:text-cream-700'
+          className={`px-4 py-2 text-xs font-bold uppercase tracking-widest border-r border-border last:border-r-0 transition-colors ${
+            activeTab === tab ? 'text-foreground-bold bg-background' : 'text-muted-foreground hover:text-cream-700'
           }`}
         >
           {tab === 'output' ? 'Run Output' : 'Submit Result'}
@@ -173,7 +173,7 @@ const OutputPanel: React.FC<OutputPanelProps> = ({
       ))}
     </div>
 
-    <div className="flex-1 overflow-y-auto custom-scrollbar p-3 bg-cream-50/50">
+    <div className="flex-1 overflow-y-auto custom-scrollbar p-3 bg-background/50">
       {activeTab === 'output' && (
         <RunOutput
           customInput={customInput}

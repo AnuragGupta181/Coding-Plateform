@@ -71,7 +71,7 @@ const VerifyOTP: React.FC = () => {
   return (
     <AuthLayout
       title="Verify Identity"
-      subtitle={<>Verification code dispatched to <span className="font-bold text-cream-900">{email}</span></>}
+      subtitle={<>Verification code dispatched to <span className="font-bold text-foreground">{email}</span></>}
       footer="Security Protocol 4.0 &bull; NextGen"
       logoLinksHome={false}
     >
@@ -79,7 +79,7 @@ const VerifyOTP: React.FC = () => {
         <AlertMessage message={error} />
 
         <div>
-          <label htmlFor="otp" className="block text-[10px] font-bold uppercase tracking-widest text-cream-500 mb-2 text-center">
+          <label htmlFor="otp" className="block text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2 text-center">
             Secure Authentication Code
           </label>
           <input
@@ -90,23 +90,23 @@ const VerifyOTP: React.FC = () => {
             value={otp}
             onChange={(e) => setOtp(e.target.value)}
             placeholder="0 0 0 0 0 0"
-            className="block w-full border border-cream-200 rounded-sm px-4 py-4 text-center text-3xl font-serif tracking-[0.5em] focus:ring-0 focus:border-cream-900 transition-colors placeholder:text-cream-100"
+            className="block w-full border border-border rounded-sm px-4 py-4 text-center text-3xl font-sans tracking-[0.5em] focus:ring-0 focus:border-cream-900 transition-colors placeholder:text-cream-100"
           />
         </div>
 
-        <button type="submit" disabled={isLoading || otp.length !== 6} className="w-full flex justify-center py-3 px-4 border border-transparent rounded-sm text-xs font-bold uppercase tracking-widest text-cream-50 bg-cream-900 hover:bg-cream-950 focus:outline-none transition-all disabled:opacity-50 shadow-lg shadow-cream-200">
+        <button type="submit" disabled={isLoading || otp.length !== 6} className="w-full flex justify-center py-3 px-4 border border-transparent rounded-sm text-xs font-bold uppercase tracking-widest text-primary-foreground bg-primary hover:bg-primary focus:outline-none transition-all disabled:opacity-50 shadow-lg shadow-cream-200">
           {isLoading ? 'Verifying...' : 'Authorize Access'}
         </button>
       </form>
 
       <div className="mt-8 text-center">
         {canResend ? (
-          <button onClick={handleResend} className="text-xs text-cream-950 font-bold hover:underline underline-offset-4 uppercase tracking-widest">
+          <button onClick={handleResend} className="text-xs text-foreground-bold font-bold hover:underline underline-offset-4 uppercase tracking-widest">
             Resend Code
           </button>
         ) : (
-          <p className="text-[10px] text-cream-400 font-bold uppercase tracking-widest">
-            Resend available in <span className="text-cream-950">{timer}s</span>
+          <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">
+            Resend available in <span className="text-foreground-bold">{timer}s</span>
           </p>
         )}
       </div>

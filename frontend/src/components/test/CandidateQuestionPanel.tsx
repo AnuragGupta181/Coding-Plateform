@@ -85,8 +85,8 @@ const CandidateQuestionPanel: React.FC<CandidateQuestionPanelProps> = ({
 }) => {
   return (
     <aside className="lg:sticky lg:top-8 space-y-6">
-      <section className="bg-white border border-cream-200 rounded-sm shadow-sm p-6">
-        <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-cream-400 mb-4">Question Panel</div>
+      <section className="bg-white border border-border rounded-sm shadow-sm p-6">
+        <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground mb-4">Question Panel</div>
         <div className="grid grid-cols-5 gap-3">
           {questions.map((question, index) => {
             const state = getQuestionState(question._id);
@@ -111,16 +111,16 @@ const CandidateQuestionPanel: React.FC<CandidateQuestionPanelProps> = ({
         <div className="grid grid-cols-2 gap-3 mt-6 text-center">
           {countCards(counts).map((count) => (
             <div key={count.label} className={`${count.className} border p-3 rounded-sm`}>
-              <div className={`text-xl font-serif ${count.valueClassName}`}>{count.value}</div>
+              <div className={`text-xl font-sans ${count.valueClassName}`}>{count.value}</div>
               <div className={`text-[8px] uppercase tracking-widest font-black ${count.labelClassName}`}>{count.label}</div>
             </div>
           ))}
         </div>
       </section>
 
-      <section className="bg-white border border-cream-200 rounded-sm shadow-sm p-6">
-        <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-cream-400 mb-4">Instructions</div>
-        <div className="space-y-3 text-xs text-cream-600 leading-relaxed">
+      <section className="bg-white border border-border rounded-sm shadow-sm p-6">
+        <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground mb-4">Instructions</div>
+        <div className="space-y-3 text-xs text-muted-foreground leading-relaxed">
           <p>Select one option for each question.</p>
           <p>Use <span className="font-bold text-amber-700">Mark for Review</span> when you want to revisit a question.</p>
           <p>Click any number in the panel to jump to that question.</p>
@@ -129,7 +129,7 @@ const CandidateQuestionPanel: React.FC<CandidateQuestionPanelProps> = ({
 
         <div className="mt-6 pt-6 border-t border-cream-100 space-y-3">
           {legendItems.map((item) => (
-            <div key={item.label} className="flex items-center gap-3 text-[10px] uppercase tracking-widest font-bold text-cream-500">
+            <div key={item.label} className="flex items-center gap-3 text-[10px] uppercase tracking-widest font-bold text-muted-foreground">
               <span className={`w-4 h-4 border rounded-sm ${item.swatchClassName}`}></span>
               {item.label}
             </div>

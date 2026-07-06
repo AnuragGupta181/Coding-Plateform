@@ -45,38 +45,38 @@ const WaitingRoom: React.FC = () => {
   }, [testId, navigate]);
 
   return (
-    <div className="min-h-screen bg-cream-50 flex flex-col items-center justify-center p-6 text-cream-900 font-sans">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-foreground font-sans">
       <div className="max-w-xl w-full text-center">
         <div className="mb-12">
-          <div className="w-12 h-12 border-2 border-cream-950 flex items-center justify-center text-cream-950 font-serif font-bold text-2xl mx-auto mb-6">
+          <div className="w-12 h-12 border-2 border-cream-950 flex items-center justify-center text-foreground-bold font-sans font-bold text-2xl mx-auto mb-6">
             N
           </div>
-          <div className="text-[10px] font-bold uppercase tracking-[0.4em] text-cream-400 mb-2">Secure Holding Area</div>
-          <h2 className="text-5xl font-serif text-cream-950 mb-4">The Waiting Room</h2>
-          <p className="text-cream-600 italic font-light">
-            Protocol initialized for candidate <span className="font-bold text-cream-900">{user?.name}</span>.
+          <div className="text-[10px] font-bold uppercase tracking-[0.4em] text-muted-foreground mb-2">Secure Holding Area</div>
+          <h2 className="text-5xl font-sans text-foreground-bold mb-4">The Waiting Room</h2>
+          <p className="text-muted-foreground italic font-light">
+            Protocol initialized for candidate <span className="font-bold text-foreground">{user?.name}</span>.
           </p>
         </div>
 
-        <div className="bg-white border border-cream-200 p-12 rounded-sm shadow-premium mb-12">
+        <div className="bg-white border border-border p-12 rounded-sm shadow-premium mb-12">
           <div className="flex flex-col items-center gap-8">
             <div className="flex gap-3">
-              <span className="w-2 h-2 bg-cream-900 rounded-full animate-pulse"></span>
+              <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
               <span className="w-2 h-2 bg-cream-400 rounded-full animate-pulse delay-150"></span>
               <span className="w-2 h-2 bg-cream-200 rounded-full animate-pulse delay-300"></span>
             </div>
 
-            <p className="text-sm font-bold tracking-widest uppercase text-cream-950">
+            <p className="text-sm font-bold tracking-widest uppercase text-foreground-bold">
               {statusMessage}
             </p>
 
-            <p className="text-xs text-cream-500 max-w-xs mx-auto leading-relaxed">
+            <p className="text-xs text-muted-foreground max-w-xs mx-auto leading-relaxed">
               Please maintain focus. The assessment environment will synchronize automatically across all participants.
             </p>
           </div>
         </div>
 
-        <div className="space-y-4 opacity-50 text-[10px] uppercase tracking-widest font-bold text-cream-400">
+        <div className="space-y-4 opacity-50 text-[10px] uppercase tracking-widest font-bold text-muted-foreground">
           <p>Connectivity: Stable</p>
           <p>Encryption: Active</p>
         </div>

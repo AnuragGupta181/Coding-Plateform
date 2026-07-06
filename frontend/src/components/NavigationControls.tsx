@@ -18,7 +18,7 @@ const NavigationControls: React.FC<NavigationControlsProps> = ({
   isLoading
 }) => {
   return (
-    <div className="flex justify-between items-center w-full mt-12 pt-8 border-t border-cream-200">
+    <div className="flex justify-between items-center w-full mt-12 pt-8 border-t border-border">
       <button
         onClick={onPrevious}
         disabled={isFirst || isLoading}

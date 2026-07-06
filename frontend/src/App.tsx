@@ -65,17 +65,24 @@ const AuthStorageSync = ({ children }: { children: React.ReactNode }) => {
 
 const App: React.FC = () => (
   <Router>
-    <Toaster
+    <div className="relative min-h-screen bg-background text-foreground font-sans overflow-x-hidden selection:bg-primary/20 selection:text-primary">
+      {/* Global Ambient Glowing Orbs */}
+      <div className="fixed top-0 left-[-10%] w-[50vw] h-[500px] rounded-full bg-primary/30 dark:bg-primary/15 blur-[120px] pointer-events-none z-0"></div>
+      <div className="fixed top-[30%] right-[-5%] w-[40vw] h-[600px] rounded-full bg-emerald-400/20 dark:bg-emerald-500/10 blur-[120px] pointer-events-none z-0"></div>
+      <div className="fixed bottom-[10%] left-[10%] w-[60vw] h-[500px] rounded-full bg-purple-400/20 dark:bg-purple-500/10 blur-[150px] pointer-events-none z-0"></div>
+
+      <div className="relative z-10 min-h-screen flex flex-col">
+        <Toaster
       position="top-right"
       toastOptions={{
         duration: 4000,
         style: {
-          background: '#1a1917',
-          color: '#faf9f6',
+          background: 'var(--toast-bg)',
+          color: 'var(--toast-color)',
           fontSize: '13px',
           fontWeight: 600,
-          borderRadius: '2px',
-          border: '1px solid #2a2926',
+          borderRadius: 'var(--radius-sm)',
+          border: '1px solid var(--toast-border)',
         },
       }}
     />
@@ -102,6 +109,8 @@ const App: React.FC = () => (
         <Route path="*" element={<div className="p-10 text-center">Page Not Found</div>} />
       </Routes>
     </AuthStorageSync>
+      </div>
+    </div>
   </Router>
 );
 

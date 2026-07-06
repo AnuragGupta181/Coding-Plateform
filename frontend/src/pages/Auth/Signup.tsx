@@ -38,7 +38,7 @@ const Signup: React.FC = () => {
         <FormField label="Professional Email" id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@company.com" />
         <FormField label="Password" id="password" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Minimum 8 characters" />
 
-        <button type="submit" disabled={isLoading} className="w-full flex justify-center py-3 px-4 border border-transparent rounded-sm text-xs font-bold uppercase tracking-widest text-cream-50 bg-cream-900 hover:bg-cream-950 focus:outline-none transition-all disabled:opacity-50 shadow-lg shadow-cream-200">
+        <button type="submit" disabled={isLoading} className="w-full flex justify-center py-3 px-4 border border-transparent rounded-sm text-xs font-bold uppercase tracking-widest text-primary-foreground bg-primary hover:bg-primary focus:outline-none transition-all disabled:opacity-50 shadow-lg shadow-cream-200">
           {isLoading ? 'Processing...' : 'Register'}
         </button>
       </form>

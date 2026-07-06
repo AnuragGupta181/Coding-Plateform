@@ -59,13 +59,13 @@ const Login: React.FC = () => {
           placeholder="Minimum 8 characters"
         />
 
-        <button type="submit" disabled={isLoading} className="w-full flex justify-center py-3 px-4 border border-transparent rounded-sm text-xs font-bold uppercase tracking-widest text-cream-50 bg-cream-900 hover:bg-cream-950 focus:outline-none transition-all disabled:opacity-50 shadow-lg shadow-cream-200">
+        <button type="submit" disabled={isLoading} className="w-full flex justify-center py-3 px-4 border border-transparent rounded-sm text-xs font-bold uppercase tracking-widest text-primary-foreground bg-primary hover:bg-primary focus:outline-none transition-all disabled:opacity-50 shadow-lg shadow-cream-200">
           {isLoading ? 'Processing...' : 'Sign In'}
         </button>
       </form>
 
       <div className="mt-5 text-center">
-        <Link to="/forgot-password" className="text-[10px] text-cream-500 hover:text-cream-950 transition-colors uppercase tracking-widest font-bold">
+        <Link to="/forgot-password" className="text-[10px] text-muted-foreground hover:text-foreground-bold transition-colors uppercase tracking-widest font-bold">
           Forgot password?
         </Link>
       </div>

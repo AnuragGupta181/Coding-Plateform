@@ -85,24 +85,24 @@ const CreateCodingQuestion: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-cream-50 font-sans text-cream-900 pb-32">
-      <nav className="bg-white border-b border-cream-200 mb-6">
+    <div className="min-h-screen bg-background font-sans text-foreground pb-32">
+      <nav className="bg-white border-b border-border mb-6">
         <div className="max-w-7xl mx-auto px-4 h-20 flex items-center gap-3">
-          <Link to="/admin" className="w-8 h-8 border border-cream-950 flex items-center justify-center text-cream-950 font-serif font-bold text-lg">N</Link>
-          <span className="text-lg font-serif font-bold text-cream-950">NextGen Admin</span>
+          <Link to="/admin" className="w-8 h-8 border border-cream-950 flex items-center justify-center text-foreground-bold font-sans font-bold text-lg">N</Link>
+          <span className="text-lg font-sans font-bold text-foreground-bold">NextGen Admin</span>
         </div>
       </nav>
 
       <div className="max-w-4xl mx-auto px-4">
-        <button onClick={() => navigate('/admin')} className="group flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold text-cream-500 hover:text-cream-950 transition-all mb-8">
+        <button onClick={() => navigate('/admin')} className="group flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground-bold transition-all mb-8">
           <span className="group-hover:-translate-x-1 transition-transform">&larr;</span>
           Back to Dashboard
         </button>
 
         <header className="mb-10">
-          <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-cream-400 mb-2">Coding Assessment Builder</div>
-          <h1 className="text-3xl font-serif text-cream-950">New Coding Question</h1>
-          <p className="text-sm text-cream-500 mt-1 italic">Define the problem, examples, and hidden test cases.</p>
+          <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground mb-2">Coding Assessment Builder</div>
+          <h1 className="text-3xl font-sans text-foreground-bold">New Coding Question</h1>
+          <p className="text-sm text-muted-foreground mt-1 italic">Define the problem, examples, and hidden test cases.</p>
         </header>
 
         {error && (
@@ -112,13 +112,13 @@ const CreateCodingQuestion: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-8">
 
           {/* Tab switcher */}
-          <div className="flex gap-1 border-b border-cream-200">
+          <div className="flex gap-1 border-b border-border">
             {(['problem', 'testcases', 'starter'] as const).map(tab => (
               <button
                 key={tab} type="button"
                 onClick={() => setActiveTab(tab)}
                 className={`px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest border-b-2 transition-all ${
-                  activeTab === tab ? 'border-cream-900 text-cream-900' : 'border-transparent text-cream-400 hover:text-cream-700'
+                  activeTab === tab ? 'border-cream-900 text-foreground' : 'border-transparent text-muted-foreground hover:text-cream-700'
                 }`}
               >
                 {tab === 'problem' ? 'Problem' : tab === 'testcases' ? 'Test Cases' : 'Starter Code'}
@@ -129,17 +129,17 @@ const CreateCodingQuestion: React.FC = () => {
           {/* ── Problem Tab ── */}
           {activeTab === 'problem' && (
             <div className="space-y-6">
-              <div className="bg-white border border-cream-200 rounded-sm p-8 space-y-6 shadow-sm">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-cream-400 border-b border-cream-50 pb-3">Metadata</div>
+              <div className="bg-white border border-border rounded-sm p-8 space-y-6 shadow-sm">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground border-b border-cream-50 pb-3">Metadata</div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                   <div className="md:col-span-2">
-                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-cream-500 mb-2">Problem Title *</label>
-                    <input required value={title} onChange={e => setTitle(e.target.value)} className="input-premium text-lg font-serif" placeholder="e.g. Two Sum" />
+                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-2">Problem Title *</label>
+                    <input required value={title} onChange={e => setTitle(e.target.value)} className="input text-lg font-sans" placeholder="e.g. Two Sum" />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-cream-500 mb-2">Difficulty</label>
-                    <select value={difficulty} onChange={e => setDifficulty(e.target.value as 'easy' | 'medium' | 'hard')} className="input-premium">
+                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-2">Difficulty</label>
+                    <select value={difficulty} onChange={e => setDifficulty(e.target.value as 'easy' | 'medium' | 'hard')} className="input">
                       <option value="easy">Easy</option>
                       <option value="medium">Medium</option>
                       <option value="hard">Hard</option>
@@ -149,16 +149,16 @@ const CreateCodingQuestion: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-cream-500 mb-2">Points</label>
-                    <input type="number" min={1} value={points} onChange={e => setPoints(Number(e.target.value))} className="input-premium font-mono" />
+                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-2">Points</label>
+                    <input type="number" min={1} value={points} onChange={e => setPoints(Number(e.target.value))} className="input font-mono" />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-cream-500 mb-2">Allowed Languages</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-2">Allowed Languages</label>
                     <div className="flex flex-wrap gap-2 mt-1">
                       {SUPPORTED_LANGS.map(lang => (
                         <button key={lang} type="button" onClick={() => toggleLang(lang)}
                           className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-sm border transition-all ${
-                            allowedLanguages.includes(lang) ? 'bg-cream-900 text-cream-50 border-cream-900' : 'border-cream-200 text-cream-500 hover:border-cream-500'
+                            allowedLanguages.includes(lang) ? 'bg-primary text-primary-foreground border-cream-900' : 'border-border text-muted-foreground hover:border-cream-500'
                           }`}
                         >{lang}</button>
                       ))}
@@ -167,50 +167,50 @@ const CreateCodingQuestion: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-white border border-cream-200 rounded-sm p-8 space-y-6 shadow-sm">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-cream-400 border-b border-cream-50 pb-3">Problem Statement</div>
+              <div className="bg-white border border-border rounded-sm p-8 space-y-6 shadow-sm">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground border-b border-cream-50 pb-3">Problem Statement</div>
 
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-cream-500 mb-2">Description *</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-2">Description *</label>
                   <textarea required value={description} onChange={e => setDescription(e.target.value)}
-                    className="input-premium h-48 font-mono text-sm leading-relaxed resize-y"
+                    className="input h-48 font-mono text-sm leading-relaxed resize-y"
                     placeholder="Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target..." />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-cream-500 mb-2">Constraints</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-2">Constraints</label>
                   <textarea value={constraints} onChange={e => setConstraints(e.target.value)}
-                    className="input-premium h-24 font-mono text-sm resize-y"
+                    className="input h-24 font-mono text-sm resize-y"
                     placeholder="• 2 ≤ nums.length ≤ 10^4&#10;• -10^9 ≤ nums[i] ≤ 10^9" />
                 </div>
 
                 <div>
                   <div className="flex justify-between items-center mb-4">
-                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-cream-500">Examples</label>
-                    <button type="button" onClick={addExample} className="text-[10px] font-bold uppercase tracking-widest text-cream-500 border border-dashed border-cream-300 px-3 py-1 rounded-sm hover:border-cream-700 hover:text-cream-700 transition-all">+ Add Example</button>
+                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Examples</label>
+                    <button type="button" onClick={addExample} className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground border border-dashed border-border-hover px-3 py-1 rounded-sm hover:border-cream-700 hover:text-cream-700 transition-all">+ Add Example</button>
                   </div>
                   <div className="space-y-4">
                     {examples.map((ex, i) => (
-                      <div key={i} className="border border-cream-100 rounded-sm p-4 space-y-3 bg-cream-50/50">
+                      <div key={i} className="border border-cream-100 rounded-sm p-4 space-y-3 bg-background/50">
                         <div className="flex justify-between items-center">
-                          <span className="text-[10px] font-bold text-cream-400 uppercase tracking-widest">Example {i + 1}</span>
+                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Example {i + 1}</span>
                           {examples.length > 1 && (
                             <button type="button" onClick={() => removeExample(i)} className="text-[10px] text-cream-300 hover:text-red-500 transition-colors">✕ Remove</button>
                           )}
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className="block text-[10px] text-cream-400 mb-1">Input</label>
-                            <textarea value={ex.input} onChange={e => updateExample(i, 'input', e.target.value)} className="input-premium h-16 font-mono text-xs resize-none" placeholder="[2,7,11,15]&#10;9" />
+                            <label className="block text-[10px] text-muted-foreground mb-1">Input</label>
+                            <textarea value={ex.input} onChange={e => updateExample(i, 'input', e.target.value)} className="input h-16 font-mono text-xs resize-none" placeholder="[2,7,11,15]&#10;9" />
                           </div>
                           <div>
-                            <label className="block text-[10px] text-cream-400 mb-1">Output</label>
-                            <textarea value={ex.output} onChange={e => updateExample(i, 'output', e.target.value)} className="input-premium h-16 font-mono text-xs resize-none" placeholder="[0,1]" />
+                            <label className="block text-[10px] text-muted-foreground mb-1">Output</label>
+                            <textarea value={ex.output} onChange={e => updateExample(i, 'output', e.target.value)} className="input h-16 font-mono text-xs resize-none" placeholder="[0,1]" />
                           </div>
                         </div>
                         <div>
-                          <label className="block text-[10px] text-cream-400 mb-1">Explanation (optional)</label>
-                          <input value={ex.explanation} onChange={e => updateExample(i, 'explanation', e.target.value)} className="input-premium text-xs" placeholder="Because nums[0] + nums[1] == 9, we return [0, 1]" />
+                          <label className="block text-[10px] text-muted-foreground mb-1">Explanation (optional)</label>
+                          <input value={ex.explanation} onChange={e => updateExample(i, 'explanation', e.target.value)} className="input text-xs" placeholder="Because nums[0] + nums[1] == 9, we return [0, 1]" />
                         </div>
                       </div>
                     ))}
@@ -222,30 +222,30 @@ const CreateCodingQuestion: React.FC = () => {
 
           {/* ── Test Cases Tab ── */}
           {activeTab === 'testcases' && (
-            <div className="bg-white border border-cream-200 rounded-sm p-8 shadow-sm space-y-6">
+            <div className="bg-white border border-border rounded-sm p-8 shadow-sm space-y-6">
               <div className="flex justify-between items-center border-b border-cream-50 pb-3">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-cream-400">Test Cases</div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Test Cases</div>
                 <div className="flex gap-2">
-                  <button type="button" onClick={() => addTestCase(false)} className="text-[10px] font-bold uppercase tracking-widest text-cream-500 border border-dashed border-cream-300 px-3 py-1 rounded-sm hover:border-cream-700 hover:text-cream-700 transition-all">+ Visible</button>
+                  <button type="button" onClick={() => addTestCase(false)} className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground border border-dashed border-border-hover px-3 py-1 rounded-sm hover:border-cream-700 hover:text-cream-700 transition-all">+ Visible</button>
                   <button type="button" onClick={() => addTestCase(true)} className="text-[10px] font-bold uppercase tracking-widest text-amber-600 border border-dashed border-amber-300 px-3 py-1 rounded-sm hover:border-amber-500 transition-all">+ Hidden</button>
                 </div>
               </div>
 
-              <p className="text-xs text-cream-500 italic">Visible test cases are shown to candidates. Hidden test cases are used for scoring only.</p>
+              <p className="text-xs text-muted-foreground italic">Visible test cases are shown to candidates. Hidden test cases are used for scoring only.</p>
 
               <div className="space-y-4">
                 {testCases.map((tc, i) => (
-                  <div key={i} className={`border rounded-sm p-4 space-y-3 ${tc.isHidden ? 'border-amber-200 bg-amber-50/30' : 'border-cream-100 bg-cream-50/30'}`}>
+                  <div key={i} className={`border rounded-sm p-4 space-y-3 ${tc.isHidden ? 'border-amber-200 bg-amber-50/30' : 'border-cream-100 bg-background/30'}`}>
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold text-cream-400 uppercase tracking-widest">Case {i + 1}</span>
-                        <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full ${tc.isHidden ? 'bg-amber-100 text-amber-700' : 'bg-cream-100 text-cream-600'}`}>
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Case {i + 1}</span>
+                        <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full ${tc.isHidden ? 'bg-amber-100 text-amber-700' : 'bg-muted text-muted-foreground'}`}>
                           {tc.isHidden ? '🔒 Hidden' : '👁 Visible'}
                         </span>
                       </div>
                       <div className="flex items-center gap-3">
                         <button type="button" onClick={() => updateTestCase(i, 'isHidden', !tc.isHidden)}
-                          className="text-[10px] text-cream-400 hover:text-cream-700 transition-colors">
+                          className="text-[10px] text-muted-foreground hover:text-cream-700 transition-colors">
                           Toggle
                         </button>
                         <button type="button" onClick={() => removeTestCase(i)} className="text-[10px] text-cream-300 hover:text-red-500 transition-colors">✕</button>
@@ -253,12 +253,12 @@ const CreateCodingQuestion: React.FC = () => {
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-[10px] text-cream-400 mb-1">Input (stdin)</label>
-                        <textarea value={tc.input} onChange={e => updateTestCase(i, 'input', e.target.value)} className="input-premium h-20 font-mono text-xs resize-none" placeholder="5&#10;1 2 3 4 5" />
+                        <label className="block text-[10px] text-muted-foreground mb-1">Input (stdin)</label>
+                        <textarea value={tc.input} onChange={e => updateTestCase(i, 'input', e.target.value)} className="input h-20 font-mono text-xs resize-none" placeholder="5&#10;1 2 3 4 5" />
                       </div>
                       <div>
-                        <label className="block text-[10px] text-cream-400 mb-1">Expected Output (stdout)</label>
-                        <textarea value={tc.expectedOutput} onChange={e => updateTestCase(i, 'expectedOutput', e.target.value)} className="input-premium h-20 font-mono text-xs resize-none" placeholder="15" />
+                        <label className="block text-[10px] text-muted-foreground mb-1">Expected Output (stdout)</label>
+                        <textarea value={tc.expectedOutput} onChange={e => updateTestCase(i, 'expectedOutput', e.target.value)} className="input h-20 font-mono text-xs resize-none" placeholder="15" />
                       </div>
                     </div>
                   </div>
@@ -269,16 +269,16 @@ const CreateCodingQuestion: React.FC = () => {
 
           {/* ── Starter Code Tab ── */}
           {activeTab === 'starter' && (
-            <div className="bg-white border border-cream-200 rounded-sm p-8 shadow-sm space-y-6">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-cream-400 border-b border-cream-50 pb-3">Starter Code Templates</div>
-              <p className="text-xs text-cream-500 italic">The starter code shown to candidates in the editor for each language.</p>
+            <div className="bg-white border border-border rounded-sm p-8 shadow-sm space-y-6">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground border-b border-cream-50 pb-3">Starter Code Templates</div>
+              <p className="text-xs text-muted-foreground italic">The starter code shown to candidates in the editor for each language.</p>
               {allowedLanguages.filter(l => STARTER_TEMPLATES[l] !== undefined || starterCode[l]).map(lang => (
                 <div key={lang}>
-                  <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-cream-500 mb-2">{lang}</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-2">{lang}</label>
                   <textarea
                     value={starterCode[lang] ?? ''}
                     onChange={e => setStarterCode(prev => ({ ...prev, [lang]: e.target.value }))}
-                    className="input-premium h-40 font-mono text-xs resize-y bg-cream-50"
+                    className="input h-40 font-mono text-xs resize-y bg-background"
                   />
                 </div>
               ))}
@@ -287,10 +287,10 @@ const CreateCodingQuestion: React.FC = () => {
 
           {/* Actions */}
           <div className="flex gap-4">
-            <button type="button" onClick={() => navigate('/admin')} className="flex-1 py-4 border border-cream-200 rounded-sm text-[10px] uppercase tracking-widest font-bold text-cream-500 hover:text-cream-950 hover:border-cream-400 transition-all">
+            <button type="button" onClick={() => navigate('/admin')} className="flex-1 py-4 border border-border rounded-sm text-[10px] uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground-bold hover:border-cream-400 transition-all">
               Cancel
             </button>
-            <button type="submit" disabled={saving} className="flex-1 py-4 bg-cream-900 text-cream-50 rounded-sm text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-cream-950 transition-all disabled:opacity-50 shadow-lg shadow-cream-100">
+            <button type="submit" disabled={saving} className="flex-1 py-4 bg-primary text-primary-foreground rounded-sm text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-primary transition-all disabled:opacity-50 shadow-lg shadow-cream-100">
               {saving ? 'Saving...' : 'Save Coding Question'}
             </button>
           </div>

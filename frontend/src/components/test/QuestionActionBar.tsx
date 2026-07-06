@@ -26,7 +26,7 @@ const QuestionActionBar: React.FC<QuestionActionBarProps> = ({
   isLast
 }) => {
   return (
-    <div className="mt-8 pt-6 border-t border-cream-200">
+    <div className="mt-8 pt-6 border-t border-border">
       {/* Action Buttons Row */}
       <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-6">
         <button
@@ -36,7 +36,7 @@ const QuestionActionBar: React.FC<QuestionActionBarProps> = ({
           className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 border rounded-sm text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50 ${
             isMarked
               ? 'bg-amber-500 border-amber-600 text-white hover:bg-amber-600'
-              : 'bg-white border-cream-200 text-cream-600 hover:border-amber-400 hover:text-amber-700'
+              : 'bg-white border-border text-muted-foreground hover:border-amber-400 hover:text-amber-700'
           }`}
         >
           <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -49,7 +49,7 @@ const QuestionActionBar: React.FC<QuestionActionBarProps> = ({
           type="button"
           onClick={onClearResponse}
           disabled={isSaving || !hasAnswer}
-          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 border border-cream-200 rounded-sm text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-cream-600 transition-all hover:border-red-300 hover:text-red-700 hover:bg-red-50 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-cream-200 disabled:hover:text-cream-600 disabled:hover:bg-white"
+          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 border border-border rounded-sm text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground transition-all hover:border-red-300 hover:text-red-700 hover:bg-red-50 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-muted-foreground disabled:hover:bg-white"
         >
           <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

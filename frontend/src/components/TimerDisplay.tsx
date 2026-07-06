@@ -8,9 +8,9 @@ const TimerDisplay: React.FC = () => {
 
   return (
     <div className={`flex flex-col items-end`}>
-      <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-cream-500 mb-1">Time Remaining</span>
+      <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-muted-foreground mb-1">Time Remaining</span>
       <div className={`font-mono text-2xl font-bold ${
-        isUrgent ? 'text-red-800' : 'text-cream-950'
+        isUrgent ? 'text-red-800' : 'text-foreground-bold'
       }`}>
         {timeFormatted}
       </div>

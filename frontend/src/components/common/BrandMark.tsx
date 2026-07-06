@@ -14,7 +14,7 @@ const sizeClasses = {
 };
 
 const BrandBox = ({ size = 'md', className = '' }: Omit<BrandMarkProps, 'to'>) => (
-  <div className={`${sizeClasses[size]} border border-cream-950 flex items-center justify-center text-cream-950 font-serif font-bold mx-auto ${className}`}>
+  <div className={`${sizeClasses[size]} bg-muted/40 backdrop-blur-md border border-border flex items-center justify-center text-foreground-bold font-sans font-bold shadow-sm mx-auto ${className}`}>
     N
   </div>
 );

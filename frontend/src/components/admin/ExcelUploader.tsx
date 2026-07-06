@@ -255,31 +255,31 @@ const ExcelUploader: React.FC<ExcelUploaderProps> = ({ onImport, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-sm border border-cream-200 shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+      <div className="bg-white rounded-sm border border-border shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
 
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-cream-100">
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-widest text-cream-400 mb-1">Bulk Import</div>
-            <h2 className="text-xl font-serif text-cream-950">Upload Questions File</h2>
-            <p className="text-xs text-cream-500 mt-0.5">One file — two sheets: <strong>MCQ</strong> + <strong>Coding</strong></p>
+            <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Bulk Import</div>
+            <h2 className="text-xl font-sans text-foreground-bold">Upload Questions File</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">One file — two sheets: <strong>MCQ</strong> + <strong>Coding</strong></p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-cream-400 hover:text-cream-950 hover:bg-cream-50 rounded-sm transition-all text-lg">✕</button>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground-bold hover:bg-background rounded-sm transition-all text-lg">✕</button>
         </div>
 
         <div className="overflow-y-auto flex-1 p-6 space-y-6 custom-scrollbar">
 
           {/* Template download */}
           {!parseResult && (
-            <div className="bg-cream-50 border border-cream-200 rounded-sm p-4 flex items-start gap-3">
-              <span className="text-cream-500 text-lg mt-0.5">📄</span>
+            <div className="bg-background border border-border rounded-sm p-4 flex items-start gap-3">
+              <span className="text-muted-foreground text-lg mt-0.5">📄</span>
               <div className="flex-1">
                 <p className="text-xs text-cream-700 font-medium mb-1">Download the template first</p>
-                <p className="text-[11px] text-cream-500 mb-3">
+                <p className="text-[11px] text-muted-foreground mb-3">
                   The template has two sheets: <strong>MCQ</strong> (multiple choice) and <strong>Coding</strong> (programming questions).
                   Fill both, or just one — the system detects automatically.
                 </p>
-                <button onClick={downloadTemplate} className="text-[10px] font-bold uppercase tracking-widest text-cream-700 border border-cream-300 px-3 py-1.5 rounded-sm hover:bg-white hover:border-cream-500 transition-all">
+                <button onClick={downloadTemplate} className="text-[10px] font-bold uppercase tracking-widest text-cream-700 border border-border-hover px-3 py-1.5 rounded-sm hover:bg-white hover:border-cream-500 transition-all">
                   ↓ Download Template (.xlsx)
                 </button>
               </div>
@@ -293,19 +293,19 @@ const ExcelUploader: React.FC<ExcelUploaderProps> = ({ onImport, onClose }) => {
               onDragLeave={() => setIsDragging(false)}
               onDrop={handleDrop}
               onClick={() => fileRef.current?.click()}
-              className={`border-2 border-dashed rounded-sm p-8 text-center cursor-pointer transition-all ${isDragging ? 'border-cream-900 bg-cream-50' : 'border-cream-200 hover:border-cream-400 hover:bg-cream-50/50'}`}
+              className={`border-2 border-dashed rounded-sm p-8 text-center cursor-pointer transition-all ${isDragging ? 'border-cream-900 bg-background' : 'border-border hover:border-cream-400 hover:bg-background/50'}`}
             >
               <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleFileChange} />
               {isProcessing ? (
                 <div className="space-y-3">
-                  <div className="w-8 h-8 border-2 border-cream-300 border-t-cream-900 rounded-full animate-spin mx-auto" />
-                  <p className="text-xs text-cream-500">Parsing <span className="font-medium text-cream-700">{fileName}</span>…</p>
+                  <div className="w-8 h-8 border-2 border-border-hover border-t-cream-900 rounded-full animate-spin mx-auto" />
+                  <p className="text-xs text-muted-foreground">Parsing <span className="font-medium text-cream-700">{fileName}</span>…</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   <div className="text-4xl">📊</div>
-                  <p className="text-sm font-serif text-cream-700">Drop your file here, or <span className="underline">click to browse</span></p>
-                  <p className="text-[11px] text-cream-400 uppercase tracking-widest">.xlsx · .xls · .csv — max 5 MB</p>
+                  <p className="text-sm font-sans text-cream-700">Drop your file here, or <span className="underline">click to browse</span></p>
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-widest">.xlsx · .xls · .csv — max 5 MB</p>
                 </div>
               )}
             </div>
@@ -320,15 +320,15 @@ const ExcelUploader: React.FC<ExcelUploaderProps> = ({ onImport, onClose }) => {
               {/* Summary */}
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-3 flex-wrap">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-cream-400">File: <span className="text-cream-700 normal-case">{fileName}</span></span>
-                  <span className={`text-[10px] font-bold px-2 py-1 rounded-sm border ${parseResult.testType === 'mixed' ? 'bg-purple-50 border-purple-200 text-purple-700' : parseResult.testType === 'coding' ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-cream-50 border-cream-200 text-cream-700'}`}>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">File: <span className="text-cream-700 normal-case">{fileName}</span></span>
+                  <span className={`text-[10px] font-bold px-2 py-1 rounded-sm border ${parseResult.testType === 'mixed' ? 'bg-purple-50 border-purple-200 text-purple-700' : parseResult.testType === 'coding' ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-background border-border text-cream-700'}`}>
                     {parseResult.testType.toUpperCase()}
                   </span>
                   {parseResult.mcqQuestions.length > 0 && <span className="text-[10px] font-bold text-green-700 bg-green-50 border border-green-200 px-2 py-1 rounded-sm">✓ {parseResult.mcqQuestions.length} MCQ</span>}
                   {parseResult.codingQuestions.length > 0 && <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-1 rounded-sm">⚡ {parseResult.codingQuestions.length} Coding</span>}
                   {parseResult.errors.length > 0 && <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-sm">⚠ {parseResult.errors.length} skipped</span>}
                 </div>
-                <button onClick={handleReset} className="text-[10px] font-bold uppercase tracking-widest text-cream-400 hover:text-cream-700 transition-colors">Change file</button>
+                <button onClick={handleReset} className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-cream-700 transition-colors">Change file</button>
               </div>
 
               {/* Errors */}
@@ -342,24 +342,24 @@ const ExcelUploader: React.FC<ExcelUploaderProps> = ({ onImport, onClose }) => {
               {/* MCQ preview */}
               {parseResult.mcqQuestions.length > 0 && (
                 <div className="space-y-3">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-cream-400">MCQ Questions — {parseResult.mcqQuestions.length}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">MCQ Questions — {parseResult.mcqQuestions.length}</p>
                   {parseResult.mcqQuestions.map((q, i) => (
-                    <div key={i} className="border border-cream-100 rounded-sm p-4 bg-cream-50/50 hover:bg-white transition-colors">
+                    <div key={i} className="border border-cream-100 rounded-sm p-4 bg-background/50 hover:bg-white transition-colors">
                       <div className="flex gap-3">
                         <span className="text-[10px] font-bold text-cream-300 font-mono mt-0.5 w-5 shrink-0">{String(i + 1).padStart(2, '0')}</span>
                         <div className="flex-1 space-y-2">
-                          <p className="text-sm font-medium text-cream-900">{q.questionText}</p>
+                          <p className="text-sm font-medium text-foreground">{q.questionText}</p>
                           <div className="grid grid-cols-2 gap-1.5">
                             {q.options.map((opt, oi) => (
-                              <div key={oi} className={`flex items-center gap-2 px-2.5 py-1.5 rounded-sm border text-[11px] ${q.correctOptionIndex === oi ? 'border-cream-900 bg-white font-semibold' : 'border-cream-100 text-cream-600'}`}>
-                                <span className={`w-4 h-4 rounded-full border flex items-center justify-center text-[8px] font-bold shrink-0 ${q.correctOptionIndex === oi ? 'border-cream-900 bg-cream-900 text-white' : 'border-cream-300'}`}>
+                              <div key={oi} className={`flex items-center gap-2 px-2.5 py-1.5 rounded-sm border text-[11px] ${q.correctOptionIndex === oi ? 'border-cream-900 bg-white font-semibold' : 'border-cream-100 text-muted-foreground'}`}>
+                                <span className={`w-4 h-4 rounded-full border flex items-center justify-center text-[8px] font-bold shrink-0 ${q.correctOptionIndex === oi ? 'border-cream-900 bg-primary text-white' : 'border-border-hover'}`}>
                                   {q.correctOptionIndex === oi ? '✓' : String.fromCharCode(65 + oi)}
                                 </span>
                                 {opt}
                               </div>
                             ))}
                           </div>
-                          <p className="text-[10px] text-cream-400">Points: <strong className="text-cream-700">{q.points ?? 1}</strong></p>
+                          <p className="text-[10px] text-muted-foreground">Points: <strong className="text-cream-700">{q.points ?? 1}</strong></p>
                         </div>
                       </div>
                     </div>
@@ -370,21 +370,21 @@ const ExcelUploader: React.FC<ExcelUploaderProps> = ({ onImport, onClose }) => {
               {/* Coding preview */}
               {parseResult.codingQuestions.length > 0 && (
                 <div className="space-y-3">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-cream-400">Coding Questions — {parseResult.codingQuestions.length}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Coding Questions — {parseResult.codingQuestions.length}</p>
                   {parseResult.codingQuestions.map((q, i) => (
                     <div key={i} className="border border-blue-100 rounded-sm p-4 bg-blue-50/30 hover:bg-white transition-colors">
                       <div className="flex items-start justify-between gap-3 mb-2">
                         <div className="flex items-center gap-2">
                           <span className="text-[10px] font-bold text-cream-300 font-mono w-5 shrink-0">{String(i + 1).padStart(2, '0')}</span>
-                          <p className="text-sm font-bold text-cream-900">⚡ {q.title}</p>
+                          <p className="text-sm font-bold text-foreground">⚡ {q.title}</p>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${DIFF_COLOR[q.difficulty]}`}>{q.difficulty}</span>
-                          <span className="text-[10px] text-cream-500">{q.points} pts</span>
+                          <span className="text-[10px] text-muted-foreground">{q.points} pts</span>
                         </div>
                       </div>
-                      <p className="text-xs text-cream-600 ml-7 line-clamp-2">{q.description}</p>
-                      <div className="ml-7 mt-2 flex items-center gap-3 text-[10px] text-cream-400">
+                      <p className="text-xs text-muted-foreground ml-7 line-clamp-2">{q.description}</p>
+                      <div className="ml-7 mt-2 flex items-center gap-3 text-[10px] text-muted-foreground">
                         <span>{q.examples.length} example{q.examples.length !== 1 ? 's' : ''}</span>
                         <span>·</span>
                         <span>{q.testCases.filter(t => !t.isHidden).length} visible / {q.testCases.filter(t => t.isHidden).length} hidden test cases</span>
@@ -399,13 +399,13 @@ const ExcelUploader: React.FC<ExcelUploaderProps> = ({ onImport, onClose }) => {
 
         {/* Footer */}
         <div className="p-6 border-t border-cream-100 flex gap-3">
-          <button onClick={onClose} className="flex-1 py-3 border border-cream-200 rounded-sm text-[10px] uppercase tracking-widest font-bold text-cream-500 hover:text-cream-950 hover:border-cream-400 transition-all">
+          <button onClick={onClose} className="flex-1 py-3 border border-border rounded-sm text-[10px] uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground-bold hover:border-cream-400 transition-all">
             Cancel
           </button>
           <button
             onClick={handleImport}
             disabled={!parseResult || total === 0}
-            className="flex-1 py-3 bg-cream-900 text-cream-50 rounded-sm text-[10px] uppercase tracking-widest font-bold hover:bg-cream-950 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex-1 py-3 bg-primary text-primary-foreground rounded-sm text-[10px] uppercase tracking-widest font-bold hover:bg-primary transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {parseResult ? `Import ${total} Question${total !== 1 ? 's' : ''}` : 'Import Questions'}
           </button>

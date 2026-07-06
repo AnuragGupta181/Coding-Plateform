@@ -141,16 +141,16 @@ const CreateTest: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-cream-50 font-sans text-cream-900 pb-32">
+    <div className="min-h-screen bg-background font-sans text-foreground pb-32">
 
       {/* Nav */}
-      <nav className="bg-white border-b border-cream-200 mb-6 md:mb-10">
+      <nav className="bg-white border-b border-border mb-6 md:mb-10">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-20 flex justify-between items-center">
           <div className="flex items-center gap-2 md:gap-3">
-            <Link to="/admin" className="w-8 h-8 border border-cream-950 flex items-center justify-center text-cream-950 font-serif font-bold text-lg shrink-0">
+            <Link to="/admin" className="w-8 h-8 border border-cream-950 flex items-center justify-center text-foreground-bold font-sans font-bold text-lg shrink-0">
               N
             </Link>
-            <span className="text-base md:text-lg font-serif font-bold text-cream-950 tracking-wide truncate">NextGen Design</span>
+            <span className="text-base md:text-lg font-sans font-bold text-foreground-bold tracking-wide truncate">NextGen Design</span>
           </div>
         </div>
       </nav>
@@ -158,7 +158,7 @@ const CreateTest: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4 md:px-6">
         <button
           onClick={() => navigate('/admin')}
-          className="group flex items-center gap-2 text-[10px] md:text-xs uppercase tracking-widest font-bold text-cream-500 hover:text-cream-950 transition-all whitespace-nowrap mb-8"
+          className="group flex items-center gap-2 text-[10px] md:text-xs uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground-bold transition-all whitespace-nowrap mb-8"
         >
           <span className="group-hover:-translate-x-1 transition-transform">&larr;</span>
           <span className="hidden sm:inline">Cancel Session</span>
@@ -167,47 +167,47 @@ const CreateTest: React.FC = () => {
       </div>
 
       <header className="max-w-4xl mx-auto px-4 md:px-6 mb-8 md:mb-16">
-        <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-cream-400 mb-2">Architectural Studio</div>
-        <h1 className="text-2xl md:text-5xl font-serif text-cream-950">Draft New Assessment</h1>
-        <p className="text-xs md:text-base text-cream-600 mt-2 font-light italic">Define the technical parameters and evaluative criteria for your next session.</p>
+        <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground mb-2">Architectural Studio</div>
+        <h1 className="text-2xl md:text-5xl font-sans text-foreground-bold">Draft New Assessment</h1>
+        <p className="text-xs md:text-base text-muted-foreground mt-2 font-light italic">Define the technical parameters and evaluative criteria for your next session.</p>
       </header>
 
       <form onSubmit={handleSubmit} className="max-w-4xl mx-auto px-4 md:px-6 space-y-8 md:space-y-12">
 
         {/* ── Test Basics ── */}
-        <section className="bg-white p-5 md:p-12 rounded-sm border border-cream-200 shadow-sm space-y-6 md:space-y-10">
-          <div className="text-[10px] font-bold uppercase tracking-widest text-cream-400 border-b border-cream-50 pb-3 md:pb-4">Global Parameters</div>
+        <section className="bg-white p-5 md:p-12 rounded-sm border border-border shadow-sm space-y-6 md:space-y-10">
+          <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground border-b border-cream-50 pb-3 md:pb-4">Global Parameters</div>
 
           <div className="space-y-5 md:space-y-6">
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-cream-500 mb-2 md:mb-3">Assessment Title</label>
+              <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-2 md:mb-3">Assessment Title</label>
               <input
                 required
                 value={title}
                 onChange={e => setTitle(e.target.value)}
-                className="input-premium text-base md:text-lg font-serif"
+                className="input text-base md:text-lg font-sans"
                 placeholder="e.g. Senior Architecture Evaluation"
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-cream-500 mb-2 md:mb-3">Philosophical Description</label>
+              <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-2 md:mb-3">Philosophical Description</label>
               <textarea
                 value={description}
                 onChange={e => setDescription(e.target.value)}
-                className="input-premium h-24 md:h-32 leading-relaxed text-sm md:text-base"
+                className="input h-24 md:h-32 leading-relaxed text-sm md:text-base"
                 placeholder="Briefly state the objectives of this assessment..."
               />
             </div>
 
             <div className="w-full md:w-1/3">
-              <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-cream-500 mb-2 md:mb-3">Duration (Minutes)</label>
+              <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-2 md:mb-3">Duration (Minutes)</label>
               <input
                 type="number"
                 required
                 value={duration}
                 onChange={e => setDuration(Number(e.target.value))}
-                className="input-premium font-mono text-base md:text-lg"
+                className="input font-mono text-base md:text-lg"
               />
             </div>
           </div>
@@ -217,15 +217,15 @@ const CreateTest: React.FC = () => {
         <div className="space-y-6 md:space-y-8">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 mb-4 md:mb-6">
             <div>
-              <h2 className="text-xl md:text-2xl font-serif text-cream-950">Evaluative Items</h2>
-              <span className="text-[9px] md:text-[10px] font-bold uppercase text-cream-400 tracking-widest">{questions.length} Item{questions.length !== 1 ? 's' : ''} Defined</span>
+              <h2 className="text-xl md:text-2xl font-sans text-foreground-bold">Evaluative Items</h2>
+              <span className="text-[9px] md:text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{questions.length} Item{questions.length !== 1 ? 's' : ''} Defined</span>
             </div>
 
             {/* Excel Upload Button */}
             <button
               type="button"
               onClick={() => setShowUploader(true)}
-              className="flex items-center gap-2 px-4 py-2.5 border border-cream-300 rounded-sm text-[10px] uppercase tracking-widest font-bold text-cream-600 hover:text-cream-950 hover:border-cream-950 bg-white hover:bg-cream-50 transition-all whitespace-nowrap"
+              className="flex items-center gap-2 px-4 py-2.5 border border-border-hover rounded-sm text-[10px] uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground-bold hover:border-cream-950 bg-white hover:bg-background transition-all whitespace-nowrap"
             >
               <span className="text-base leading-none">📊</span>
               Bulk Upload via Excel
@@ -250,10 +250,10 @@ const CreateTest: React.FC = () => {
           {questions.map((q, qIndex) => (
             <div
               key={qIndex}
-              className="bg-white p-5 md:p-12 rounded-sm border border-cream-200 shadow-sm space-y-6 md:space-y-8 relative group"
+              className="bg-white p-5 md:p-12 rounded-sm border border-border shadow-sm space-y-6 md:space-y-8 relative group"
             >
               {/* Large background number */}
-              <div className="absolute top-3 md:top-6 right-4 md:right-8 text-cream-100 font-serif font-bold text-3xl md:text-6xl select-none group-hover:text-cream-50 transition-colors">
+              <div className="absolute top-3 md:top-6 right-4 md:right-8 text-cream-100 font-sans font-bold text-3xl md:text-6xl select-none group-hover:text-primary-foreground transition-colors">
                 {String(qIndex + 1).padStart(2, '0')}
               </div>
 
@@ -271,12 +271,12 @@ const CreateTest: React.FC = () => {
 
               {/* Question Text */}
               <div className="relative pt-6 md:pt-0">
-                <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-cream-500 mb-2 md:mb-3">Inquiry Text</label>
+                <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-2 md:mb-3">Inquiry Text</label>
                 <input
                   required
                   value={q.questionText}
                   onChange={e => handleQuestionChange(qIndex, e.target.value)}
-                  className="input-premium text-sm md:text-lg border-none bg-cream-50/50 focus:bg-white"
+                  className="input text-sm md:text-lg border-none bg-background/50 focus:bg-white"
                   placeholder="Enter the question here..."
                 />
               </div>
@@ -287,7 +287,7 @@ const CreateTest: React.FC = () => {
                   <div
                     key={oIndex}
                     className={`flex items-center gap-3 p-3 md:p-4 rounded-sm border transition-all ${
-                      q.correctOptionIndex === oIndex ? 'bg-cream-50 border-cream-900' : 'bg-white border-cream-100'
+                      q.correctOptionIndex === oIndex ? 'bg-background border-cream-900' : 'bg-white border-cream-100'
                     }`}
                   >
                     <input
@@ -302,7 +302,7 @@ const CreateTest: React.FC = () => {
                       value={opt}
                       onChange={e => handleOptionChange(qIndex, oIndex, e.target.value)}
                       placeholder={`Choice ${String.fromCharCode(65 + oIndex)}`}
-                      className="w-full bg-transparent border-none p-0 focus:ring-0 text-xs md:text-sm font-light text-cream-900 placeholder:text-cream-300"
+                      className="w-full bg-transparent border-none p-0 focus:ring-0 text-xs md:text-sm font-light text-foreground placeholder:text-cream-300"
                     />
                   </div>
                 ))}
@@ -310,13 +310,13 @@ const CreateTest: React.FC = () => {
 
               {/* Points field */}
               <div className="flex items-center gap-3 pt-1">
-                <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-cream-400 whitespace-nowrap">Points:</label>
+                <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground whitespace-nowrap">Points:</label>
                 <input
                   type="number"
                   min={1}
                   value={q.points ?? 1}
                   onChange={e => handlePointsChange(qIndex, Number(e.target.value))}
-                  className="w-20 border border-cream-200 rounded-sm px-2 py-1 text-xs font-mono text-cream-900 focus:outline-none focus:border-cream-900 transition-colors"
+                  className="w-20 border border-border rounded-sm px-2 py-1 text-xs font-mono text-foreground focus:outline-none focus:border-cream-900 transition-colors"
                 />
               </div>
             </div>
@@ -324,15 +324,15 @@ const CreateTest: React.FC = () => {
 
           {/* ── Coding Question Cards ── */}
           {codingQuestions.length > 0 && (
-            <div className="pt-8 border-t border-cream-200 space-y-6 md:space-y-8">
-              <h3 className="text-xl font-serif text-cream-950 mb-4">Coding Inquiries</h3>
+            <div className="pt-8 border-t border-border space-y-6 md:space-y-8">
+              <h3 className="text-xl font-sans text-foreground-bold mb-4">Coding Inquiries</h3>
               {codingQuestions.map((cq, cqIndex) => (
                 <div
                   key={cqIndex}
                   className="bg-blue-50/30 p-5 md:p-12 rounded-sm border border-blue-200 shadow-sm space-y-4 relative group"
                 >
                   {/* Large background number */}
-                  <div className="absolute top-3 md:top-6 right-4 md:right-8 text-blue-100 font-serif font-bold text-3xl md:text-6xl select-none group-hover:text-blue-200 transition-colors z-0">
+                  <div className="absolute top-3 md:top-6 right-4 md:right-8 text-blue-100 font-sans font-bold text-3xl md:text-6xl select-none group-hover:text-blue-200 transition-colors z-0">
                     {String(cqIndex + 1).padStart(2, '0')}
                   </div>
 
@@ -352,7 +352,7 @@ const CreateTest: React.FC = () => {
                       required
                       value={cq.title}
                       onChange={e => handleCodingQuestionChange(cqIndex, 'title', e.target.value)}
-                      className="input-premium text-sm md:text-lg border-blue-200 bg-white focus:bg-white text-cream-900 py-2 px-3 rounded-sm w-full"
+                      className="input text-sm md:text-lg border-blue-200 bg-white focus:bg-white text-foreground py-2 px-3 rounded-sm w-full"
                       placeholder="e.g. Two Sum"
                     />
                   </div>
@@ -363,7 +363,7 @@ const CreateTest: React.FC = () => {
                       required
                       value={cq.description}
                       onChange={e => handleCodingQuestionChange(cqIndex, 'description', e.target.value)}
-                      className="input-premium h-24 text-sm font-light text-cream-900 bg-white border-blue-200 p-3 rounded-sm w-full"
+                      className="input h-24 text-sm font-light text-foreground bg-white border-blue-200 p-3 rounded-sm w-full"
                       placeholder="Describe the problem..."
                     />
                   </div>
@@ -373,7 +373,7 @@ const CreateTest: React.FC = () => {
                     <textarea
                       value={cq.constraints}
                       onChange={e => handleCodingQuestionChange(cqIndex, 'constraints', e.target.value)}
-                      className="input-premium h-16 text-sm font-light text-cream-900 bg-white border-blue-200 p-3 rounded-sm w-full"
+                      className="input h-16 text-sm font-light text-foreground bg-white border-blue-200 p-3 rounded-sm w-full"
                       placeholder="e.g. 1 <= n <= 10^5"
                     />
                   </div>
@@ -384,7 +384,7 @@ const CreateTest: React.FC = () => {
                       <select
                         value={cq.difficulty}
                         onChange={e => handleCodingQuestionChange(cqIndex, 'difficulty', e.target.value)}
-                        className="input-premium py-2 px-3 border-blue-200 text-sm font-semibold text-blue-800 uppercase bg-white rounded-sm"
+                        className="input py-2 px-3 border-blue-200 text-sm font-semibold text-blue-800 uppercase bg-white rounded-sm"
                       >
                         <option value="easy">Easy</option>
                         <option value="medium">Medium</option>
@@ -398,7 +398,7 @@ const CreateTest: React.FC = () => {
                         min={1}
                         value={cq.points}
                         onChange={e => handleCodingQuestionChange(cqIndex, 'points', Number(e.target.value))}
-                        className="input-premium w-24 py-2 px-3 border-blue-200 text-sm font-semibold text-blue-800 bg-white rounded-sm"
+                        className="input w-24 py-2 px-3 border-blue-200 text-sm font-semibold text-blue-800 bg-white rounded-sm"
                       />
                     </div>
                     <div className="flex flex-col gap-2 justify-end pb-1">
@@ -489,7 +489,7 @@ const CreateTest: React.FC = () => {
           <button
             type="button"
             onClick={handleAddQuestion}
-            className="flex-1 py-4 border border-dashed border-cream-300 rounded-sm text-[10px] uppercase tracking-widest font-bold text-cream-500 hover:text-cream-950 hover:border-cream-950 transition-all bg-white"
+            className="flex-1 py-4 border border-dashed border-border-hover rounded-sm text-[10px] uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground-bold hover:border-cream-950 transition-all bg-white"
           >
             + Append MCQ
           </button>
@@ -502,7 +502,7 @@ const CreateTest: React.FC = () => {
           </button>
           <button
             type="submit"
-            className="flex-1 py-4 bg-cream-900 text-cream-50 rounded-sm text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-cream-950 shadow-lg shadow-cream-100 transition-all"
+            className="flex-1 py-4 bg-primary text-primary-foreground rounded-sm text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-primary shadow-lg shadow-cream-100 transition-all"
           >
             Finalize &amp; Distribute
           </button>

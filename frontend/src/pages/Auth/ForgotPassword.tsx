@@ -60,7 +60,7 @@ const ForgotPassword: React.FC = () => {
       {step === 'request' ? (
         <form className="space-y-6" onSubmit={handleRequestReset}>
           <FormField label="Professional Email" id="email" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="name@company.com" />
-          <button type="submit" disabled={isLoading} className="w-full flex justify-center py-3 px-4 border border-transparent rounded-sm text-xs font-bold uppercase tracking-widest text-cream-50 bg-cream-900 hover:bg-cream-950 focus:outline-none transition-all disabled:opacity-50 shadow-lg shadow-cream-200">
+          <button type="submit" disabled={isLoading} className="w-full flex justify-center py-3 px-4 border border-transparent rounded-sm text-xs font-bold uppercase tracking-widest text-primary-foreground bg-primary hover:bg-primary focus:outline-none transition-all disabled:opacity-50 shadow-lg shadow-cream-200">
             {isLoading ? 'Sending...' : 'Send Reset Code'}
           </button>
         </form>
@@ -68,7 +68,7 @@ const ForgotPassword: React.FC = () => {
         <form className="space-y-6" onSubmit={handleResetPassword}>
           <FormField label="Reset Code" id="otp" type="text" required maxLength={6} value={otp} onChange={(event) => setOtp(event.target.value)} placeholder="000000" />
           <FormField label="New Password" id="password" type="password" required minLength={8} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Minimum 8 characters" />
-          <button type="submit" disabled={isLoading || otp.length !== 6} className="w-full flex justify-center py-3 px-4 border border-transparent rounded-sm text-xs font-bold uppercase tracking-widest text-cream-50 bg-cream-900 hover:bg-cream-950 focus:outline-none transition-all disabled:opacity-50 shadow-lg shadow-cream-200">
+          <button type="submit" disabled={isLoading || otp.length !== 6} className="w-full flex justify-center py-3 px-4 border border-transparent rounded-sm text-xs font-bold uppercase tracking-widest text-primary-foreground bg-primary hover:bg-primary focus:outline-none transition-all disabled:opacity-50 shadow-lg shadow-cream-200">
             {isLoading ? 'Resetting...' : 'Reset Password'}
           </button>
         </form>

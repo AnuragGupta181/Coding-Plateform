@@ -32,22 +32,22 @@ const FullscreenGate: React.FC<FullscreenGateProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-9999 bg-cream-950/95 backdrop-blur-md flex items-center justify-center p-6">
+    <div className="fixed inset-0 z-9999 bg-primary/95 backdrop-blur-md flex items-center justify-center p-6">
       <div className="max-w-lg w-full text-center">
         {/* Brand mark */}
-        <div className="w-14 h-14 mx-auto mb-8 border-2 border-cream-300 flex items-center justify-center text-cream-200 font-serif font-bold text-2xl">
+        <div className="w-14 h-14 mx-auto mb-8 border-2 border-border-hover flex items-center justify-center text-cream-200 font-sans font-bold text-2xl">
           N
         </div>
 
-        <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-cream-500 mb-3">
+        <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground mb-3">
           Secure Assessment Protocol
         </div>
 
-        <h1 className="text-3xl sm:text-4xl font-serif text-cream-100 mb-4">
+        <h1 className="text-3xl sm:text-4xl font-sans text-cream-100 mb-4">
           {testTitle ?? 'Assessment Ready'}
         </h1>
 
-        <p className="text-cream-400 font-light leading-relaxed mb-10 max-w-sm mx-auto">
+        <p className="text-muted-foreground font-light leading-relaxed mb-10 max-w-sm mx-auto">
           This assessment requires <span className="text-cream-200 font-medium">fullscreen mode</span>.
           Once activated, your session will be monitored for security compliance.
           Switching tabs or exiting fullscreen will be recorded.
@@ -79,7 +79,7 @@ const FullscreenGate: React.FC<FullscreenGateProps> = ({
           )}
         </div>
 
-        <p className="mt-10 text-[10px] text-cream-600 uppercase tracking-widest font-bold">
+        <p className="mt-10 text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
           Encrypted Environment &bull; NextGen Protocol 4.0
         </p>
       </div>
