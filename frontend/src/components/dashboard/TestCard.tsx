@@ -6,11 +6,12 @@ export interface TestSummary {
   description: string;
   durationInMinutes: number;
   status: 'scheduled' | 'waiting' | 'active' | 'completed';
+  testType?: 'mcq' | 'coding' | 'mixed';
 }
 
 interface TestCardProps {
   test: TestSummary;
-  onEnter: (testId: string, status: string) => void;
+  onEnter: (testId: string, status: string, testType?: string) => void;
 }
 
 export const TestCard: React.FC<TestCardProps> = ({ test, onEnter }) => {
@@ -36,7 +37,7 @@ export const TestCard: React.FC<TestCardProps> = ({ test, onEnter }) => {
       </div>
 
       <button
-        onClick={() => onEnter(test._id, test.status)}
+        onClick={() => onEnter(test._id, test.status, test.testType)}
         disabled={test.status !== 'waiting' && test.status !== 'active'}
         className={`w-full py-3.5 text-xs uppercase tracking-widest font-bold transition-all ${
           (test.status === 'waiting' || test.status === 'active')

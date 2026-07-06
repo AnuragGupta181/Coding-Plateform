@@ -80,7 +80,7 @@ setIsSaving(false);
 }
 }, [submissionId, testId, testData?.testType, navigate, dispatch]);
 
-const MAX_VIOLATIONS = 3;
+const MAX_VIOLATIONS = 5;
 
 const handleViolation = useCallback((count: number, type: string) => {
 const labels: Record<string, string> = {

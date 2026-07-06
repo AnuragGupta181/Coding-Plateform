@@ -33,7 +33,7 @@ const Dashboard: React.FC = () => {
     navigate('/login');
   };
 
-  const handleEnterTest = async (testId: string, status: string) => {
+  const handleEnterTest = async (testId: string, status: string, testType?: string) => {
     try {
       await document.documentElement.requestFullscreen();
     } catch {
@@ -43,7 +43,8 @@ const Dashboard: React.FC = () => {
     if (status === 'waiting') {
       navigate(`/test/wait/${testId}`);
     } else if (status === 'active') {
-      navigate(`/test/${testId}`);
+      const route = testType === 'coding' ? `/coding-test/${testId}` : `/test/${testId}`;
+      navigate(route);
     }
   };
 
