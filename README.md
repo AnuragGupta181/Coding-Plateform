@@ -10,6 +10,7 @@
 ![MongoDB](https://img.shields.io/badge/MongoDB-%234ea94b.svg?style=for-the-badge&logo=mongodb&logoColor=white)
 ![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
+![Redis](https://img.shields.io/badge/redis-%23DD0031.svg?style=for-the-badge&logo=redis&logoColor=white)
 
 </div>
 
@@ -55,6 +56,7 @@ This platform provides a comprehensive environment for conducting technical asse
 - **Framework:** Node.js with Express.js
 - **Database:** MongoDB (Mongoose)
 - **Authentication:** JSON Web Tokens (JWT) & bcryptjs
+- **Caching & Rate Limiting:** Redis (`ioredis`)
 - **File Parsing:** Multer & SheetJS (`xlsx`) for batch question uploads
 - **Email Service:** Nodemailer for OTP verification
 
@@ -65,6 +67,7 @@ This platform provides a comprehensive environment for conducting technical asse
 ### Prerequisites
 - Node.js (v18+)
 - MongoDB (Local instance or MongoDB Atlas)
+- Redis (Local instance or Upstash/Redis Cloud)
 
 ### 1. Clone the repository
 ```bash
@@ -88,6 +91,7 @@ EMAIL_SERVICE=gmail
 EMAIL_USER=your_email@gmail.com
 EMAIL_PASS=your_app_password
 CORS_ORIGIN=http://localhost:5173
+REDIS_URL=redis://localhost:6379
 ```
 Start the backend development server:
 ```bash

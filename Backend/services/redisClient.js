@@ -85,4 +85,4 @@ function isConnected() {
   return client !== null && client.status === 'ready';
 }
 
-module.exports = { get, set, del, isConnected };
+module.exports = { get, set, del, isConnected, getClient: () => client };
