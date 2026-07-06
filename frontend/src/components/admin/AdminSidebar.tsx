@@ -17,11 +17,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     <>
       <div className="p-6 lg:p-10 lg:pb-6">
         <div className="flex items-center justify-between lg:justify-start gap-3 mb-8">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 border border-cream-950 flex items-center justify-center text-foreground-bold font-sans font-bold text-lg">
-              N
-            </div>
-            <span className="text-lg font-sans font-bold text-foreground-bold tracking-wide">NextGen</span>
+          <div className="flex items-center">
+            <img src="/logo.svg" alt="NextGen Logo" className="h-10 w-auto" />
           </div>
           <button 
             className="lg:hidden p-2 text-muted-foreground hover:text-foreground-bold"

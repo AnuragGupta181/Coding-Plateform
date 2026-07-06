@@ -9,9 +9,8 @@ export const Footer: React.FC = () => {
         <FadeInUp>
           <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8 mb-16 md:mb-24">
             <div className="md:col-span-5 flex flex-col items-center md:items-start text-center md:text-left">
-              <div className="flex items-center gap-3 mb-4 md:mb-6">
-                <BrandMark size="md" />
-                <span className="text-xl md:text-2xl font-sans font-bold text-foreground-bold tracking-tight">NextGen</span>
+              <div className="flex items-center mb-4 md:mb-6">
+                <img src="/logo.svg" alt="NextGen Logo" className="h-14 md:h-20 w-auto" />
               </div>
               <p className="text-muted-foreground text-xs md:text-sm leading-relaxed max-w-sm mb-0">
                 The ultimate technical evaluation protocol. Secure, immutable, and precisely orchestrated for the next generation of engineers.

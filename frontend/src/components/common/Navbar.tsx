@@ -17,11 +17,8 @@ export const Navbar: React.FC = () => {
   return (
     <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
       <div className="max-w-7xl mx-auto px-4 md:px-8 h-20 md:h-24 flex items-center justify-between">
-        <div className="flex items-center gap-3 md:gap-4 group cursor-pointer" onClick={() => navigate('/')}>
-          <div className="w-8 h-8 md:w-10 md:h-10 border-2 border-cream-950 flex items-center justify-center text-foreground-bold font-sans font-bold text-lg md:text-xl transition-transform group-hover:scale-105 shrink-0">
-            N
-          </div>
-          <span className="text-lg md:text-xl font-sans font-bold text-foreground-bold tracking-tight">NextGen</span>
+        <div className="flex items-center group cursor-pointer" onClick={() => navigate('/')}>
+          <img src="/logo.svg" alt="NextGen Logo" className="h-12 md:h-16 w-auto transition-transform group-hover:scale-105" />
         </div>
 
         <div className="hidden lg:flex flex-1 justify-center items-center gap-8 xl:gap-12 text-[10px] uppercase font-bold tracking-[0.2em] text-muted-foreground px-8">

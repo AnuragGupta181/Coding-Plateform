@@ -11,13 +11,11 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ userName, onLo
   return (
     <nav className="bg-background/80 backdrop-blur-md border-b border-border sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <Link to="/" className="w-8 h-8 border border-border flex items-center justify-center text-foreground-bold font-sans font-bold text-lg bg-card/50 backdrop-blur-sm">
-            N
+        <div className="flex items-center">
+          <Link to="/">
+            <img src="/logo.svg" alt="NextGen Logo" className="h-10 w-auto" />
           </Link>
-          <span className="text-lg font-sans font-bold text-foreground-bold tracking-wide">NextGen</span>
         </div>
-        
         <div className="flex items-center gap-6">
           <ThemeToggle />
           <span className="text-sm text-muted-foreground hidden sm:inline">
