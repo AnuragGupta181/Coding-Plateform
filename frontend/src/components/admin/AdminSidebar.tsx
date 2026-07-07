@@ -13,12 +13,30 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   onTabChange,
   onCloseMobile
 }) => {
+  const [isDarkMode, setIsDarkMode] = React.useState(false);
+
+  React.useEffect(() => {
+    // Check initial state
+    const isDark = document.documentElement.classList.contains('dark');
+    setIsDarkMode(isDark);
+  }, []);
+
+  const toggleTheme = () => {
+    if (isDarkMode) {
+      document.documentElement.classList.remove('dark');
+      setIsDarkMode(false);
+    } else {
+      document.documentElement.classList.add('dark');
+      setIsDarkMode(true);
+    }
+  };
+
   return (
     <>
       <div className="p-6 lg:p-10 lg:pb-6">
         <div className="flex items-center justify-between lg:justify-start gap-3 mb-8">
           <div className="flex items-center">
-            <img src="/logo.svg" alt="NextGen Logo" className="h-10 w-auto" />
+            <img src="/logo.svg" alt="NextGen Logo" className="h-16 w-auto" />
           </div>
           <button 
             className="lg:hidden p-2 text-muted-foreground hover:text-foreground-bold"
@@ -39,13 +57,14 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           { id: 'queue', label: 'Waiting Queues' },
           { id: 'history', label: 'Test Repository' },
           { id: 'create', label: 'Draft Assessment' },
+          { id: 'aichat', label: 'Ask AI Assistant ✨' },
         ].map((item) => (
           <button
             key={item.id}
             onClick={() => onTabChange(item.id as AdminSection)}
             className={`w-full text-left px-5 py-4 text-xs font-bold uppercase tracking-widest rounded-sm transition-all ${
               activeSection === item.id 
-                ? 'bg-primary text-primary-foreground shadow-lg shadow-cream-100' 
+                ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' 
                 : 'text-muted-foreground hover:bg-background hover:text-foreground-bold'
             }`}
           >
@@ -54,7 +73,13 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         ))}
       </nav>
 
-      <div className="p-6 lg:p-8 border-t border-cream-50">
+      <div className="p-6 lg:p-8 border-t border-border space-y-4">
+        <button 
+          onClick={toggleTheme}
+          className="w-full flex items-center justify-center gap-2 py-2 text-xs font-bold uppercase tracking-widest bg-muted text-muted-foreground hover:text-foreground hover:bg-border transition-colors rounded-sm"
+        >
+          {isDarkMode ? '🌞 Light Mode' : '🌙 Dark Mode'}
+        </button>
         <Link 
           to="/"
           className="w-full block text-center py-2 text-[10px] text-muted-foreground hover:text-foreground-bold transition-colors uppercase tracking-[0.2em] font-bold"

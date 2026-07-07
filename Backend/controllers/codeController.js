@@ -78,3 +78,104 @@ exports.submitCode = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+/**
+ * POST /api/code/analyze
+ * Analyzes code using Groq AI
+ */
+exports.analyzeCode = async (req, res) => {
+  try {
+    const { sourceCode, language, title, submissionId, questionId, description, testCases } = req.body;
+    
+    // Lazy initialize to avoid crashing if env is missing at startup
+    const Groq = require("groq-sdk");
+    if (!process.env.GROQ_API_KEY) {
+      return res.status(500).json({ message: "GROQ_API_KEY is not configured in .env" });
+    }
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+    let problemContext = `Problem: ${title || 'Coding Challenge'}\nLanguage: ${language}\n`;
+    if (description) problemContext += `\nDescription:\n${description}\n`;
+    if (testCases && Array.isArray(testCases)) {
+      problemContext += `\nTest Cases Provided (Format: input -> expectedOutput):\n`;
+      testCases.forEach((tc, i) => {
+        problemContext += `Case ${i+1}: ${tc.input} -> ${tc.expectedOutput}\n`;
+      });
+    }
+    problemContext += `\nStudent's Code:\n${sourceCode}`;
+
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: "You are an expert coding tutor. Analyze the student code submission for the provided problem context.\n\nCRITICAL RULE 1: IGNORE BOILERPLATE. Ignore any code related to reading standard input (e.g. fs.readFileSync, process.stdin). Do NOT praise the student for reading input, and do NOT include input reading/storage in your space/time complexity analysis. Focus strictly on their actual algorithmic logic to solve the problem.\n\nCRITICAL RULE 2: If the student's code contains no actual logic (e.g. they just print the input, print 0, or left it blank), do NOT use the 3 headings. Just reply exactly with:\n'#### No Attempt Detected\nThe student appears to have submitted the starter code without writing any meaningful logic to solve the problem.'\n\nIf they did attempt the problem, you MUST provide very brief, actionable feedback using exactly these 3 headings: '#### What You Did Well', '#### Time & Space Complexity', and '#### One Suggestion for Improvement'. Keep it extremely concise and encouraging."
+        },
+        {
+          role: "user",
+          content: problemContext
+        }
+      ],
+      model: "llama-3.1-8b-instant",
+    });
+
+    const analysisResult = chatCompletion.choices[0].message.content;
+
+    if (submissionId && questionId) {
+      const Submission = require('../models/submission');
+      const submission = await Submission.findById(submissionId);
+      if (submission && submission.codingAnswers.has(questionId)) {
+        const answer = submission.codingAnswers.get(questionId);
+        answer.aiAnalysis = analysisResult;
+        submission.codingAnswers.set(questionId, answer);
+        await submission.save();
+      }
+    }
+
+    res.json({ analysis: analysisResult });
+  } catch (error) {
+    console.error("AI Analysis Error:", error);
+    res.status(500).json({ message: "AI analysis failed." });
+  }
+};
+
+/**
+ * POST /api/code/chat
+ * Interactive chat about a specific code submission using Groq AI
+ */
+exports.chatWithCode = async (req, res) => {
+  try {
+    const { messages, sourceCode, language, title } = req.body;
+    
+    const Groq = require("groq-sdk");
+    if (!process.env.GROQ_API_KEY) {
+      return res.status(500).json({ message: "GROQ_API_KEY is not configured in .env" });
+    }
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+    let systemContent = "You are a helpful and expert AI assistant for the Admin of a coding platform. You can answer general questions, help generate coding problems, explain algorithms, and assist the admin with technical tasks.";
+    
+    if (sourceCode) {
+      systemContent = `You are an expert coding tutor and AI assistant for the Admin of a coding platform. The admin is reviewing a student's code submission for the problem "${title || 'Coding Challenge'}" written in ${language}.
+Here is the student's code:
+\`\`\`${language}
+${sourceCode}
+\`\`\`
+Answer the admin's questions about this code, explain bugs, or suggest improvements. Keep responses helpful and concise.`;
+    }
+
+    const systemMessage = {
+      role: "system",
+      content: systemContent
+    };
+
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [systemMessage, ...messages],
+      model: "llama-3.1-8b-instant",
+    });
+
+    res.json({ reply: chatCompletion.choices[0].message.content });
+  } catch (error) {
+    console.error("AI Chat Error:", error);
+    res.status(500).json({ message: "AI chat failed." });
+  }
+};

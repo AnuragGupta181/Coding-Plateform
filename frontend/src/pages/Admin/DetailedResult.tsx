@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import testService from '../../utils/apiService';
+import ReactMarkdown from 'react-markdown';
 
 interface Question {
   _id: string;
@@ -16,6 +17,7 @@ interface CodingAnswer {
   verdict: string;
   passed: number;
   total: number;
+  aiAnalysis?: string;
 }
 
 interface SubmissionDetail {
@@ -63,6 +65,30 @@ const DetailedResult: React.FC = () => {
   const navigate = useNavigate();
   const [submission, setSubmission] = useState<SubmissionDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [aiAnalysis, setAiAnalysis] = useState<Record<string, { loading: boolean, result?: string, error?: string }>>({});
+
+  const handleAnalyzeCode = async (questionId: string, sourceCode: string, language: string, title: string, description: string, testCases: any[]) => {
+    setAiAnalysis(prev => ({ ...prev, [questionId]: { loading: true, result: undefined, error: undefined } }));
+    try {
+      const res = await testService.analyzeCode(sourceCode, language, title, subId, questionId, description, testCases);
+      
+      // Update local submission state to reflect the permanently saved analysis
+      if (submission && submission.codingAnswers && submission.codingAnswers[questionId]) {
+        const updatedSubmission = { ...submission };
+        if (updatedSubmission.codingAnswers) {
+          updatedSubmission.codingAnswers[questionId] = {
+            ...updatedSubmission.codingAnswers[questionId],
+            aiAnalysis: res.data.analysis
+          };
+          setSubmission(updatedSubmission);
+        }
+      }
+      
+      setAiAnalysis(prev => ({ ...prev, [questionId]: { loading: false, result: res.data.analysis } }));
+    } catch (err: any) {
+      setAiAnalysis(prev => ({ ...prev, [questionId]: { loading: false, error: err.response?.data?.message || 'Failed to analyze code' } }));
+    }
+  };
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -356,15 +382,107 @@ const DetailedResult: React.FC = () => {
                     </div>
 
                     {isAnswered ? (
-                      <div className="space-y-4">
-                        <div className="bg-background rounded-sm border border-border overflow-hidden">
+                        <div className="space-y-4">
+                          <details className="mb-4 p-4 md:p-5 rounded-sm border bg-slate-50 border-slate-200 group">
+                            <summary className="text-[10px] font-bold uppercase tracking-[0.2em] mb-3 flex items-center justify-between cursor-pointer list-none">
+                              <div className="flex items-center gap-2">
+                                <span className="text-slate-600">📝 Problem Description & Test Cases</span>
+                              </div>
+                              <div className="text-slate-400 transform transition-transform group-open:rotate-180">
+                                ▼
+                              </div>
+                            </summary>
+                            
+                            <div className="pt-2 border-t border-slate-200/60 mt-2 text-sm text-slate-700 prose prose-sm max-w-none">
+                              <ReactMarkdown>{cq.description || 'No description available.'}</ReactMarkdown>
+                              
+                              {cq.testCases && cq.testCases.length > 0 && (
+                                <div className="mt-6">
+                                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 border-b border-slate-200 pb-2">Test Cases</h4>
+                                  <div className="space-y-3">
+                                    {cq.testCases.map((tc: any, i: number) => (
+                                      <div key={i} className="bg-white p-3 rounded border border-slate-200 font-mono text-xs">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                          <div>
+                                            <div className="text-slate-400 mb-1">Input:</div>
+                                            <pre className="whitespace-pre-wrap">{tc.input}</pre>
+                                          </div>
+                                          <div>
+                                            <div className="text-slate-400 mb-1">Expected Output:</div>
+                                            <pre className="whitespace-pre-wrap">{tc.expectedOutput}</pre>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </details>
+
+                          <div className="bg-background rounded-sm border border-border overflow-hidden">
                           <div className="bg-white px-4 py-3 flex items-center justify-between text-[10px] md:text-xs font-mono border-b border-border">
                             <span className="text-muted-foreground font-sans uppercase tracking-widest font-bold">Language: <span className="text-emerald-700 ml-2">{codingAns.language}</span></span>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => {
+                                  const chatContext = `I have a question about this coding problem and the student's submission.\n\nProblem Title: ${cq.title}\nDescription:\n${cq.description}\n\nStudent's Language: ${codingAns.language}\nStudent's Code:\n${codingAns.sourceCode}`;
+                                  localStorage.setItem('pendingAiChat', chatContext);
+                                  navigate('/admin?tab=aichat');
+                                }}
+                                className="px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded text-xs font-bold font-sans transition-colors flex items-center gap-2"
+                              >
+                                💬 Chat About Code
+                              </button>
+                              <button
+                                onClick={() => handleAnalyzeCode(cq._id, codingAns.sourceCode, codingAns.language, cq.title, cq.description, cq.testCases)}
+                                disabled={aiAnalysis[cq._id]?.loading}
+                                className="px-3 py-1 bg-cream-50 hover:bg-cream-100 text-cream-700 border border-cream-200 rounded text-xs font-bold font-sans transition-colors disabled:opacity-50 flex items-center gap-2"
+                              >
+                                {aiAnalysis[cq._id]?.loading ? (
+                                  <>
+                                    <div className="w-3 h-3 border-2 border-cream-700 border-t-transparent rounded-full animate-spin"></div>
+                                    Analyzing...
+                                  </>
+                                ) : (
+                                  <>{codingAns.aiAnalysis ? 'Regenerate AI 🔄' : 'Ask AI 🤖'}</>
+                                )}
+                              </button>
+                            </div>
                           </div>
                           <pre className="p-4 md:p-6 overflow-x-auto text-sm font-mono text-slate-800 custom-scrollbar">
                             <code>{codingAns.sourceCode}</code>
                           </pre>
                         </div>
+                        
+                        {(codingAns.aiAnalysis || aiAnalysis[cq._id]) && (
+                          <details className={`mt-4 p-4 md:p-5 rounded-sm border group ${aiAnalysis[cq._id]?.error ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200'}`}>
+                            <summary className="text-[10px] font-bold uppercase tracking-[0.2em] mb-3 flex items-center justify-between cursor-pointer list-none">
+                              <div className="flex items-center gap-2">
+                                {aiAnalysis[cq._id]?.error ? (
+                                  <span className="text-red-500">Analysis Failed</span>
+                                ) : (
+                                  <span className="text-indigo-600">✨ AI Feedback (Saved)</span>
+                                )}
+                              </div>
+                              <div className="text-indigo-600 transform transition-transform group-open:rotate-180">
+                                ▼
+                              </div>
+                            </summary>
+                            
+                            <div className="pt-2 border-t border-slate-200/60 mt-2">
+                              {aiAnalysis[cq._id]?.loading ? (
+                                <div className="text-sm text-slate-500 italic">Thinking...</div>
+                              ) : aiAnalysis[cq._id]?.error ? (
+                                <div className="text-sm text-red-600">{aiAnalysis[cq._id].error}</div>
+                              ) : (
+                                <div className="text-sm text-slate-700 prose prose-sm max-w-none prose-headings:font-sans prose-headings:text-indigo-900 prose-headings:mt-4 prose-headings:mb-2 prose-a:text-indigo-600">
+                                  <ReactMarkdown>{codingAns.aiAnalysis || aiAnalysis[cq._id]?.result || ''}</ReactMarkdown>
+                                </div>
+                              )}
+                            </div>
+                          </details>
+                        )}
                       </div>
                     ) : (
                       <div className="bg-slate-50 border border-slate-200 p-6 text-center rounded-sm text-sm text-slate-500 italic">

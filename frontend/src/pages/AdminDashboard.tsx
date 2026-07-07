@@ -4,6 +4,7 @@ import testService from '../utils/apiService';
 import { QueueItem } from '../components/admin/QueueItem';
 import { AdminSidebar } from '../components/admin/AdminSidebar';
 import { TestRepositoryTable } from '../components/admin/TestRepositoryTable';
+import { AIChatTab } from  '../components/admin/AIChatTab';
 import type { TestSummary, QueueSummary, AdminSection } from '../types/admin';
 
 const AdminDashboard: React.FC = () => {
@@ -107,7 +108,16 @@ const AdminDashboard: React.FC = () => {
   const queues_waiting = useMemo(() => queues.filter(q => q.status === 'waiting'), [queues]);
 
   return (
-    <div className="flex h-screen bg-background text-foreground font-sans overflow-hidden flex-col lg:flex-row">
+    <div className="flex h-screen bg-background text-foreground font-sans overflow-hidden flex-col lg:flex-row relative">
+      
+      {/* Ambient Background Gradient */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-[20%] -right-[10%] w-[60%] h-[60%] rounded-full bg-primary/20 blur-[140px] opacity-70" />
+        <div className="absolute top-[40%] -left-[10%] w-[50%] h-[50%] rounded-full bg-indigo-500/10 blur-[120px] opacity-50" />
+      </div>
+
+      {/* Main Content Wrapper (ensure z-index) */}
+      <div className="flex w-full h-full relative z-10">
       {/* Mobile Header Bar */}
       <div className="lg:hidden bg-white border-b border-border px-6 py-4 flex items-center justify-between shrink-0 z-20">
         <div className="flex items-center gap-3">
@@ -127,7 +137,7 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex w-72 border-r border-border flex-col h-full bg-white shrink-0">
+      <aside className="hidden lg:flex w-72 border-r border-border flex-col h-full bg-background shrink-0">
         <AdminSidebar 
           activeSection={activeSection} 
           onTabChange={handleTabChange} 
@@ -138,7 +148,7 @@ const AdminDashboard: React.FC = () => {
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden flex">
           <div className="absolute inset-0 bg-primary/50 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
-          <aside className="relative w-72 max-w-[80vw] h-full bg-white flex flex-col animate-slide-in shadow-premium">
+          <aside className="relative w-72 max-w-[80vw] h-full bg-background flex flex-col animate-slide-in shadow-premium">
             <AdminSidebar 
               activeSection={activeSection} 
               onTabChange={handleTabChange} 
@@ -148,10 +158,10 @@ const AdminDashboard: React.FC = () => {
         </div>
       )}
       
-      <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-16 w-full">
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-16 w-full bg-background">
         <div className="max-w-5xl mx-auto pb-20">
           {message && (
-            <div className="fixed top-20 lg:top-8 right-4 lg:right-8 z-50 p-4 lg:p-5 bg-white border-l-4 border-cream-900 shadow-premium text-xs font-bold uppercase tracking-widest text-foreground animate-slide-in max-w-[calc(100vw-2rem)]">
+            <div className="fixed top-20 lg:top-8 right-4 lg:right-8 z-50 p-4 lg:p-5 bg-background border-l-4 border-cream-900 shadow-premium text-xs font-bold uppercase tracking-widest text-foreground animate-slide-in max-w-[calc(100vw-2rem)]">
               {message}
             </div>
           )}
@@ -240,8 +250,22 @@ const AdminDashboard: React.FC = () => {
               </button>
             </div>
           )}
+
+          {activeSection === 'aichat' && (
+            <div className="animate-fade-in h-[calc(100vh-120px)] flex flex-col">
+              <header className="mb-6 shrink-0">
+                <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-indigo-500 mb-2">Groq Integration</div>
+                <h2 className="text-3xl lg:text-4xl font-sans text-foreground-bold mb-2">AI Assistant</h2>
+                <p className="text-sm lg:text-base text-muted-foreground font-light italic">Ask questions about platform usage, grading logic, or anything else.</p>
+              </header>
+              <div className="flex-1 bg-background border border-border shadow-sm rounded-sm overflow-hidden flex flex-col min-h-0">
+                <AIChatTab />
+              </div>
+            </div>
+          )}
         </div>
       </main>
+      </div>
     </div>
   );
 };

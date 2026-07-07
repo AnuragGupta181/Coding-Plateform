@@ -20,4 +20,4 @@ export interface QueueSummary {
   waitingUsers: WaitingUser[];
 }
 
-export type AdminSection = 'overview' | 'queue' | 'history' | 'create';
+export type AdminSection = 'overview' | 'queue' | 'history' | 'create' | 'aichat';

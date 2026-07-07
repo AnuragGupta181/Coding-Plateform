@@ -29,7 +29,8 @@ const submissionSchema = new mongoose.Schema({
       score: Number,
       verdict: String,
       passed: Number,
-      total: Number
+      total: Number,
+      aiAnalysis: String
     }, { _id: false }),
     default: {}
   },

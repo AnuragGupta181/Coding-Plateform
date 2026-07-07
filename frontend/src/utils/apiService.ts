@@ -82,6 +82,10 @@ export const testService = {
     api.post('/code/run', { sourceCode, language, stdin }),
   submitCode: (testId: string, questionId: string, sourceCode: string, language: string, submissionId: string) =>
     api.post(`/code/submit/${testId}/${questionId}`, { sourceCode, language, submissionId }),
+  analyzeCode: (sourceCode: string, language: string, title: string, submissionId?: string, questionId?: string, description?: string, testCases?: any[]) =>
+    api.post('/code/analyze', { sourceCode, language, title, submissionId, questionId, description, testCases }),
+  chatWithCode: (sourceCode: string, language: string, title: string, messages: {role: string, content: string}[]) =>
+    api.post('/code/chat', { sourceCode, language, title, messages }),
 };
 
 export const createEventSourceUrl = (path: string) => {
