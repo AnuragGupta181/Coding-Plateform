@@ -260,7 +260,7 @@ const CodingTestRoom: React.FC = () => {
       <TestRoomHeader candidateName={user?.name} />
 
       {/* Sub-header: test title, timer, question pills, finish */}
-      <div className="bg-white border-b border-border px-4 sm:px-6 py-3 flex items-center gap-3 shrink-0 flex-wrap">
+      <div className="bg-background border-b border-border px-4 sm:px-6 py-3 flex items-center gap-3 shrink-0 flex-wrap">
         <div className="min-w-0">
           <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground">Coding Assessment</div>
           <h1 className="text-sm sm:text-base font-sans text-foreground-bold truncate">{testData.title}</h1>
@@ -285,7 +285,7 @@ const CodingTestRoom: React.FC = () => {
                   ? 'bg-primary text-primary-foreground border-cream-900'
                   : submitted[q._id]
                     ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                    : 'bg-white text-muted-foreground border-border hover:border-cream-400 hover:text-foreground'
+                    : 'bg-background text-muted-foreground border-border hover:border-cream-400 hover:text-foreground'
               }`}
             >
               {i + 1}
@@ -296,7 +296,7 @@ const CodingTestRoom: React.FC = () => {
         {testData.testType === 'mixed' && (
           <button
             onClick={() => navigate(`/test/${testId}`)}
-            className="px-4 py-2 bg-white text-foreground text-[10px] font-black uppercase tracking-widest rounded-sm border border-border transition-all hover:bg-background"
+            className="px-4 py-2 bg-background text-foreground text-[10px] font-black uppercase tracking-widest rounded-sm border border-border transition-all hover:bg-background"
           >
             Back to MCQ
           </button>
@@ -312,7 +312,7 @@ const CodingTestRoom: React.FC = () => {
       </div>
 
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        <div className="w-full lg:w-[420px] shrink-0 flex flex-col border-b lg:border-b-0 lg:border-r border-border overflow-y-auto custom-scrollbar bg-white max-h-[35vh] lg:max-h-full">
+        <div className="w-full lg:w-[420px] shrink-0 flex flex-col border-b lg:border-b-0 lg:border-r border-border overflow-y-auto custom-scrollbar bg-background max-h-[35vh] lg:max-h-full">
           <ProblemStatement
             question={activeQuestion}
             questionIndex={activeQIndex}
@@ -320,13 +320,13 @@ const CodingTestRoom: React.FC = () => {
           />
         </div>
 
-        <div className="flex-1 flex flex-col overflow-hidden bg-white">
+        <div className="flex-1 flex flex-col overflow-hidden bg-background">
           <div className="h-11 bg-background border-b border-border flex items-center px-3 gap-3 shrink-0">
             <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hidden sm:block">Language</label>
             <select
               value={language}
               onChange={e => handleLanguageChange(e.target.value)}
-              className="bg-white border border-border text-foreground text-xs px-3 py-1.5 rounded-sm focus:outline-none focus:border-cream-400 font-bold uppercase tracking-wider"
+              className="bg-background border border-border text-foreground text-xs px-3 py-1.5 rounded-sm focus:outline-none focus:border-cream-400 font-bold uppercase tracking-wider"
             >
               {allowedLangs.map(l => (
                 <option key={l} value={l}>{LANG_META[l]?.label ?? l}</option>
@@ -338,7 +338,7 @@ const CodingTestRoom: React.FC = () => {
             <button
               onClick={handleRun}
               disabled={isRunning || isSubmitting}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-background border border-border text-foreground text-[10px] font-black uppercase tracking-widest rounded-sm transition-all disabled:opacity-40"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-background hover:bg-background border border-border text-foreground text-[10px] font-black uppercase tracking-widest rounded-sm transition-all disabled:opacity-40"
             >
               {isRunning
                 ? <span className="w-3 h-3 border border-border-hover border-t-cream-900 rounded-full animate-spin" />

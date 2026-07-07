@@ -255,7 +255,7 @@ const ExcelUploader: React.FC<ExcelUploaderProps> = ({ onImport, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-sm border border-border shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+      <div className="bg-background rounded-sm border border-border shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
 
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-cream-100">
@@ -279,7 +279,7 @@ const ExcelUploader: React.FC<ExcelUploaderProps> = ({ onImport, onClose }) => {
                   The template has two sheets: <strong>MCQ</strong> (multiple choice) and <strong>Coding</strong> (programming questions).
                   Fill both, or just one — the system detects automatically.
                 </p>
-                <button onClick={downloadTemplate} className="text-[10px] font-bold uppercase tracking-widest text-cream-700 border border-border-hover px-3 py-1.5 rounded-sm hover:bg-white hover:border-cream-500 transition-all">
+                <button onClick={downloadTemplate} className="text-[10px] font-bold uppercase tracking-widest text-cream-700 border border-border-hover px-3 py-1.5 rounded-sm hover:bg-background hover:border-cream-500 transition-all">
                   ↓ Download Template (.xlsx)
                 </button>
               </div>
@@ -344,14 +344,14 @@ const ExcelUploader: React.FC<ExcelUploaderProps> = ({ onImport, onClose }) => {
                 <div className="space-y-3">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">MCQ Questions — {parseResult.mcqQuestions.length}</p>
                   {parseResult.mcqQuestions.map((q, i) => (
-                    <div key={i} className="border border-cream-100 rounded-sm p-4 bg-background/50 hover:bg-white transition-colors">
+                    <div key={i} className="border border-cream-100 rounded-sm p-4 bg-background/50 hover:bg-background transition-colors">
                       <div className="flex gap-3">
                         <span className="text-[10px] font-bold text-cream-300 font-mono mt-0.5 w-5 shrink-0">{String(i + 1).padStart(2, '0')}</span>
                         <div className="flex-1 space-y-2">
                           <p className="text-sm font-medium text-foreground">{q.questionText}</p>
                           <div className="grid grid-cols-2 gap-1.5">
                             {q.options.map((opt, oi) => (
-                              <div key={oi} className={`flex items-center gap-2 px-2.5 py-1.5 rounded-sm border text-[11px] ${q.correctOptionIndex === oi ? 'border-cream-900 bg-white font-semibold' : 'border-cream-100 text-muted-foreground'}`}>
+                              <div key={oi} className={`flex items-center gap-2 px-2.5 py-1.5 rounded-sm border text-[11px] ${q.correctOptionIndex === oi ? 'border-cream-900 bg-background font-semibold' : 'border-cream-100 text-muted-foreground'}`}>
                                 <span className={`w-4 h-4 rounded-full border flex items-center justify-center text-[8px] font-bold shrink-0 ${q.correctOptionIndex === oi ? 'border-cream-900 bg-primary text-white' : 'border-border-hover'}`}>
                                   {q.correctOptionIndex === oi ? '✓' : String.fromCharCode(65 + oi)}
                                 </span>
@@ -372,7 +372,7 @@ const ExcelUploader: React.FC<ExcelUploaderProps> = ({ onImport, onClose }) => {
                 <div className="space-y-3">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Coding Questions — {parseResult.codingQuestions.length}</p>
                   {parseResult.codingQuestions.map((q, i) => (
-                    <div key={i} className="border border-blue-100 rounded-sm p-4 bg-blue-50/30 hover:bg-white transition-colors">
+                    <div key={i} className="border border-blue-100 rounded-sm p-4 bg-blue-50/30 hover:bg-background transition-colors">
                       <div className="flex items-start justify-between gap-3 mb-2">
                         <div className="flex items-center gap-2">
                           <span className="text-[10px] font-bold text-cream-300 font-mono w-5 shrink-0">{String(i + 1).padStart(2, '0')}</span>

@@ -86,7 +86,7 @@ const CreateCodingQuestion: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background font-sans text-foreground pb-32">
-      <nav className="bg-white border-b border-border mb-6">
+      <nav className="bg-background border-b border-border mb-6">
         <div className="max-w-7xl mx-auto px-4 h-20 flex items-center gap-3">
           <Link to="/admin" className="w-8 h-8 border border-cream-950 flex items-center justify-center text-foreground-bold font-sans font-bold text-lg">N</Link>
           <span className="text-lg font-sans font-bold text-foreground-bold">NextGen Admin</span>
@@ -129,7 +129,7 @@ const CreateCodingQuestion: React.FC = () => {
           {/* ── Problem Tab ── */}
           {activeTab === 'problem' && (
             <div className="space-y-6">
-              <div className="bg-white border border-border rounded-sm p-8 space-y-6 shadow-sm">
+              <div className="bg-background border border-border rounded-sm p-8 space-y-6 shadow-sm">
                 <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground border-b border-cream-50 pb-3">Metadata</div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -167,7 +167,7 @@ const CreateCodingQuestion: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-white border border-border rounded-sm p-8 space-y-6 shadow-sm">
+              <div className="bg-background border border-border rounded-sm p-8 space-y-6 shadow-sm">
                 <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground border-b border-cream-50 pb-3">Problem Statement</div>
 
                 <div>
@@ -222,7 +222,7 @@ const CreateCodingQuestion: React.FC = () => {
 
           {/* ── Test Cases Tab ── */}
           {activeTab === 'testcases' && (
-            <div className="bg-white border border-border rounded-sm p-8 shadow-sm space-y-6">
+            <div className="bg-background border border-border rounded-sm p-8 shadow-sm space-y-6">
               <div className="flex justify-between items-center border-b border-cream-50 pb-3">
                 <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Test Cases</div>
                 <div className="flex gap-2">
@@ -269,7 +269,7 @@ const CreateCodingQuestion: React.FC = () => {
 
           {/* ── Starter Code Tab ── */}
           {activeTab === 'starter' && (
-            <div className="bg-white border border-border rounded-sm p-8 shadow-sm space-y-6">
+            <div className="bg-background border border-border rounded-sm p-8 shadow-sm space-y-6">
               <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground border-b border-cream-50 pb-3">Starter Code Templates</div>
               <p className="text-xs text-muted-foreground italic">The starter code shown to candidates in the editor for each language.</p>
               {allowedLanguages.filter(l => STARTER_TEMPLATES[l] !== undefined || starterCode[l]).map(lang => (

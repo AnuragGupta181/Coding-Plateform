@@ -58,7 +58,7 @@ const WaitingRoom: React.FC = () => {
           </p>
         </div>
 
-        <div className="bg-white border border-border p-12 rounded-sm shadow-premium mb-12">
+        <div className="bg-background border border-border p-12 rounded-sm shadow-premium mb-12">
           <div className="flex flex-col items-center gap-8">
             <div className="flex gap-3">
               <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>

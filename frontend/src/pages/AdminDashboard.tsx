@@ -117,14 +117,11 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       {/* Main Content Wrapper (ensure z-index) */}
-      <div className="flex w-full h-full relative z-10">
+      <div className="flex flex-col lg:flex-row w-full h-full relative z-10">
       {/* Mobile Header Bar */}
-      <div className="lg:hidden bg-white border-b border-border px-6 py-4 flex items-center justify-between shrink-0 z-20">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 border border-cream-950 flex items-center justify-center text-foreground-bold font-sans font-bold text-lg">
-            N
-          </div>
-          <span className="text-lg font-sans font-bold text-foreground-bold tracking-wide">NextGen</span>
+      <div className="lg:hidden bg-background border-b border-border px-6 py-4 flex items-center justify-between shrink-0 z-20">
+        <div className="flex items-center">
+          <img src="/logo.svg" alt="NextGen Logo" className="h-10 w-auto" />
         </div>
         <button 
           onClick={() => setIsMobileMenuOpen(true)}
@@ -159,7 +156,7 @@ const AdminDashboard: React.FC = () => {
       )}
       
       <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-16 w-full bg-background">
-        <div className="max-w-5xl mx-auto pb-20">
+        <div className={`max-w-5xl mx-auto ${activeSection === 'aichat' ? 'pb-0' : 'pb-20'}`}>
           {message && (
             <div className="fixed top-20 lg:top-8 right-4 lg:right-8 z-50 p-4 lg:p-5 bg-background border-l-4 border-cream-900 shadow-premium text-xs font-bold uppercase tracking-widest text-foreground animate-slide-in max-w-[calc(100vw-2rem)]">
               {message}
@@ -234,7 +231,7 @@ const AdminDashboard: React.FC = () => {
           )}
 
           {activeSection === 'create' && (
-            <div className="animate-fade-in bg-white border border-border p-8 lg:p-20 rounded-sm text-center shadow-premium max-w-2xl mx-auto mt-10 lg:mt-20">
+            <div className="animate-fade-in bg-background border border-border p-8 lg:p-20 rounded-sm text-center shadow-premium max-w-2xl mx-auto mt-10 lg:mt-20">
               <div className="w-12 h-12 lg:w-16 lg:h-16 border-2 border-cream-950 flex items-center justify-center text-foreground-bold font-sans font-bold text-2xl lg:text-3xl mx-auto mb-8 lg:mb-10">
                 N
               </div>
@@ -252,7 +249,7 @@ const AdminDashboard: React.FC = () => {
           )}
 
           {activeSection === 'aichat' && (
-            <div className="animate-fade-in h-[calc(100vh-120px)] flex flex-col">
+            <div className="animate-fade-in h-[calc(100svh-130px)] lg:h-[calc(100vh-200px)] min-h-[450px] flex flex-col">
               <header className="mb-6 shrink-0">
                 <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-indigo-500 mb-2">Groq Integration</div>
                 <h2 className="text-3xl lg:text-4xl font-sans text-foreground-bold mb-2">AI Assistant</h2>

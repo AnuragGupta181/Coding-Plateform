@@ -54,7 +54,7 @@ const ResultsList: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background font-sans text-foreground pb-20">
-      <nav className="bg-white border-b border-border mb-6 md:mb-10">
+      <nav className="bg-background border-b border-border mb-6 md:mb-10">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-20 flex justify-between items-center">
           <div className="flex items-center gap-2 md:gap-3">
             <Link to="/admin" className="w-8 h-8 border border-cream-950 flex items-center justify-center text-foreground-bold font-sans font-bold text-lg shrink-0">
@@ -87,7 +87,7 @@ const ResultsList: React.FC = () => {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SortOption)}
-            className="bg-white border border-border rounded-sm px-3 md:px-4 py-2 text-[10px] md:text-xs font-bold uppercase tracking-wide text-foreground focus:outline-none focus:border-cream-900 transition-colors flex-1"
+            className="bg-background border border-border rounded-sm px-3 md:px-4 py-2 text-[10px] md:text-xs font-bold uppercase tracking-wide text-foreground focus:outline-none focus:border-cream-900 transition-colors flex-1"
           >
             <option value="rank">By Rank</option>
             <option value="latest">By Date</option>
@@ -103,7 +103,7 @@ const ResultsList: React.FC = () => {
             <p className="mt-6 text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Retrieving Data...</p>
           </div>
         ) : sortedResults.length === 0 ? (
-          <div className="bg-white border border-dashed border-border-hover rounded-sm p-12 md:p-24 text-center shadow-sm">
+          <div className="bg-background border border-dashed border-border-hover rounded-sm p-12 md:p-24 text-center shadow-sm">
             <p className="text-muted-foreground font-light italic text-sm md:text-base">No completed submissions recorded for this assessment.</p>
           </div>
         ) : (
@@ -112,7 +112,7 @@ const ResultsList: React.FC = () => {
               <div
                 key={sub._id}
                 onClick={() => navigate(`/admin/submission/${sub._id}`)}
-                className="group cursor-pointer bg-white border border-border p-5 md:p-8 rounded-sm shadow-sm hover:shadow-premium transition-all"
+                className="group cursor-pointer bg-background border border-border p-5 md:p-8 rounded-sm shadow-sm hover:shadow-premium transition-all"
               >
                 <div className="flex items-start justify-between mb-6 md:mb-8 gap-4">
                   <div className="min-w-0 flex-1">

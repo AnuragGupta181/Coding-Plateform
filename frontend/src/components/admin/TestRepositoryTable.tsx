@@ -10,7 +10,7 @@ export const TestRepositoryTable: React.FC<TestRepositoryTableProps> = ({ tests 
   const navigate = useNavigate();
 
   return (
-    <div className="bg-white border border-border rounded-sm shadow-sm overflow-hidden">
+    <div className="bg-background border border-border rounded-sm shadow-sm overflow-hidden">
       <div className="hidden md:block overflow-x-auto custom-scrollbar">
         <table className="w-full text-left text-sm min-w-[600px]">
           <thead className="bg-muted/50 text-muted-foreground uppercase text-[9px] font-black tracking-[0.2em] border-b border-border">
@@ -21,12 +21,12 @@ export const TestRepositoryTable: React.FC<TestRepositoryTableProps> = ({ tests 
               <th className="px-4 lg:px-8 py-4 lg:py-5 text-right">Action</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-cream-50">
+          <tbody className="divide-y divide-border">
             {tests.map((test) => (
-              <tr key={test._id} className="hover:bg-background/50 transition-colors group">
-                <td className="px-4 lg:px-8 py-4 lg:py-6 font-sans text-base lg:text-lg text-foreground-bold group-hover:text-cream-700">{test.title}</td>
+              <tr key={test._id} className="hover:bg-muted/30 transition-colors group">
+                <td className="px-4 lg:px-8 py-4 lg:py-6 font-sans text-base lg:text-lg text-foreground-bold group-hover:text-primary transition-colors">{test.title}</td>
                 <td className="px-4 lg:px-8 py-4 lg:py-6">
-                  <span className="text-[9px] uppercase font-black px-3 py-1 rounded-full border border-border bg-white text-muted-foreground">
+                  <span className="text-[9px] uppercase font-black px-3 py-1 rounded-full border border-border bg-background text-muted-foreground">
                     {test.status}
                   </span>
                 </td>
@@ -34,11 +34,12 @@ export const TestRepositoryTable: React.FC<TestRepositoryTableProps> = ({ tests 
                   {test.createdAt ? new Date(test.createdAt).toLocaleDateString() : 'N/A'}
                 </td>
                 <td className="px-4 lg:px-8 py-4 lg:py-6 text-right">
-                  <button 
+                  <button
                     onClick={() => navigate(`/admin/results/${test._id}`)}
-                    className="text-[9px] lg:text-[10px] font-black text-foreground uppercase tracking-widest hover:underline underline-offset-4 whitespace-nowrap"
+                    className="group text-[9px] lg:text-[10px] font-black text-foreground uppercase tracking-widest whitespace-nowrap flex items-center justify-end gap-2 ml-auto hover:text-primary transition-colors"
                   >
-                    Access Results &rarr;
+                    <span>Access Results</span>
+                    <span className="group-hover:translate-x-1 transition-transform">&rarr;</span>
                   </button>
                 </td>
               </tr>
@@ -48,12 +49,12 @@ export const TestRepositoryTable: React.FC<TestRepositoryTableProps> = ({ tests 
       </div>
 
       {/* Mobile Card Layout */}
-      <div className="md:hidden divide-y divide-cream-100">
+      <div className="md:hidden divide-y divide-border">
         {tests.map((test) => (
           <div key={test._id} className="p-5 flex flex-col gap-4">
             <div className="flex justify-between items-start gap-3">
               <h3 className="font-sans text-base text-foreground-bold">{test.title}</h3>
-              <span className="text-[8px] uppercase font-black px-2 py-1 rounded-full border border-border bg-white text-muted-foreground shrink-0">
+              <span className="text-[8px] uppercase font-black px-2 py-1 rounded-full border border-border bg-background text-muted-foreground shrink-0">
                 {test.status}
               </span>
             </div>
@@ -61,11 +62,12 @@ export const TestRepositoryTable: React.FC<TestRepositoryTableProps> = ({ tests 
               <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
                 {test.createdAt ? new Date(test.createdAt).toLocaleDateString() : 'N/A'}
               </span>
-              <button 
+              <button
                 onClick={() => navigate(`/admin/results/${test._id}`)}
-                className="text-[9px] font-black text-foreground uppercase tracking-widest flex items-center gap-1"
+                className="group text-[9px] font-black text-foreground uppercase tracking-widest flex items-center gap-1 hover:text-primary transition-colors"
               >
-                Results &rarr;
+                <span>Results</span>
+                <span className="group-hover:translate-x-1 transition-transform">&rarr;</span>
               </button>
             </div>
           </div>

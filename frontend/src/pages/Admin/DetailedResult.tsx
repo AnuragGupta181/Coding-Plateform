@@ -51,7 +51,7 @@ const getQuestionState = (question: Question, answers: Record<string, number>): 
 const questionStateStyles: Record<QuestionReviewState, string> = {
   correct: 'bg-green-600 border-green-700 text-white',
   wrong: 'bg-red-600 border-red-700 text-white',
-  unanswered: 'bg-slate-100 border-slate-300 text-slate-500'
+  unanswered: 'bg-muted border-slate-300 text-slate-500'
 };
 
 const questionStateLabels: Record<QuestionReviewState, string> = {
@@ -131,7 +131,7 @@ const DetailedResult: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background font-sans text-foreground pb-32">
-      <nav className="bg-white border-b border-border mb-6 md:mb-10">
+      <nav className="bg-background border-b border-border mb-6 md:mb-10">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-20 flex justify-between items-center">
           <div className="flex items-center gap-2 md:gap-3">
             <div className="w-8 h-8 border border-cream-950 flex items-center justify-center text-foreground-bold font-sans font-bold text-lg shrink-0">
@@ -173,7 +173,7 @@ const DetailedResult: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 md:px-6">
         <div className="flex flex-col lg:grid lg:grid-cols-[280px_1fr] gap-8 lg:gap-10 items-start">
           <aside className="w-full lg:sticky lg:top-8 space-y-6">
-            <section className="bg-white border border-border rounded-sm shadow-sm p-4 md:p-6">
+            <section className="bg-background border border-border rounded-sm shadow-sm p-4 md:p-6">
               <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground mb-4">Question Board</div>
               {/* Horizontally scrollable on mobile, grid on desktop */}
               <div className="flex overflow-x-auto custom-scrollbar pb-2 lg:pb-0 lg:grid lg:grid-cols-5 gap-2 md:gap-3">
@@ -202,20 +202,20 @@ const DetailedResult: React.FC = () => {
                   <div className="text-lg md:text-xl font-sans text-red-800">{wrongCount}</div>
                   <div className="text-[7px] md:text-[8px] uppercase tracking-widest font-black text-red-700">Wrong</div>
                 </div>
-                <div className="bg-slate-50 border border-slate-200 p-2 md:p-3 rounded-sm">
-                  <div className="text-lg md:text-xl font-sans text-slate-700">{unansweredCount}</div>
+                <div className="bg-muted border border-border p-2 md:p-3 rounded-sm">
+                  <div className="text-lg md:text-xl font-sans text-foreground">{unansweredCount}</div>
                   <div className="text-[7px] md:text-[8px] uppercase tracking-widest font-black text-slate-500">Blank</div>
                 </div>
               </div>
             </section>
 
-            <section className="bg-white border border-border rounded-sm shadow-sm p-4 md:p-6">
+            <section className="bg-background border border-border rounded-sm shadow-sm p-4 md:p-6">
               <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground mb-4">Instructions</div>
               <div className="space-y-3 text-xs text-muted-foreground leading-relaxed">
                 <p>Use the numbered board to jump directly to any question.</p>
                 <p><span className="font-bold text-green-700">Green</span> means the selected answer is correct.</p>
                 <p><span className="font-bold text-red-700">Red</span> means the selected answer is wrong.</p>
-                <p><span className="font-bold text-slate-600">Grey</span> means no answer was submitted.</p>
+                <p><span className="font-bold text-muted-foreground">Grey</span> means no answer was submitted.</p>
               </div>
 
               <div className="mt-6 pt-6 border-t border-cream-100 space-y-3">
@@ -224,7 +224,7 @@ const DetailedResult: React.FC = () => {
                   Marked / Viewed
                 </div>
                 <div className="flex items-center gap-3 text-[9px] md:text-[10px] uppercase tracking-widest font-bold text-muted-foreground">
-                  <span className="w-4 h-4 bg-slate-100 border border-slate-300 rounded-sm shrink-0"></span>
+                  <span className="w-4 h-4 bg-muted border border-slate-300 rounded-sm shrink-0"></span>
                   Unmarked / Not Viewed
                 </div>
               </div>
@@ -235,7 +235,7 @@ const DetailedResult: React.FC = () => {
             </section>
 
             {submission.violations && submission.violations.length > 0 && (
-              <section className="bg-white border border-red-200 rounded-sm shadow-sm p-4 md:p-6">
+              <section className="bg-background border border-red-200 rounded-sm shadow-sm p-4 md:p-6">
                 <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-red-500 mb-4">Proctoring Log</div>
                 <div className="flex items-center gap-3 mb-4 pb-4 border-b border-red-50">
                   <div className="text-3xl font-sans text-red-700">{submission.violations.length}</div>
@@ -279,7 +279,7 @@ const DetailedResult: React.FC = () => {
                 <div
                   id={`question-${q._id}`}
                   key={q._id}
-                  className="bg-white p-6 md:p-10 rounded-sm border border-border shadow-sm scroll-mt-24 md:scroll-mt-8"
+                  className="bg-background p-6 md:p-10 rounded-sm border border-border shadow-sm scroll-mt-24 md:scroll-mt-8"
                 >
                   <div className="flex flex-col md:flex-row justify-between items-start mb-6 md:mb-8 gap-4 md:gap-6">
                     <h3 className="text-xl md:text-2xl font-sans flex gap-4 md:gap-6">
@@ -288,7 +288,7 @@ const DetailedResult: React.FC = () => {
                     </h3>
                     <span className={`px-3 py-1 rounded-full text-[8px] md:text-[9px] font-black uppercase tracking-widest border shrink-0 ${
                       !isAnswered
-                        ? 'bg-slate-50 border-slate-200 text-slate-600'
+                        ? 'bg-muted border-border text-muted-foreground'
                         : isCorrect
                           ? 'bg-green-50 border-green-100 text-green-700'
                           : 'bg-red-50 border-red-100 text-red-700'
@@ -299,10 +299,10 @@ const DetailedResult: React.FC = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                     <div className={`p-4 md:p-5 rounded-sm border-2 ${
-                      isCorrect ? 'bg-green-50 border-green-600' : isAnswered ? 'bg-red-50 border-red-600' : 'bg-slate-50 border-slate-300'
+                      isCorrect ? 'bg-green-50 border-green-600' : isAnswered ? 'bg-red-50 border-red-600' : 'bg-muted border-slate-300'
                     }`}>
                       <div className="text-[8px] md:text-[9px] uppercase tracking-[0.25em] font-black mb-2 text-muted-foreground">Candidate Chose</div>
-                      <div className={`text-sm font-bold ${isCorrect ? 'text-green-800' : isAnswered ? 'text-red-800' : 'text-slate-600'}`}>
+                      <div className={`text-sm font-bold ${isCorrect ? 'text-green-800' : isAnswered ? 'text-red-800' : 'text-muted-foreground'}`}>
                         {candidateAnswerText}
                       </div>
                     </div>
@@ -319,8 +319,8 @@ const DetailedResult: React.FC = () => {
                       const isCorrectChoice = q.correctOptionIndex === oIndex;
 
                       let style = 'bg-background border-cream-100 text-muted-foreground';
-                      if (isCorrectChoice) style = 'bg-white border-green-600 text-green-700 ring-1 ring-green-600 ring-offset-2';
-                      if (isCandidateChoice && !isCorrect) style = 'bg-white border-red-600 text-red-700 ring-1 ring-red-600 ring-offset-2';
+                      if (isCorrectChoice) style = 'bg-background border-green-600 text-green-700 ring-1 ring-green-600 ring-offset-2';
+                      if (isCandidateChoice && !isCorrect) style = 'bg-background border-red-600 text-red-700 ring-1 ring-red-600 ring-offset-2';
 
                       return (
                         <div key={oIndex} className={`p-3 md:p-4 rounded-sm border flex items-center justify-between gap-3 md:gap-4 text-xs md:text-sm transition-all ${style}`}>
@@ -360,7 +360,7 @@ const DetailedResult: React.FC = () => {
                 const isPerfect = codingAns && codingAns.passed === codingAns.total && codingAns.total > 0;
 
                 return (
-                  <div key={cq._id} className="bg-white p-6 md:p-8 rounded-sm shadow-sm border border-border text-foreground">
+                  <div key={cq._id} className="bg-background p-6 md:p-8 rounded-sm shadow-sm border border-border text-foreground">
                     <div className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4">
                       <div>
                         <h3 className="text-xl md:text-2xl font-sans flex gap-4 text-foreground-bold">
@@ -373,7 +373,7 @@ const DetailedResult: React.FC = () => {
                           Score: {codingAns ? codingAns.score : 0} / {cq.points}
                         </span>
                         <span className={`px-3 py-1 text-[8px] md:text-[9px] font-black uppercase tracking-widest rounded-full border ${
-                          !isAnswered ? 'bg-slate-50 border-slate-200 text-slate-600' :
+                          !isAnswered ? 'bg-muted border-border text-muted-foreground' :
                           isPerfect ? 'bg-green-50 border-green-100 text-green-700' : 'bg-red-50 border-red-100 text-red-700'
                         }`}>
                           {!isAnswered ? 'Not Attempted' : codingAns.verdict}
@@ -383,25 +383,25 @@ const DetailedResult: React.FC = () => {
 
                     {isAnswered ? (
                         <div className="space-y-4">
-                          <details className="mb-4 p-4 md:p-5 rounded-sm border bg-slate-50 border-slate-200 group">
+                          <details className="mb-4 p-4 md:p-5 rounded-sm border bg-muted border-border group">
                             <summary className="text-[10px] font-bold uppercase tracking-[0.2em] mb-3 flex items-center justify-between cursor-pointer list-none">
                               <div className="flex items-center gap-2">
-                                <span className="text-slate-600">📝 Problem Description & Test Cases</span>
+                                <span className="text-muted-foreground">📝 Problem Description & Test Cases</span>
                               </div>
                               <div className="text-slate-400 transform transition-transform group-open:rotate-180">
                                 ▼
                               </div>
                             </summary>
                             
-                            <div className="pt-2 border-t border-slate-200/60 mt-2 text-sm text-slate-700 prose prose-sm max-w-none">
+                            <div className="pt-2 border-t border-border/60 mt-2 text-sm text-foreground prose prose-sm max-w-none">
                               <ReactMarkdown>{cq.description || 'No description available.'}</ReactMarkdown>
                               
                               {cq.testCases && cq.testCases.length > 0 && (
                                 <div className="mt-6">
-                                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 border-b border-slate-200 pb-2">Test Cases</h4>
+                                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 border-b border-border pb-2">Test Cases</h4>
                                   <div className="space-y-3">
                                     {cq.testCases.map((tc: any, i: number) => (
-                                      <div key={i} className="bg-white p-3 rounded border border-slate-200 font-mono text-xs">
+                                      <div key={i} className="bg-background p-3 rounded border border-border font-mono text-xs">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                           <div>
                                             <div className="text-slate-400 mb-1">Input:</div>
@@ -421,7 +421,7 @@ const DetailedResult: React.FC = () => {
                           </details>
 
                           <div className="bg-background rounded-sm border border-border overflow-hidden">
-                          <div className="bg-white px-4 py-3 flex items-center justify-between text-[10px] md:text-xs font-mono border-b border-border">
+                          <div className="bg-background px-4 py-3 flex items-center justify-between text-[10px] md:text-xs font-mono border-b border-border">
                             <span className="text-muted-foreground font-sans uppercase tracking-widest font-bold">Language: <span className="text-emerald-700 ml-2">{codingAns.language}</span></span>
                             <div className="flex gap-2">
                               <button
@@ -450,13 +450,13 @@ const DetailedResult: React.FC = () => {
                               </button>
                             </div>
                           </div>
-                          <pre className="p-4 md:p-6 overflow-x-auto text-sm font-mono text-slate-800 custom-scrollbar">
+                          <pre className="p-4 md:p-6 overflow-x-auto text-sm font-mono text-foreground custom-scrollbar">
                             <code>{codingAns.sourceCode}</code>
                           </pre>
                         </div>
                         
                         {(codingAns.aiAnalysis || aiAnalysis[cq._id]) && (
-                          <details className={`mt-4 p-4 md:p-5 rounded-sm border group ${aiAnalysis[cq._id]?.error ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200'}`}>
+                          <details className={`mt-4 p-4 md:p-5 rounded-sm border group ${aiAnalysis[cq._id]?.error ? 'bg-red-50 border-red-200' : 'bg-muted border-border'}`}>
                             <summary className="text-[10px] font-bold uppercase tracking-[0.2em] mb-3 flex items-center justify-between cursor-pointer list-none">
                               <div className="flex items-center gap-2">
                                 {aiAnalysis[cq._id]?.error ? (
@@ -470,13 +470,13 @@ const DetailedResult: React.FC = () => {
                               </div>
                             </summary>
                             
-                            <div className="pt-2 border-t border-slate-200/60 mt-2">
+                            <div className="pt-2 border-t border-border/60 mt-2">
                               {aiAnalysis[cq._id]?.loading ? (
                                 <div className="text-sm text-slate-500 italic">Thinking...</div>
                               ) : aiAnalysis[cq._id]?.error ? (
                                 <div className="text-sm text-red-600">{aiAnalysis[cq._id].error}</div>
                               ) : (
-                                <div className="text-sm text-slate-700 prose prose-sm max-w-none prose-headings:font-sans prose-headings:text-indigo-900 prose-headings:mt-4 prose-headings:mb-2 prose-a:text-indigo-600">
+                                <div className="text-sm text-foreground prose prose-sm max-w-none prose-headings:font-sans prose-headings:text-indigo-900 prose-headings:mt-4 prose-headings:mb-2 prose-a:text-indigo-600">
                                   <ReactMarkdown>{codingAns.aiAnalysis || aiAnalysis[cq._id]?.result || ''}</ReactMarkdown>
                                 </div>
                               )}
@@ -485,7 +485,7 @@ const DetailedResult: React.FC = () => {
                         )}
                       </div>
                     ) : (
-                      <div className="bg-slate-50 border border-slate-200 p-6 text-center rounded-sm text-sm text-slate-500 italic">
+                      <div className="bg-muted border border-border p-6 text-center rounded-sm text-sm text-slate-500 italic">
                         No code was submitted for this question.
                       </div>
                     )}

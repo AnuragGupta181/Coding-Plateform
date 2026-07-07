@@ -150,11 +150,11 @@ export const AIChatTab: React.FC = () => {
   };
 
   return (
-    <div className="flex h-full bg-background border border-border rounded-sm overflow-hidden">
+    <div className="flex flex-col md:flex-row h-full bg-background border border-border rounded-sm overflow-hidden">
       
       {/* Sidebar for chat history */}
-      <div className="w-64 bg-muted/20 border-r border-border flex flex-col shrink-0">
-        <div className="p-4 border-b border-border">
+      <div className="w-full md:w-64 h-auto md:h-auto bg-muted/20 border-b md:border-b-0 md:border-r border-border flex flex-col shrink-0">
+        <div className="p-3 md:p-4 border-b border-border shrink-0">
           <button 
             onClick={() => createNewSession()}
             className="w-full flex items-center justify-center gap-2 bg-primary/10 hover:bg-primary/20 text-primary py-2 rounded-sm text-xs font-bold uppercase tracking-widest transition-colors border border-primary/20"
@@ -162,19 +162,19 @@ export const AIChatTab: React.FC = () => {
             <span>+</span> New Chat
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
+        <div className="overflow-x-auto md:overflow-x-hidden md:overflow-y-auto custom-scrollbar p-2 flex flex-row md:flex-col gap-2 shrink-0 md:flex-1">
           {sessions.map(s => (
             <div 
               key={s.id}
               onClick={() => setActiveSessionId(s.id)}
-              className={`flex items-center justify-between p-3 rounded-sm cursor-pointer transition-colors text-sm group ${
+              className={`flex shrink-0 w-48 md:w-auto items-center justify-between p-3 rounded-sm cursor-pointer transition-colors text-sm group ${
                 activeSessionId === s.id ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted text-foreground'
               }`}
             >
               <div className="truncate flex-1 font-sans">{s.title}</div>
               <button 
                 onClick={(e) => deleteSession(s.id, e)}
-                className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-opacity p-1"
+                className="md:opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-opacity p-1 ml-2"
                 title="Delete Chat"
               >
                 ✕
@@ -185,7 +185,7 @@ export const AIChatTab: React.FC = () => {
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0">
         <div 
           ref={scrollRef}
           className="flex-1 p-6 overflow-y-auto custom-scrollbar flex flex-col gap-6"

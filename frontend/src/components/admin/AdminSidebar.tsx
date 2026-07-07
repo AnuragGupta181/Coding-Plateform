@@ -56,19 +56,38 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           { id: 'overview', label: 'Active Sessions' },
           { id: 'queue', label: 'Waiting Queues' },
           { id: 'history', label: 'Test Repository' },
-          { id: 'create', label: 'Draft Assessment' },
+          { id: 'create', label: 'Design Session' },
           { id: 'aichat', label: 'Ask AI Assistant ✨' },
         ].map((item) => (
           <button
             key={item.id}
             onClick={() => onTabChange(item.id as AdminSection)}
-            className={`w-full text-left px-5 py-4 text-xs font-bold uppercase tracking-widest rounded-sm transition-all ${
+            className={`group relative w-full text-left py-4 px-5 text-xs font-bold uppercase tracking-widest rounded-sm transition-all duration-300 overflow-hidden flex items-center ${
               activeSection === item.id 
-                ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' 
-                : 'text-muted-foreground hover:bg-background hover:text-foreground-bold'
+                ? 'text-primary-foreground shadow-lg shadow-primary/20' 
+                : 'text-muted-foreground hover:text-foreground-bold'
             }`}
           >
-            {item.label}
+            {/* Background layer for active state */}
+            <div className={`absolute inset-0 transition-opacity duration-300 z-0 ${
+              activeSection === item.id ? 'opacity-100 bg-primary' : 'opacity-0 bg-muted/50 group-hover:opacity-100'
+            }`} />
+            
+            {/* Active Left Indicator Bar */}
+            <div className={`absolute left-0 top-0 bottom-0 w-1 bg-cream-100 transition-transform duration-300 z-10 ${
+              activeSection === item.id ? 'scale-y-100' : 'scale-y-0'
+            }`} />
+
+            <span className={`relative z-10 transition-all duration-300 w-full flex items-center justify-between ${
+              activeSection === item.id ? 'pl-2' : 'group-hover:pl-3'
+            }`}>
+              <span>{item.label}</span>
+              {activeSection !== item.id && (
+                <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-[10px]">
+                  &rarr;
+                </span>
+              )}
+            </span>
           </button>
         ))}
       </nav>

@@ -18,7 +18,7 @@ export const QueueItem: React.FC<QueueItemProps> = ({
   const isActive = queue.status === 'active';
 
   return (
-    <div className="bg-white border border-border p-6 lg:p-10 rounded-sm shadow-sm mb-6 lg:mb-8 transition-all hover:shadow-premium group">
+    <div className="bg-background border border-border p-6 lg:p-10 rounded-sm shadow-sm mb-6 lg:mb-8 transition-all hover:shadow-premium group">
       <div className="flex flex-col lg:flex-row justify-between items-start mb-8 lg:mb-10 gap-4">
         <div>
           <h3 className="text-xl lg:text-2xl font-sans text-foreground-bold mb-2 group-hover:text-cream-700 transition-colors">{queue.title}</h3>
@@ -72,7 +72,7 @@ export const QueueItem: React.FC<QueueItemProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 lg:gap-4">
               {queue.waitingUsers.map(u => (
                 <div key={u.id} className="p-3 lg:p-4 bg-background/50 border border-cream-100 flex items-center gap-3 lg:gap-4 rounded-sm">
-                  <div className="w-8 h-8 shrink-0 bg-white border border-border rounded-full flex items-center justify-center text-[10px] font-bold text-foreground-bold">
+                  <div className="w-8 h-8 shrink-0 bg-background border border-border rounded-full flex items-center justify-center text-[10px] font-bold text-foreground-bold">
                     {u.name.charAt(0)}
                   </div>
                   <div className="min-w-0 flex-1">
