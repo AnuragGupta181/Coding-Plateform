@@ -39,43 +39,21 @@ const STATUS = {
   EXEC_FORMAT_ERROR: 14,
 };
 
-const getHeaders = () => {
+// Helper function to get the correct headers based on the endpoint type
+const getHeaders = (type) => {
   const headers = { 'Content-Type': 'application/json' };
-
-  // If a RapidAPI key is configured, use the RapidAPI endpoint
-  if (process.env.JUDGE0_RAPIDAPI_KEY) {
+  
+  if (type === 'rapidapi' && process.env.JUDGE0_RAPIDAPI_KEY) {
     headers['X-RapidAPI-Key'] = process.env.JUDGE0_RAPIDAPI_KEY;
-    headers['X-RapidAPI-Host'] = 'judge0-ce.p.rapidapi.com';
+    headers['X-RapidAPI-Host'] = process.env.JUDGE0_RAPIDAPI_HOST || 'judge0-ce.p.rapidapi.com';
   }
 
   return headers;
 };
 
-const getBaseUrl = () => {
-  if (process.env.JUDGE0_RAPIDAPI_KEY) {
-    return 'https://judge0-ce.p.rapidapi.com';
-  }
-  // Fall back to free public CE instance
-  return 'https://ce.judge0.com';
-};
-
-/**
- * Submit code to Judge0 and wait for the result.
- * @param {string} sourceCode - The code to run
- * @param {string} language - 'javascript' | 'python' | 'cpp' | 'java' | 'c' | 'typescript'
- * @param {string} stdin - Standard input for the program
- * @param {string} expectedOutput - Expected stdout (optional, for automatic grading)
- */
-async function executeCode({ sourceCode, language, stdin = '', expectedOutput = '' }) {
-  const languageId = LANGUAGE_MAP[language];
-  if (!languageId) {
-    throw new Error(`Unsupported language: ${language}. Supported: ${Object.keys(LANGUAGE_MAP).join(', ')}`);
-  }
-
-  const base = getBaseUrl();
-  const headers = getHeaders();
-
-  // Step 1: Submit
+// Core function that does the actual API call to a specific Judge0 URL
+async function submitToJudge0Endpoint(base, headers, languageId, sourceCode, stdin, expectedOutput) {
+  // Step 1: Submit the code
   const submitRes = await axios.post(
     `${base}/submissions?base64_encoded=false&wait=false`,
     {
@@ -92,7 +70,7 @@ async function executeCode({ sourceCode, language, stdin = '', expectedOutput = 
   const token = submitRes.data.token;
   if (!token) throw new Error('Judge0 did not return a submission token.');
 
-  // Step 2: Poll for result (max 10 tries, 1s apart)
+  // Step 2: Poll for the result (max 10 tries, 1 second apart)
   for (let attempt = 0; attempt < 10; attempt++) {
     await new Promise(r => setTimeout(r, 1000));
 
@@ -104,10 +82,12 @@ async function executeCode({ sourceCode, language, stdin = '', expectedOutput = 
     const result = resultRes.data;
     const statusId = result.status?.id;
 
+    // If it's still running, wait and try again
     if (statusId === STATUS.IN_QUEUE || statusId === STATUS.PROCESSING) {
-      continue; // still running, keep polling
+      continue;
     }
 
+    // Finished! Return the results
     return {
       token,
       status: result.status?.description || 'Unknown',
@@ -120,7 +100,63 @@ async function executeCode({ sourceCode, language, stdin = '', expectedOutput = 
     };
   }
 
-  throw new Error('Code execution timed out. Please try again.');
+  throw new Error('Code execution timed out at this endpoint.');
+}
+
+/**
+ * Submit code to Judge0 and wait for the result.
+ * Includes explicit fallback logic.
+ */
+async function executeCode({ sourceCode, language, stdin = '', expectedOutput = '' }) {
+  const languageId = LANGUAGE_MAP[language];
+  if (!languageId) {
+    throw new Error(`Unsupported language: ${language}. Supported: ${Object.keys(LANGUAGE_MAP).join(', ')}`);
+  }
+
+  let lastErrorMessage = '';
+
+  // 1st Attempt: Try the Self-Hosted Instance (if configured in .env)
+  if (process.env.JUDGE0_BASE_URL) {
+    try {
+      const baseUrl = process.env.JUDGE0_BASE_URL;
+      const headers = getHeaders('self-hosted');
+      console.log(`[Judge0] Attempting Self-Hosted API: ${baseUrl}`);
+      
+      return await submitToJudge0Endpoint(baseUrl, headers, languageId, sourceCode, stdin, expectedOutput);
+    } catch (error) {
+      console.warn(`[Judge0] Self-Hosted API failed: ${error.message}. Falling back to next option...`);
+      lastErrorMessage = error.message;
+    }
+  }
+
+  // 2nd Attempt: Fallback to the Free Public Instance
+  try {
+    const baseUrl = 'https://ce.judge0.com';
+    const headers = getHeaders('public');
+    console.log(`[Judge0] Attempting Public Free API: ${baseUrl}`);
+    
+    return await submitToJudge0Endpoint(baseUrl, headers, languageId, sourceCode, stdin, expectedOutput);
+  } catch (error) {
+    console.warn(`[Judge0] Public Free API failed: ${error.message}. Falling back to next option...`);
+    lastErrorMessage = error.message;
+  }
+
+  // 3rd Attempt: Try the RapidAPI Instance (if configured in .env) as last resort
+  if (process.env.JUDGE0_RAPIDAPI_KEY) {
+    try {
+      const baseUrl = `https://${process.env.JUDGE0_RAPIDAPI_HOST || 'judge0-ce.p.rapidapi.com'}`;
+      const headers = getHeaders('rapidapi');
+      console.log(`[Judge0] Attempting RapidAPI: ${baseUrl}`);
+      
+      return await submitToJudge0Endpoint(baseUrl, headers, languageId, sourceCode, stdin, expectedOutput);
+    } catch (error) {
+      console.error(`[Judge0] RapidAPI failed: ${error.message}. All endpoints exhausted.`);
+      lastErrorMessage = error.message;
+    }
+  }
+
+  // If we reach here, every attempt failed
+  throw new Error(`All Judge0 execution attempts failed! Last error: ${lastErrorMessage}`);
 }
 
 /**
