@@ -329,10 +329,10 @@ const CreateTest: React.FC = () => {
               {codingQuestions.map((cq, cqIndex) => (
                 <div
                   key={cqIndex}
-                  className="bg-blue-50/30 p-5 md:p-12 rounded-sm border border-blue-200 shadow-sm space-y-4 relative group"
+                  className="bg-muted/30 p-5 md:p-12 rounded-sm border border-border shadow-sm space-y-4 relative group"
                 >
                   {/* Large background number */}
-                  <div className="absolute top-3 md:top-6 right-4 md:right-8 text-blue-100 font-sans font-bold text-3xl md:text-6xl select-none group-hover:text-blue-200 transition-colors z-0">
+                  <div className="absolute top-3 md:top-6 right-4 md:right-8 text-muted-foreground/10 font-sans font-bold text-3xl md:text-6xl select-none group-hover:text-muted-foreground/30 transition-colors z-0">
                     {String(cqIndex + 1).padStart(2, '0')}
                   </div>
 
@@ -341,50 +341,50 @@ const CreateTest: React.FC = () => {
                     type="button"
                     onClick={() => handleDeleteCodingQuestion(cqIndex)}
                     title="Remove this coding question"
-                    className="absolute top-3 md:top-5 left-4 md:left-8 text-[10px] uppercase tracking-widest font-bold text-blue-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 z-10"
+                    className="absolute top-3 md:top-5 left-4 md:left-8 text-[10px] uppercase tracking-widest font-bold text-muted-foreground hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 z-10"
                   >
                     ✕ Remove
                   </button>
 
                   <div className="relative pt-6 md:pt-0 z-10">
-                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-blue-500 mb-2 md:mb-3">Coding Question Title</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-2 md:mb-3">Coding Question Title</label>
                     <input
                       required
                       value={cq.title}
                       onChange={e => handleCodingQuestionChange(cqIndex, 'title', e.target.value)}
-                      className="input text-sm md:text-lg border-blue-200 bg-background focus:bg-background text-foreground py-2 px-3 rounded-sm w-full"
+                      className="input text-sm md:text-lg border-border bg-background focus:bg-background text-foreground py-2 px-3 rounded-sm w-full"
                       placeholder="e.g. Two Sum"
                     />
                   </div>
 
                   <div className="relative z-10">
-                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-blue-500 mb-2 md:mb-3">Description</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-2 md:mb-3">Description</label>
                     <textarea
                       required
                       value={cq.description}
                       onChange={e => handleCodingQuestionChange(cqIndex, 'description', e.target.value)}
-                      className="input h-24 text-sm font-light text-foreground bg-background border-blue-200 p-3 rounded-sm w-full"
+                      className="input h-24 text-sm font-light text-foreground bg-background border-border p-3 rounded-sm w-full"
                       placeholder="Describe the problem..."
                     />
                   </div>
 
                   <div className="relative z-10">
-                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-blue-500 mb-2 md:mb-3">Constraints</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-2 md:mb-3">Constraints</label>
                     <textarea
                       value={cq.constraints}
                       onChange={e => handleCodingQuestionChange(cqIndex, 'constraints', e.target.value)}
-                      className="input h-16 text-sm font-light text-foreground bg-background border-blue-200 p-3 rounded-sm w-full"
+                      className="input h-16 text-sm font-light text-foreground bg-background border-border p-3 rounded-sm w-full"
                       placeholder="e.g. 1 <= n <= 10^5"
                     />
                   </div>
 
                   <div className="flex flex-wrap gap-4 pt-2 z-10 relative">
                     <div className="flex flex-col gap-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-blue-400">Difficulty:</label>
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Difficulty:</label>
                       <select
                         value={cq.difficulty}
                         onChange={e => handleCodingQuestionChange(cqIndex, 'difficulty', e.target.value)}
-                        className="input py-2 px-3 border-blue-200 text-sm font-semibold text-blue-800 uppercase bg-background rounded-sm"
+                        className="input py-2 px-3 border-border text-sm font-semibold text-foreground uppercase bg-background rounded-sm"
                       >
                         <option value="easy">Easy</option>
                         <option value="medium">Medium</option>
@@ -392,36 +392,36 @@ const CreateTest: React.FC = () => {
                       </select>
                     </div>
                     <div className="flex flex-col gap-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-blue-400">Points:</label>
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Points:</label>
                       <input
                         type="number"
                         min={1}
                         value={cq.points}
                         onChange={e => handleCodingQuestionChange(cqIndex, 'points', Number(e.target.value))}
-                        className="input w-24 py-2 px-3 border-blue-200 text-sm font-semibold text-blue-800 bg-background rounded-sm"
+                        className="input w-24 py-2 px-3 border-border text-sm font-semibold text-foreground bg-background rounded-sm"
                       />
                     </div>
                     <div className="flex flex-col gap-2 justify-end pb-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400">Test Cases:</span>
-                        <span className="text-xs font-semibold text-blue-800">{cq.testCases?.length || 0}</span>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Test Cases:</span>
+                        <span className="text-xs font-semibold text-foreground">{cq.testCases?.length || 0}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* ── Test Cases Builder ── */}
-                  <div className="pt-4 mt-4 border-t border-blue-200/50 relative z-10 space-y-4">
+                  <div className="pt-4 mt-4 border-t border-border relative z-10 space-y-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-blue-500">Test Cases (Auto-Grading Data)</label>
-                        <p className="text-[10px] text-blue-400 italic font-semibold mt-1">
+                        <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Test Cases (Auto-Grading Data)</label>
+                        <p className="text-[10px] text-muted-foreground italic font-semibold mt-1">
                           ⚠️ CRITICAL: Ensure inputs and outputs have NO trailing spaces. The system does an exact text match!
                         </p>
                       </div>
                       <button
                         type="button"
                         onClick={() => handleAddTestCase(cqIndex)}
-                        className="px-3 py-1.5 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-sm text-[10px] uppercase font-bold tracking-widest transition-colors"
+                        className="px-3 py-1.5 bg-muted text-foreground hover:bg-muted/80 rounded-sm text-[10px] uppercase font-bold tracking-widest transition-colors"
                       >
                         + Add Case
                       </button>
@@ -429,7 +429,7 @@ const CreateTest: React.FC = () => {
 
                     <div className="space-y-3">
                       {(cq.testCases || []).map((tc, tcIndex) => (
-                        <div key={tcIndex} className="flex flex-col md:flex-row gap-3 bg-background p-3 rounded-sm border border-blue-100 relative group/tc shadow-sm">
+                        <div key={tcIndex} className="flex flex-col md:flex-row gap-3 bg-background p-3 rounded-sm border border-border relative group/tc shadow-sm">
                           <button
                             type="button"
                             onClick={() => handleRemoveTestCase(cqIndex, tcIndex)}
@@ -439,22 +439,22 @@ const CreateTest: React.FC = () => {
                           </button>
                           
                           <div className="flex-1">
-                            <label className="block text-[9px] font-bold uppercase tracking-widest text-blue-400 mb-1">Standard Input (stdin)</label>
+                            <label className="block text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Standard Input (stdin)</label>
                             <textarea
                               required
                               value={tc.input}
                               onChange={e => handleTestCaseChange(cqIndex, tcIndex, 'input', e.target.value)}
-                              className="w-full bg-blue-50/50 border border-blue-100 p-2 rounded-sm text-xs font-mono focus:bg-background focus:border-blue-300 transition-colors h-16"
+                              className="w-full bg-background border border-border p-2 rounded-sm text-xs font-mono focus:bg-background focus:border-border transition-colors h-16"
                               placeholder="e.g. 3 4"
                             />
                           </div>
                           <div className="flex-1">
-                            <label className="block text-[9px] font-bold uppercase tracking-widest text-blue-400 mb-1">Expected Output (stdout)</label>
+                            <label className="block text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Expected Output (stdout)</label>
                             <textarea
                               required
                               value={tc.expectedOutput}
                               onChange={e => handleTestCaseChange(cqIndex, tcIndex, 'expectedOutput', e.target.value)}
-                              className="w-full bg-blue-50/50 border border-blue-100 p-2 rounded-sm text-xs font-mono focus:bg-background focus:border-blue-300 transition-colors h-16"
+                              className="w-full bg-background border border-border p-2 rounded-sm text-xs font-mono focus:bg-background focus:border-border transition-colors h-16"
                               placeholder="e.g. 12"
                             />
                           </div>
@@ -464,9 +464,9 @@ const CreateTest: React.FC = () => {
                                 type="checkbox"
                                 checked={tc.isHidden}
                                 onChange={e => handleTestCaseChange(cqIndex, tcIndex, 'isHidden', e.target.checked)}
-                                className="w-3.5 h-3.5 accent-blue-600"
+                                className="w-3.5 h-3.5 accent-primary"
                               />
-                              <span className="text-[10px] font-bold uppercase tracking-widest text-blue-500">Hidden</span>
+                              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Hidden</span>
                             </label>
                           </div>
                         </div>
@@ -496,7 +496,7 @@ const CreateTest: React.FC = () => {
           <button
             type="button"
             onClick={handleAddCodingQuestion}
-            className="flex-1 py-4 border border-dashed border-blue-300 rounded-sm text-[10px] uppercase tracking-widest font-bold text-blue-500 hover:text-blue-900 hover:border-blue-900 transition-all bg-background"
+            className="flex-1 py-4 border border-dashed border-border rounded-sm text-[10px] uppercase tracking-widest font-bold text-muted-foreground hover:text-blue-900 hover:border-blue-900 transition-all bg-background"
           >
             + Append Coding
           </button>

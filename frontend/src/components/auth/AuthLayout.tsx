@@ -21,7 +21,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ title, subtitle, children, foot
       </div>
 
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-10 px-8 border border-border shadow-sm rounded-sm">
+        <div className="bg-background py-10 px-8 border border-border shadow-sm rounded-sm">
           {children}
         </div>
 

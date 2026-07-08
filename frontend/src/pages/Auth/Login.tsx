@@ -53,10 +53,9 @@ const Login: React.FC = () => {
           id="password"
           type="password"
           required
-          minLength={8}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="Minimum 8 characters"
+          placeholder="Password"
         />
 
         <button type="submit" disabled={isLoading} className="w-full flex justify-center py-3 px-4 border border-transparent rounded-sm text-xs font-bold uppercase tracking-widest text-primary-foreground bg-primary hover:bg-primary focus:outline-none transition-all disabled:opacity-50 shadow-lg shadow-cream-200">
