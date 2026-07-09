@@ -1,6 +1,7 @@
 import React from 'react';
 import { Toaster } from 'react-hot-toast';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Analytics } from '@vercel/analytics/react';
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from './store';
@@ -111,6 +112,7 @@ const App: React.FC = () => (
     </AuthStorageSync>
       </div>
     </div>
+    <Analytics />
   </Router>
 );
 
