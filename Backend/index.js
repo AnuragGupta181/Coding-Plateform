@@ -35,10 +35,15 @@ app.use(compression({
 }));
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
-const corsOptions = {
-  origin: true, // Accept all origins to avoid Vercel config headaches
-  credentials: true
-};
+const corsOptions = config.isProduction
+  ? {
+      origin: config.corsOrigins.length > 0 ? config.corsOrigins : false,
+      credentials: true
+    }
+  : {
+      origin: config.corsOrigins.length > 0 ? config.corsOrigins : true,
+      credentials: true
+    };
 
 app.set('trust proxy', 1);
 app.use(cors(corsOptions));
