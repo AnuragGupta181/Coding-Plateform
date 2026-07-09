@@ -16,7 +16,7 @@
   "crons": [
     {
       "path": "/api/cron/complete-expired-tests",
-      "schedule": "* * * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
