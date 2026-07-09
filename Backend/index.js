@@ -133,6 +133,8 @@ const connectDB = async () => {
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
       connectTimeoutMS: 10000,
+      maxIdleTimeMS: 60000, // CRITICAL FOR VERCEL: Closes connections before AWS/Atlas silently drops them
+      family: 4, // Force IPv4 to prevent Vercel DNS resolution hangs
     });
     console.log(`✅ Connected to MongoDB (pool: ${poolSize})`);
   } catch (err) {
