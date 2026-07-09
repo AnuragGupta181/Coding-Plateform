@@ -130,7 +130,12 @@ const connectDB = async () => {
     await mongoose.connect(config.mongoUri, {
       maxPoolSize: poolSize,
       minPoolSize: 1,
-      serverSelectionTimeoutMS: 5000,
+      // Raised from 5000 -> 15000. On Vercel the function freezes after
+      // inactivity; when it warms, the kept-alive socket may be stale and a
+      // fresh server selection is needed. The old 5s budget was too tight for
+      // a frozen -> warm Mongo reconnect, causing "findOne took longer to
+      // connect" timeouts that were then masked as 401 by authMiddleware.
+      serverSelectionTimeoutMS: 15000,
       socketTimeoutMS: 45000,
       connectTimeoutMS: 10000,
       maxIdleTimeMS: 60000, // CRITICAL FOR VERCEL: Closes connections before AWS/Atlas silently drops them

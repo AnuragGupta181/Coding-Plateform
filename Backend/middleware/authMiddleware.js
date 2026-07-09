@@ -14,7 +14,13 @@ exports.requireAuth = async (req, res, next) => {
     
     next();
   } catch (error) {
-    res.status(401).json({ message: 'Invalid token' });
+    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Invalid token' });
+    }
+    // Any other error (e.g. cold-start Mongo timeout) must NOT return 401,
+    // otherwise the frontend response interceptor wipes the token (false logout).
+    console.error('requireAuth non-auth error:', error.message);
+    return res.status(503).json({ message: 'Service temporarily unavailable' });
   }
 };
 
