@@ -212,6 +212,10 @@ async function ensureDb() {
       mongoCache.lastOk = Date.now();
     } catch (pingErr) {
       console.warn('⚠️ DB ping failed (stale socket), reconnecting:', pingErr.message);
+      // Close the stale socket first so connect() opens a genuinely fresh one
+      // (mongoose.connect() on an already-"connected" singleton can otherwise
+      // return the same dead socket).
+      try { await mongoose.connection.close(); } catch { /* already closed */ }
       mongoCache.conn = null;
       mongoCache.promise = null;
       await connectDB(); // reconnect on a fresh socket
