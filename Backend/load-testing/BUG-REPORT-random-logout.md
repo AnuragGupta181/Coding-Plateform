@@ -131,13 +131,84 @@ That is the false logout.
 Now only genuine JWT errors return 401. Transient Mongo/infra failures return 503,
 which the interceptor already ignores (no logout, retry-friendly).
 
-### Fix 2 — Production connection hardening
-`Backend/index.js` connection options:
+### Fix 2 — Permanent cold-start / dead-connection healing (`ensureDb`)
+The original `connectDB` only checked `mongoose.connection.readyState >= 1` and skipped
+reconnecting. That flag stays `1` ("connected") even on a socket Vercel silently killed
+while freezing the container, so the first query after warm-up hit a dead socket.
+
+`Backend/index.js` now uses a cached, self-healing connection:
 ```js
-serverSelectionTimeoutMS: 15000,   // was 5000 — too tight for a frozen->warm reconnect
+// Cache the connection promise on globalThis so warm containers reuse it.
+const mongoCache =
+  global._mongoCache || (global._mongoCache = { conn: null, promise: null, lastOk: 0 });
+
+// Invalidate the cache on error/disconnect so the next request reconnects
+// instead of reusing a dead (frozen) socket.
+mongoose.connection.on('error',     (e) => { mongoCache.conn = null; mongoCache.promise = null; });
+mongoose.connection.on('disconnected', () => { mongoCache.conn = null; mongoCache.promise = null; });
+
+async function connectDB() {
+  if (mongoCache.conn && isConnected()) return mongoCache.conn;
+  if (!mongoCache.promise) {                       // single-flight guard
+    mongoCache.promise = mongoose.connect(MONGODB_URI, {
+      maxPoolSize: config.isProduction ? 2 : 50,
+      minPoolSize: 1,
+      serverSelectionTimeoutMS: 15000,             // was 5000 — too tight for frozen->warm
+      socketTimeoutMS: 45000,
+      connectTimeoutMS: 10000,
+      maxIdleTimeMS: 60000,
+      heartbeatFrequencyMS: 10000,                 // detect dead sockets faster while warm
+      family: 4,
+    }).catch((err) => { mongoCache.promise = null; throw err; });  // allow retry
+  }
+  mongoCache.conn = await mongoCache.promise;
+  return mongoCache.conn;
+}
+
+// Heal a frozen/stale connection BEFORE any query runs. Throttled to one health
+// probe per 15s; on a failed probe we close the stale socket and reconnect ONCE.
+async function ensureDb() {
+  await connectDB();
+  if (!isConnected()) throw new Error('MongoDB not connected');
+  if (Date.now() - mongoCache.lastOk > 15000) {
+    try {
+      await mongoose.connection.db.command({ ping: 1 });
+      mongoCache.lastOk = Date.now();
+    } catch (pingErr) {
+      console.warn('⚠️ DB ping failed (stale socket), reconnecting:', pingErr.message);
+      try { await mongoose.connection.close(); } catch { /* already closed */ }
+      mongoCache.conn = null;
+      mongoCache.promise = null;
+      await connectDB();           // opens a genuinely fresh socket
+      mongoCache.lastOk = Date.now();
+    }
+  }
+}
 ```
-Gives the frozen→warm Mongo reconnect enough budget so the query succeeds instead of
-throwing a server-selection timeout.
+A `ensureDb()` middleware runs **before every request** (except SSE):
+```js
+app.use(async (req, res, next) => {
+  try { await ensureDb(); next(); }
+  catch (err) {
+    console.error('ensureDb failed:', err.message);
+    if (!res.headersSent) res.status(503).json({ message: 'Database temporarily unavailable' });
+  }
+});
+```
+
+**Why this is permanent (even if every instance dies):**
+The first request after a freeze runs `ensureDb()`, pings the connection, finds the dead
+socket, closes it, and reconnects on a fresh socket — all within that same request, so the
+user gets a successful response instead of a 500/401. `on('error')`/`on('disconnected')`
+listeners and the `connectDB` promise guard (single-flight) keep this safe under concurrency.
+
+**Does this open more connections than required? — NO.**
+- There is exactly **one** Mongoose connection per Vercel instance (singleton), capped by
+  `maxPoolSize: 2`. `ensureDb` never creates a second connection object.
+- The `if (!mongoCache.promise)` single-flight guard means even if N requests hit a dead
+  socket at once, only **one** reconnect is attempted; the rest await the same promise.
+- The stale-socket heal explicitly `close()`s the old socket before `connect()`, so it
+  cannot accumulate dead sockets. Atlas limits stay safe (2 connections/instance).
 
 ---
 
@@ -160,11 +231,16 @@ throwing a server-selection timeout.
 ## 7. Reproduction / Verification
 
 - Idle the app for several minutes (let Vercel freeze the function).
-- Resume and observe the next authenticated request.
-- **Expected after fix:** transient slowness at worst; never an automatic logout.
-  A cold-start DB failure now returns 503 and the request can be retried, not a 401.
-- Confirm no `401 Invalid token` is emitted from `authMiddleware` for non-JWT errors in
-  backend logs.
+- Resume and observe the next authenticated request **and** a fresh login.
+- **Expected after fix:**
+  - The first request after a freeze may take slightly longer (ping + reconnect on a
+    fresh socket), but it **succeeds** — never an automatic logout.
+  - Login works even on the first request after a long freeze (the dead socket is healed
+    by `ensureDb()` before `User.findOne` runs).
+  - A genuine DB outage (Atlas truly down) returns 503, not a false 401 logout.
+- Confirm in backend logs: no `401 Invalid token` from `authMiddleware` for non-JWT
+  errors, and `⚠️ DB ping failed (stale socket), reconnecting:` appears (and recovers)
+  during cold-start windows.
 
 ---
 
@@ -173,4 +249,4 @@ throwing a server-selection timeout.
 | File | Change |
 |------|--------|
 | `Backend/middleware/authMiddleware.js` | Distinguish JWT errors (401) from transient DB errors (503). |
-| `Backend/index.js` | `serverSelectionTimeoutMS` 5000 → 15000 for cold-start resilience. |
+| `Backend/index.js` | Cached self-healing Mongo connection (`ensureDb` + single-flight `connectDB` + error/disconnect listeners); `serverSelectionTimeoutMS` 5000 → 15000; added `heartbeatFrequencyMS`. |
