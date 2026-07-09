@@ -11,6 +11,13 @@
         {
           "src": "/(.*)",
           "dest": "index.js"
-       }
-     ] }
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/complete-expired-tests",
+      "schedule": "* * * * *"
+    }
+  ]
+}
 

@@ -142,8 +142,29 @@ const connectDB = async () => {
 
 connectDB();
 
+// ── Vercel Cron Endpoint ──────────────────────────────────────────────────────
+// Vercel will automatically hit this endpoint every minute based on vercel.json
+app.get('/api/cron/complete-expired-tests', async (req, res) => {
+  try {
+    // Optional: Add basic security header check so only Vercel can trigger this
+    if (process.env.VERCEL && req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    await completeExpiredTests();
+    res.status(200).json({ message: 'Expired tests processed successfully' });
+  } catch (error) {
+    console.error('Failed to complete expired tests via cron:', error.message);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // ── Expired Test Cleanup (every 15 seconds) ───────────────────────────────────
 // Set DISABLE_CRON=true on all-but-one instance when horizontally scaling.
+// [COMMENTED OUT FOR VERCEL]
+// If you ever move away from Vercel (e.g. to AWS, Render, Railway), you can uncomment 
+// this block to use standard Node.js background timers instead of Vercel Cron.
+/*
 if (process.env.DISABLE_CRON !== 'true') {
   setInterval(async () => {
     try {
@@ -153,6 +174,7 @@ if (process.env.DISABLE_CRON !== 'true') {
     }
   }, 15000);
 }
+*/
 
 // ── Start Server ──────────────────────────────────────────────────────────────
 const server = app.listen(config.port, () => {

@@ -8,11 +8,24 @@ const TEST_CACHE_TTL = 600; // Cache test documents for 10 minutes
 // ── GET /api/tests (Available tests for candidates) ──────────────────────────
 exports.getAvailableTests = async (req, res) => {
   try {
+    const cacheKey = 'tests:available';
+    
+    // 1. Try cache first
+    const cached = await cache.get(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
+    // 2. Cache miss — read from DB
     // .lean() skips Mongoose document overhead — returns plain JS objects (~40% faster)
     const tests = await Test.find(
       { status: { $in: ['scheduled', 'waiting', 'active'] } },
       'title description durationInMinutes status createdAt startedAt completedAt testType'
     ).lean();
+    
+    // 3. Store in cache for 60 seconds (short TTL since test statuses change)
+    await cache.set(cacheKey, tests, 60);
+
     res.json(tests);
   } catch (error) {
     res.status(500).json({ message: error.message });
