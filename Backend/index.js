@@ -92,9 +92,9 @@ const sseLimiter = rateLimit({
   message: { message: 'Too many event stream connections.' }
 });
 
-app.use('/api/', generalLimiter);
-app.use('/api/auth/', authLimiter);
-app.use('/api/events/', sseLimiter);
+// app.use('/api/', generalLimiter);
+// app.use('/api/auth/', authLimiter);
+// app.use('/api/events/', sseLimiter);
 
 // ── Health Check ──────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
@@ -116,17 +116,31 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/code', codeRoutes);
 
-// ── MongoDB Connection ────────────────────────────────────────────────────────
-// Increased connection pool from default 5 → 50 to handle concurrent bursts.
-mongoose.connect(config.mongoUri, {
-  maxPoolSize: 50,
-  minPoolSize: 5,
-  serverSelectionTimeoutMS: 5000,
-  socketTimeoutMS: 45000,
-  connectTimeoutMS: 10000,
-})
-  .then(() => console.log('✅ Connected to MongoDB (pool: 50)'))
-  .catch(err => console.error('❌ Could not connect to MongoDB', err));
+// ── MongoDB Connection (Optimized for Vercel) ─────────────────────────────────
+// CRITICAL FIX FOR VERCEL: Cache the connection and lower pool size on production 
+// to prevent crashing MongoDB Atlas Free Tier with connection spikes.
+const connectDB = async () => {
+  // If Vercel reuses the function, skip reconnecting
+  if (mongoose.connection.readyState >= 1) return;
+  
+  // Vercel spawns many micro-servers. If they all use 50, Atlas crashes instantly.
+  const poolSize = config.isProduction ? 2 : 50;
+  
+  try {
+    await mongoose.connect(config.mongoUri, {
+      maxPoolSize: poolSize,
+      minPoolSize: 1,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      connectTimeoutMS: 10000,
+    });
+    console.log(`✅ Connected to MongoDB (pool: ${poolSize})`);
+  } catch (err) {
+    console.error('❌ Could not connect to MongoDB', err);
+  }
+};
+
+connectDB();
 
 // ── Expired Test Cleanup (every 15 seconds) ───────────────────────────────────
 // Set DISABLE_CRON=true on all-but-one instance when horizontally scaling.
