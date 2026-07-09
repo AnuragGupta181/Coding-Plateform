@@ -109,6 +109,21 @@ app.get('/health', (_req, res) => {
   });
 });
 
+// ── Ensure DB connection before handling requests ────────────────────────────
+// Heals dead/frozen connections so a request never runs on a killed socket
+// (the root cause of the old "findOne took longer to connect" / 401 logout bug).
+app.use(async (req, res, next) => {
+  try {
+    await ensureDb();
+    next();
+  } catch (err) {
+    console.error('ensureDb failed:', err.message);
+    if (!res.headersSent) {
+      res.status(503).json({ message: 'Database temporarily unavailable' });
+    }
+  }
+});
+
 // ── Routes ────────────────────────────────────────────────────────────────────
 app.use('/api', testRoutes);
 app.use('/api/auth', authRoutes);
@@ -116,38 +131,96 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/code', codeRoutes);
 
-// ── MongoDB Connection (Optimized for Vercel) ─────────────────────────────────
-// CRITICAL FIX FOR VERCEL: Cache the connection and lower pool size on production 
-// to prevent crashing MongoDB Atlas Free Tier with connection spikes.
+// ── MongoDB Connection (Optimized for Vercel serverless) ──────────────────────
+// PERMANENT cold-start / frozen-container safety:
+//  1. Cache the connection promise on globalThis so warm containers reuse it.
+//  2. On 'error'/'disconnected', invalidate the cache so the next request
+//     reconnects instead of reusing a dead (frozen) socket.
+//  3. ensureDb() probes the connection before each request and reconnects ONCE
+//     if it is stale, so a request never runs a query on a dead connection —
+//     even if every instance died between requests.
+const MONGODB_URI = config.mongoUri;
+
+const mongoCache =
+  global._mongoCache ||
+  (global._mongoCache = { conn: null, promise: null, lastOk: 0 });
+
+const isConnected = () => mongoose.connection.readyState === 1;
+
+mongoose.connection.on('error', (err) => {
+  console.error('❌ MongoDB connection error:', err.message);
+  mongoCache.conn = null;
+  mongoCache.promise = null;
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.warn('⚠️ MongoDB disconnected — clearing cache for next reconnect');
+  mongoCache.conn = null;
+  mongoCache.promise = null;
+});
+
 const connectDB = async () => {
-  // If Vercel reuses the function, skip reconnecting
-  if (mongoose.connection.readyState >= 1) return;
-  
-  // Vercel spawns many micro-servers. If they all use 50, Atlas crashes instantly.
-  const poolSize = config.isProduction ? 2 : 50;
-  
-  try {
-    await mongoose.connect(config.mongoUri, {
-      maxPoolSize: poolSize,
-      minPoolSize: 1,
-      // Raised from 5000 -> 15000. On Vercel the function freezes after
-      // inactivity; when it warms, the kept-alive socket may be stale and a
-      // fresh server selection is needed. The old 5s budget was too tight for
-      // a frozen -> warm Mongo reconnect, causing "findOne took longer to
-      // connect" timeouts that were then masked as 401 by authMiddleware.
-      serverSelectionTimeoutMS: 15000,
-      socketTimeoutMS: 45000,
-      connectTimeoutMS: 10000,
-      maxIdleTimeMS: 60000, // CRITICAL FOR VERCEL: Closes connections before AWS/Atlas silently drops them
-      family: 4, // Force IPv4 to prevent Vercel DNS resolution hangs
-    });
-    console.log(`✅ Connected to MongoDB (pool: ${poolSize})`);
-  } catch (err) {
-    console.error('❌ Could not connect to MongoDB', err);
+  if (mongoCache.conn && isConnected()) return mongoCache.conn;
+
+  if (!mongoCache.promise) {
+    // Vercel spawns many micro-servers. If they all use 50, Atlas crashes instantly.
+    const poolSize = config.isProduction ? 2 : 50;
+    mongoCache.promise = mongoose
+      .connect(MONGODB_URI, {
+        maxPoolSize: poolSize,
+        minPoolSize: 1,
+        // Raised from 5000 -> 15000. On Vercel the function freezes after
+        // inactivity; when it warms, the kept-alive socket may be stale and a
+        // fresh server selection is needed. The old 5s budget was too tight for
+        // a frozen -> warm Mongo reconnect.
+        serverSelectionTimeoutMS: 15000,
+        socketTimeoutMS: 45000,
+        connectTimeoutMS: 10000,
+        maxIdleTimeMS: 60000, // Closes connections before Atlas silently drops them
+        heartbeatFrequencyMS: 10000, // Detect dead sockets faster while warm
+        family: 4, // Force IPv4 to prevent Vercel DNS resolution hangs
+      })
+      .then((m) => {
+        console.log(`✅ Connected to MongoDB (pool: ${poolSize})`);
+        return m;
+      })
+      .catch((err) => {
+        console.error('❌ Could not connect to MongoDB', err.message);
+        mongoCache.promise = null; // allow retry on next invocation
+        throw err;
+      });
   }
+
+  try {
+    mongoCache.conn = await mongoCache.promise;
+  } catch (err) {
+    mongoCache.promise = null;
+    throw err;
+  }
+  return mongoCache.conn;
 };
 
-connectDB();
+// Heal a frozen/stale connection BEFORE any query runs. Throttled to one
+// health probe per 15s; on a failed probe we drop the cache and reconnect once.
+async function ensureDb() {
+  await connectDB();
+  if (!isConnected()) throw new Error('MongoDB not connected');
+
+  if (Date.now() - mongoCache.lastOk > 15000) {
+    try {
+      await mongoose.connection.db.command({ ping: 1 });
+      mongoCache.lastOk = Date.now();
+    } catch (pingErr) {
+      console.warn('⚠️ DB ping failed (stale socket), reconnecting:', pingErr.message);
+      mongoCache.conn = null;
+      mongoCache.promise = null;
+      await connectDB(); // reconnect on a fresh socket
+      mongoCache.lastOk = Date.now();
+    }
+  }
+}
+
+connectDB().catch(() => {});
 
 // ── Vercel Cron Endpoint ──────────────────────────────────────────────────────
 // Vercel will automatically hit this endpoint every minute based on vercel.json
