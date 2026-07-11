@@ -92,9 +92,9 @@ const sseLimiter = rateLimit({
   message: { message: 'Too many event stream connections.' }
 });
 
-app.use('/api/', generalLimiter);
-app.use('/api/auth/', authLimiter);
-app.use('/api/events/', sseLimiter);
+// app.use('/api/', generalLimiter);
+// app.use('/api/auth/', authLimiter);
+// app.use('/api/events/', sseLimiter);
 
 // ── Health Check ──────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
