@@ -163,8 +163,7 @@ const connectDB = async () => {
   if (mongoCache.conn && isConnected()) return mongoCache.conn;
 
   if (!mongoCache.promise) {
-    // Vercel spawns many micro-servers. If they all use 50, Atlas crashes instantly.
-    const poolSize = config.isProduction ? 2 : 50;
+    const poolSize = config.mongoPoolSize;
     mongoCache.promise = mongoose
       .connect(MONGODB_URI, {
         maxPoolSize: poolSize,
@@ -245,10 +244,7 @@ app.get('/api/cron/complete-expired-tests', async (req, res) => {
 
 // ── Expired Test Cleanup (every 15 seconds) ───────────────────────────────────
 // Set DISABLE_CRON=true on all-but-one instance when horizontally scaling.
-// [COMMENTED OUT FOR VERCEL]
-// If you ever move away from Vercel (e.g. to AWS, Render, Railway), you can uncomment 
-// this block to use standard Node.js background timers instead of Vercel Cron.
-/*
+// Standard Node.js background timers (Ideal for EC2/VPS deployments)
 if (process.env.DISABLE_CRON !== 'true') {
   setInterval(async () => {
     try {
@@ -258,7 +254,6 @@ if (process.env.DISABLE_CRON !== 'true') {
     }
   }, 15000);
 }
-*/
 
 // ── Start Server ──────────────────────────────────────────────────────────────
 const server = app.listen(config.port, () => {

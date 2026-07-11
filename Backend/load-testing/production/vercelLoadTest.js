@@ -4,7 +4,7 @@ const autocannon = require('autocannon');
 // Configuration - Reads from .env or defaults to VERCEL PRODUCTION URL
 const TARGET_URL = process.env.PROD_API_URL || 'https://your-production-api.vercel.app/api/some-route-here'; 
 const DURATION = 10; // Test duration in seconds
-const CONCURRENT_USERS = 500; // Concurrent connections
+const CONCURRENT_USERS = 100; // Concurrent connections
 
 async function run() {
   console.log(`🚀 Starting PRODUCTION HTTP load test on ${TARGET_URL}...`);

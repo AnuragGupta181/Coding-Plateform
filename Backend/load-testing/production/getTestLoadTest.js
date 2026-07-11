@@ -2,7 +2,7 @@ const autocannon = require('autocannon');
 const axios = require('axios');
 require('dotenv').config({ path: '../../.env' }); 
 
-const API_URL = 'https://coding-plateform-t2vc.vercel.app';
+const API_URL = 'https://coding-plateform-5gvy.vercel.app';
 
 async function runLoadTest() {
   console.log(`\n🚀 Initializing Production Load Test for GET /api/test/:id...`);
