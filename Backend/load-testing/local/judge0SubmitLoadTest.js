@@ -3,7 +3,7 @@ const axios = require('axios');
 require('dotenv').config({ path: '../../.env' }); 
 
 // Target LOCAL API
-const API_URL = `http://localhost:${process.env.PORT || 5000}`;
+const API_URL = process.env.API_URL || `http://localhost:${process.env.PORT || 5000}`;
 
 async function runJudge0SubmitLoadTest() {
   console.log(`\n🚀 Initializing LOCAL Load Test for POST /api/code/submit/:testId/:questionId...`);
@@ -62,7 +62,7 @@ async function runJudge0SubmitLoadTest() {
     console.log(`✅ Created active submission ID: ${submissionId}`);
 
     const targetUrl = `${API_URL}/api/code/submit/${testId}/${questionId}`;
-    console.log(`\n🔥 EXTREME TEST: Blasting ${targetUrl} with 300 students submitting exactly at the same time...`);
+    console.log(`\n🔥 SELF-HOSTED TEST: Blasting ${targetUrl} with 50 students submitting simultaneously...`);
     
     // A simple JS submission
     const sourceCode = `console.log("Hello from submission");`;
@@ -70,9 +70,9 @@ async function runJudge0SubmitLoadTest() {
 
     const instance = autocannon({
       url: targetUrl,
-      connections: 300, 
-      amount: 300, 
-      timeout: 90, // Give Judge0 and the Node event loop up to 90 seconds to process the queue without aborting
+      connections: 200, 
+      amount: 200, 
+      timeout: 120, // 2 minutes to let your COUNT=4 Judge0 instance process the queued submissions safely
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

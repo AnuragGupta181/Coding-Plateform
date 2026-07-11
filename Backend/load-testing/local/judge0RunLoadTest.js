@@ -3,7 +3,7 @@ const axios = require('axios');
 require('dotenv').config({ path: '../../.env' }); 
 
 // Target LOCAL API
-const API_URL = `http://localhost:${process.env.PORT || 5000}`;
+const API_URL = process.env.API_URL || `http://localhost:${process.env.PORT || 5000}`;
 
 async function runJudge0LoadTest() {
   console.log(`\n🚀 Initializing LOCAL Load Test for POST /api/code/run...`);

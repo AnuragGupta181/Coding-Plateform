@@ -1,7 +1,7 @@
 const autocannon = require('autocannon');
 require('dotenv').config({ path: '../../.env' }); 
 
-const API_URL = `http://localhost:${process.env.PORT || 5000}`;
+const API_URL = process.env.API_URL || `http://localhost:${process.env.PORT || 5000}`;
 
 async function runSignupLoadTest() {
   console.log(`\n🚀 Initializing LOCAL Load Test for POST /api/auth/signup...`);

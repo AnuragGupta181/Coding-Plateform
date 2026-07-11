@@ -70,8 +70,8 @@ async function submitToJudge0Endpoint(base, headers, languageId, sourceCode, std
   const token = submitRes.data.token;
   if (!token) throw new Error('Judge0 did not return a submission token.');
 
-  // Step 2: Poll for the result (max 10 tries, 1 second apart)
-  for (let attempt = 0; attempt < 10; attempt++) {
+  // Step 2: Poll for the result (max 120 tries, 1 second apart, allows queueing up to 2 minutes)
+  for (let attempt = 0; attempt < 120; attempt++) {
     await new Promise(r => setTimeout(r, 1000));
 
     const resultRes = await axios.get(

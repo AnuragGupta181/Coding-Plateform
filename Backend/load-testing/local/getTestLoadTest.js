@@ -2,8 +2,8 @@ const autocannon = require('autocannon');
 const axios = require('axios');
 require('dotenv').config({ path: '../../.env' }); 
 
-// Target the local Express server instead of Vercel
-const API_URL = `http://localhost:${process.env.PORT || 5000}`;
+// Target the local Express server instead of Vercel (unless overridden by API_URL)
+const API_URL = process.env.API_URL || `http://localhost:${process.env.PORT || 5000}`;
 
 async function runLoadTest() {
   console.log(`\n🚀 Initializing LOCAL Load Test for GET /api/test/:id...`);
