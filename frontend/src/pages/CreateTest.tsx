@@ -30,7 +30,6 @@ const CreateTest: React.FC = () => {
   };
 
   const handleDeleteQuestion = (index: number) => {
-    if (questions.length === 1) return; // keep at least one
     setQuestions(questions.filter((_, i) => i !== index));
   };
 
@@ -258,16 +257,14 @@ const CreateTest: React.FC = () => {
               </div>
 
               {/* Delete button */}
-              {questions.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => handleDeleteQuestion(qIndex)}
-                  title="Remove this question"
-                  className="absolute top-3 md:top-5 left-4 md:left-8 text-[10px] uppercase tracking-widest font-bold text-cream-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                >
-                  ✕ Remove
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => handleDeleteQuestion(qIndex)}
+                title="Remove this question"
+                className="absolute top-3 md:top-5 left-4 md:left-8 text-[10px] uppercase tracking-widest font-bold text-cream-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+              >
+                ✕ Remove
+              </button>
 
               {/* Question Text */}
               <div className="relative pt-6 md:pt-0">
