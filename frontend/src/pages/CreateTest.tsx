@@ -22,6 +22,7 @@ const CreateTest: React.FC = () => {
   const [testType, setTestType] = useState<'mcq' | 'coding' | 'mixed'>('mcq');
   const [showUploader, setShowUploader] = useState(false);
   const [importSuccess, setImportSuccess] = useState<{ mcq: number; coding: number } | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // ─── Question Handlers ───────────────────────────────────────────────────
 
@@ -116,6 +117,8 @@ const CreateTest: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
+    setIsLoading(true);
     try {
       // Auto-determine testType based on populated questions
       let finalTestType = testType;
@@ -136,6 +139,7 @@ const CreateTest: React.FC = () => {
     } catch (err) {
       console.error('Failed to create test', err);
       alert('Error creating test: Unauthorized or Server Error');
+      setIsLoading(false);
     }
   };
 
@@ -283,9 +287,8 @@ const CreateTest: React.FC = () => {
                 {q.options.map((opt, oIndex) => (
                   <div
                     key={oIndex}
-                    className={`flex items-center gap-3 p-3 md:p-4 rounded-sm border transition-all ${
-                      q.correctOptionIndex === oIndex ? 'bg-background border-cream-900' : 'bg-background border-cream-100'
-                    }`}
+                    className={`flex items-center gap-3 p-3 md:p-4 rounded-sm border transition-all ${q.correctOptionIndex === oIndex ? 'bg-background border-cream-900' : 'bg-background border-cream-100'
+                      }`}
                   >
                     <input
                       type="radio"
@@ -434,7 +437,7 @@ const CreateTest: React.FC = () => {
                           >
                             ✕
                           </button>
-                          
+
                           <div className="flex-1">
                             <label className="block text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Standard Input (stdin)</label>
                             <textarea
@@ -499,9 +502,22 @@ const CreateTest: React.FC = () => {
           </button>
           <button
             type="submit"
-            className="flex-1 py-4 bg-primary text-primary-foreground rounded-sm text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-primary shadow-lg shadow-cream-100 transition-all"
+            disabled={isLoading}
+            className={`flex-1 py-4 rounded-sm text-[10px] uppercase tracking-[0.2em] font-bold transition-all ${
+              isLoading 
+                ? 'bg-primary/70 text-primary-foreground/70 cursor-not-allowed shadow-none' 
+                : 'bg-primary text-primary-foreground hover:bg-primary shadow-lg shadow-cream-100'
+            }`}
           >
-            Finalize &amp; Distribute
+            {isLoading ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-3 w-3 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Finalizing...
+              </span>
+            ) : 'Finalize & Distribute'}
           </button>
         </div>
       </form>

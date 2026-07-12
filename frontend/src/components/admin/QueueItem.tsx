@@ -1,5 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { QueueSummary } from '../../types/admin';
+
+const Spinner = ({ red }: { red?: boolean }) => (
+  <svg className={`animate-spin h-3 w-3 ${red ? 'text-red-700' : 'text-current'}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+  </svg>
+);
 
 interface QueueItemProps {
   queue: QueueSummary;
@@ -16,6 +23,7 @@ export const QueueItem: React.FC<QueueItemProps> = ({
 }) => {
   const isWaiting = queue.status === 'waiting';
   const isActive = queue.status === 'active';
+  const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
   return (
     <div className="bg-background border border-border p-6 lg:p-10 rounded-sm shadow-sm mb-6 lg:mb-8 transition-all hover:shadow-premium group">
@@ -35,26 +43,41 @@ export const QueueItem: React.FC<QueueItemProps> = ({
         <div className="flex flex-wrap gap-3 w-full lg:w-auto">
           {queue.status === 'scheduled' && (
             <button 
-              onClick={() => onOpenWaitingRoom(queue.testId)}
-              className="btn-primary py-2 px-6 flex-1 lg:flex-none text-center justify-center"
+              disabled={loadingAction === 'allow_entry'}
+              onClick={async () => {
+                setLoadingAction('allow_entry');
+                await onOpenWaitingRoom(queue.testId);
+                setLoadingAction(null);
+              }}
+              className={`btn-primary py-2 px-6 flex-1 lg:flex-none text-center justify-center flex items-center gap-2 ${loadingAction === 'allow_entry' ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
-              Allow Entry
+              {loadingAction === 'allow_entry' && <Spinner />} Allow Entry
             </button>
           )}
           {isWaiting && (
             <button 
-              onClick={() => onStartTest(queue.testId)}
-              className="btn-primary py-2 px-6 bg-primary animate-pulse flex-1 lg:flex-none text-center justify-center"
+              disabled={loadingAction === 'start_test'}
+              onClick={async () => {
+                setLoadingAction('start_test');
+                await onStartTest(queue.testId);
+                setLoadingAction(null);
+              }}
+              className={`btn-primary py-2 px-6 flex-1 lg:flex-none text-center justify-center flex items-center gap-2 ${loadingAction === 'start_test' ? 'opacity-70 cursor-not-allowed' : 'bg-primary animate-pulse'}`}
             >
-              Commence Test
+              {loadingAction === 'start_test' && <Spinner />} Commence Test
             </button>
           )}
           {isActive && (
             <button 
-              onClick={() => onMarkCompleted(queue.testId)}
-              className="btn-secondary py-2 px-6 border-red-200 text-red-700 hover:bg-red-50 flex-1 lg:flex-none text-center justify-center"
+              disabled={loadingAction === 'force_complete'}
+              onClick={async () => {
+                setLoadingAction('force_complete');
+                await onMarkCompleted(queue.testId);
+                setLoadingAction(null);
+              }}
+              className={`btn-secondary py-2 px-6 border-red-200 text-red-700 flex-1 lg:flex-none text-center justify-center flex items-center gap-2 ${loadingAction === 'force_complete' ? 'opacity-70 cursor-not-allowed' : 'hover:bg-red-50'}`}
             >
-              Force Complete
+              {loadingAction === 'force_complete' && <Spinner red />} Force Complete
             </button>
           )}
         </div>
