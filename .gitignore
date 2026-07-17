@@ -61,3 +61,8 @@ GEMINI.md
 
 # Text files (remove this line if you want to track .txt files)
 *.txt
+
+# Excel & CSV files (sample/test data)
+*.xlsx
+*.xls
+*.csv
