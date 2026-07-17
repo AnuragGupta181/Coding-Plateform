@@ -243,7 +243,7 @@ const DetailedResult: React.FC = () => {
                     Violation{submission.violations.length !== 1 ? 's' : ''} Detected
                   </div>
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-3 max-h-64 overflow-y-auto custom-scrollbar pr-2">
                   {submission.violations.map((v, i) => {
                     const labelMap: Record<string, string> = {
                       tab_switch: 'Tab Switch',

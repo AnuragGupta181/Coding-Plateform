@@ -88,7 +88,7 @@ export const SubmitResult: React.FC<SubmitResultProps> = ({ isSubmitting, result
 
       <div className="space-y-3 mt-4">
         {result.results.map((r, i) => (
-          <div key={i} className={`border rounded-sm p-3 bg-white ${r.passed ? 'border-emerald-200' : 'border-red-200'}`}>
+          <div key={i} className={`border rounded-sm p-3 bg-card ${r.passed ? 'border-emerald-200' : 'border-red-200'}`}>
             <div className="flex items-center gap-2 mb-2 border-b border-cream-100 pb-2">
               <span className={`w-5 h-5 rounded-sm flex items-center justify-center text-[10px] font-bold ${r.passed ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
                 {i + 1}
@@ -111,7 +111,7 @@ export const SubmitResult: React.FC<SubmitResultProps> = ({ isSubmitting, result
                 </div>
                 <div>
                   <span className="text-muted-foreground font-bold uppercase tracking-wider text-[10px]">Expected Output</span>
-                  <pre className="mt-1 bg-emerald-50/50 border border-emerald-100 p-2 rounded-sm text-emerald-800 font-mono whitespace-pre-wrap">{r.expectedOutput}</pre>
+                  <pre className="mt-1 bg-emerald-950/30 border border-emerald-900/50 p-2 rounded-sm text-emerald-400 font-mono whitespace-pre-wrap">{r.expectedOutput}</pre>
                 </div>
                 <div className="md:col-span-2">
                   <span className="text-muted-foreground font-bold uppercase tracking-wider text-[10px]">Actual Output</span>
@@ -158,7 +158,7 @@ const OutputPanel: React.FC<OutputPanelProps> = ({
   customInput, onCustomInputChange, isRunning, runResult,
   isSubmitting, submitResult,
 }) => (
-  <div className="h-56 shrink-0 border-t border-border flex flex-col bg-white">
+  <div className="h-56 shrink-0 border-t border-border flex flex-col bg-background">
     <div className="flex border-b border-border shrink-0">
       {(['output', 'submit'] as const).map(tab => (
         <button

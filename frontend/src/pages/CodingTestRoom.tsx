@@ -105,7 +105,7 @@ const CodingTestRoom: React.FC = () => {
 
   const MAX_VIOLATIONS = 999999;
 
-  const handleViolation = useCallback((count: number, type: string) => {
+  const handleViolation = useCallback((_count: number, type: string) => {
     const labels: Record<string, string> = {
       tab_switch: 'Tab switch detected',
       window_blur: 'Window switch detected',
@@ -146,7 +146,7 @@ const CodingTestRoom: React.FC = () => {
     if (!testId || !submissionId) return;
 
     // Introduce Jitter to prevent Thundering Herd
-    const randomDelay = Math.random() * 15000;
+    const randomDelay = Math.random() * 15000;  
     setTimeout(async () => {
       try {
         const { activeQuestion: aq, currentCode: cc, language: lang } = stateRef.current;

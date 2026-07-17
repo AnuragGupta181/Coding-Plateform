@@ -82,7 +82,7 @@ setIsSaving(false);
 
 const MAX_VIOLATIONS = 999999;
 
-const handleViolation = useCallback((count: number, type: string) => {
+const handleViolation = useCallback((_count: number, type: string) => {
 const labels: Record<string, string> = {
 tab_switch: 'Tab switch detected',
 window_blur: 'Window switch detected',

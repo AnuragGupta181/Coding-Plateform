@@ -16,7 +16,7 @@ interface TestCardProps {
 
 export const TestCard: React.FC<TestCardProps> = ({ test, onEnter }) => {
   return (
-    <div className="bg-white border border-border p-8 rounded-sm shadow-sm hover:shadow-premium transition-all group">
+    <div className="bg-card border border-border p-8 rounded-sm shadow-sm hover:shadow-premium transition-all group">
       <div className="mb-8">
         <div className="flex justify-between items-start mb-4">
           <h3 className="text-xl font-sans text-foreground-bold group-hover:text-cream-700 transition-colors">{test.title}</h3>
@@ -24,7 +24,7 @@ export const TestCard: React.FC<TestCardProps> = ({ test, onEnter }) => {
         </div>
         <p className="text-sm text-muted-foreground line-clamp-2 font-light leading-relaxed mb-6">{test.description}</p>
         
-        <div className="flex items-center gap-6 pt-6 border-t border-cream-50">
+        <div className="flex items-center gap-6 pt-6 border-t border-border">
           <div className="flex flex-col">
             <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-tighter">Duration</span>
             <span className="text-sm font-bold text-foreground">{test.durationInMinutes} mins</span>
@@ -41,7 +41,7 @@ export const TestCard: React.FC<TestCardProps> = ({ test, onEnter }) => {
         disabled={test.status !== 'waiting' && test.status !== 'active'}
         className={`w-full py-3.5 text-xs uppercase tracking-widest font-bold transition-all ${
           (test.status === 'waiting' || test.status === 'active')
-            ? 'bg-primary text-primary-foreground hover:bg-primary shadow-lg shadow-cream-100'
+            ? 'bg-primary text-primary-foreground hover:bg-primary shadow-lg shadow-primary/20'
             : 'bg-muted text-muted-foreground cursor-not-allowed'
         }`}
       >

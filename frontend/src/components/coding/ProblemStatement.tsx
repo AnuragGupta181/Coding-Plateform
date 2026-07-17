@@ -46,7 +46,7 @@ const ProblemStatement: React.FC<ProblemStatementProps> = ({ question, questionI
       <div className="space-y-3 border-t border-border pt-4">
         <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Examples</p>
         {question.examples.map((ex, i) => (
-          <div key={i} className="rounded-sm border border-border overflow-hidden text-xs bg-white">
+          <div key={i} className="rounded-sm border border-border overflow-hidden text-xs bg-card">
             <div className="px-3 py-3 space-y-2">
               <div>
                 <span className="text-muted-foreground font-bold uppercase tracking-wider text-[10px]">Input</span>
@@ -54,7 +54,7 @@ const ProblemStatement: React.FC<ProblemStatementProps> = ({ question, questionI
               </div>
               <div>
                 <span className="text-muted-foreground font-bold uppercase tracking-wider text-[10px]">Output</span>
-                <pre className="mt-1 text-emerald-800 font-mono bg-emerald-50/50 border border-emerald-100 p-2 rounded-sm">{ex.output}</pre>
+                <pre className="mt-1 text-emerald-400 font-mono bg-emerald-950/30 border border-emerald-900/50 p-2 rounded-sm">{ex.output}</pre>
               </div>
               {ex.explanation && (
                 <div className="text-muted-foreground italic pt-1 text-xs">{ex.explanation}</div>
