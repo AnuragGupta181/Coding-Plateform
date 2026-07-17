@@ -37,10 +37,10 @@ interface ExcelUploaderProps {
 
 // ─── Template download ────────────────────────────────────────────────────────
 
-const MCQ_HEADERS = ['questionText', 'option1', 'option2', 'option3', 'option4', 'correctOptionIndex', 'points'];
+const MCQ_HEADERS = ['questionText', 'option1', 'option2', 'option3', 'option4', 'correctOptionIndex (1=A, 2=B, 3=C, 4=D)', 'points'];
 const MCQ_SAMPLES = [
-  ['What is 2 + 2?', '3', '4', '5', '6', 1, 1],
-  ['Capital of France?', 'Berlin', 'Paris', 'Rome', 'Madrid', 1, 2],
+  ['What is 2 + 2?', '3', '4', '5', '6', 2, 1],
+  ['Capital of France?', 'Berlin', 'Paris', 'Rome', 'Madrid', 2, 2],
 ];
 
 const CODING_HEADERS = [
@@ -86,22 +86,32 @@ const parseMCQRows = (rows: Record<string, string>[]): { questions: MCQQuestion[
     const n: Record<string, string> = {};
     Object.keys(row).forEach(k => (n[k.trim().toLowerCase()] = String(row[k]).trim()));
 
-    const questionText = n['questiontext'] || n['question_text'] || n['question'] || '';
-    const option1 = n['option1'] || n['choice_a'] || n['a'] || '';
-    const option2 = n['option2'] || n['choice_b'] || n['b'] || '';
-    const option3 = n['option3'] || n['choice_c'] || n['c'] || '';
-    const option4 = n['option4'] || n['choice_d'] || n['d'] || '';
-    const correctRaw = n['correctoptionindex'] || n['correct'] || n['answer'] || '0';
+    const questionText = n['questiontext'] || n['question_text'] || n['question'] || n['q'] || '';
+    const option1 = n['option1'] || n['option a'] || n['choice_a'] || n['choice a'] || n['a'] || '';
+    const option2 = n['option2'] || n['option b'] || n['choice_b'] || n['choice b'] || n['b'] || '';
+    const option3 = n['option3'] || n['option c'] || n['choice_c'] || n['choice c'] || n['c'] || '';
+    const option4 = n['option4'] || n['option d'] || n['choice_d'] || n['choice d'] || n['d'] || '';
+    // Handle the verbose header name from the template: "correctOptionIndex (1=A, 2=B, 3=C, 4=D)"
+    const correctKey = Object.keys(n).find(k => k.startsWith('correctoptionindex'));
+    const correctRaw = (correctKey ? n[correctKey] : '') || n['correct_option_index'] || n['correct option index'] || n['correct'] || n['answer'] || n['correct answer'] || n['correctanswer'] || '';
     const pointsRaw = n['points'] || n['marks'] || '1';
 
     if (!questionText) { errors.push(`MCQ Row ${rowNum}: Missing question text`); return; }
     if (!option1 || !option2 || !option3 || !option4) {
       errors.push(`MCQ Row ${rowNum}: All four options required`); return;
     }
+    if (!correctRaw) { errors.push(`MCQ Row ${rowNum}: Missing correct answer column — use header "correctOptionIndex" or "Answer"`); return; }
 
-    const correctOptionIndex = parseInt(correctRaw, 10);
-    if (isNaN(correctOptionIndex) || correctOptionIndex < 0 || correctOptionIndex > 3) {
-      errors.push(`MCQ Row ${rowNum}: correctOptionIndex must be 0–3`); return;
+    const rawInt = parseInt(correctRaw, 10);
+    if (isNaN(rawInt)) { errors.push(`MCQ Row ${rowNum}: Correct answer must be a number (1–4 or 0–3)`); return; }
+    // Accept both 1-indexed (1–4) and 0-indexed (0–3), auto-convert 1-indexed → 0-indexed
+    let correctOptionIndex: number;
+    if (rawInt >= 1 && rawInt <= 4) {
+      correctOptionIndex = rawInt - 1;  // 1-indexed: treat 1 as option A (index 0)
+    } else if (rawInt === 0) {
+      correctOptionIndex = 0;
+    } else {
+      errors.push(`MCQ Row ${rowNum}: Correct answer "${rawInt}" is out of range — use 1–4 (first option = 1)`); return;
     }
 
     const points = parseInt(pointsRaw, 10);
@@ -140,8 +150,8 @@ const parseCodingRows = (rows: Record<string, string>[]): { questions: CodingQue
       const inp = n[`tc${t}_input`] || '';
       const exp = n[`tc${t}_expected`] || '';
       if (inp || exp) {
-        const hiddenRaw = n[`tc${t}_hidden`] || '';
-        testCases.push({ input: inp, expectedOutput: exp, isHidden: hiddenRaw === 'true' || hiddenRaw === '1' });
+        const hiddenRaw = (n[`tc${t}_hidden`] || '').toLowerCase().trim();
+        testCases.push({ input: inp, expectedOutput: exp, isHidden: hiddenRaw === 'true' || hiddenRaw === '1' || hiddenRaw === 'yes' });
       }
     }
 
