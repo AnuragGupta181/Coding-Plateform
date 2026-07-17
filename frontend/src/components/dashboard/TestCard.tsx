@@ -47,6 +47,7 @@ export const TestCard: React.FC<TestCardProps> = ({ test, onEnter }) => {
       >
         {test.status === 'waiting' ? 'Enter Waiting Room' : 
          test.status === 'active' ? 'Enter Live Session' : 
+         test.status === 'completed' ? 'Completed' :
          'Awaiting Authorization'}
       </button>
     </div>

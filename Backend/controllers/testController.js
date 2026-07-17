@@ -204,3 +204,21 @@ exports.logViolation = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// ── GET /api/submissions/me ───────────────────────────────────────────────────
+exports.getStudentSubmissions = async (req, res) => {
+  try {
+    const { email } = req.query;
+    if (!email) return res.status(400).json({ message: 'Email query parameter is required' });
+    
+    // Fetch only basic submission info to save bandwidth
+    const submissions = await Submission.find(
+      { candidateEmail: email },
+      'testId status'
+    ).lean();
+    
+    res.json(submissions);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

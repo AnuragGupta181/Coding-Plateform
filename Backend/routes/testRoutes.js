@@ -5,6 +5,7 @@ const testController = require('../controllers/testController');
 // Test routes
 router.get('/tests/available', testController.getAvailableTests);
 router.get('/test/:id', testController.getTest);
+router.get('/submissions/me', testController.getStudentSubmissions);
 
 // Submission routes
 router.post('/submission/start', testController.startSubmission);

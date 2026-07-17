@@ -80,7 +80,7 @@ setIsSaving(false);
 }
 }, [submissionId, testId, testData?.testType, navigate, dispatch]);
 
-const MAX_VIOLATIONS = 5;
+const MAX_VIOLATIONS = 999999;
 
 const handleViolation = useCallback((count: number, type: string) => {
 const labels: Record<string, string> = {
@@ -88,19 +88,11 @@ tab_switch: 'Tab switch detected',
 window_blur: 'Window switch detected',
 fullscreen_exit: 'Fullscreen exit detected',
 };
-const remaining = MAX_VIOLATIONS - count;
 
-if (remaining > 0) {
-toast.error(`?? ${labels[type] || 'Violation detected'} — ${remaining} warning${remaining !== 1 ? 's' : ''} left before auto-submit`, {
+toast.error(`⚠️ ${labels[type] || 'Violation detected'} — Violation recorded!`, {
 duration: 5000,
 id: 'violation-toast',
 });
-} else {
-toast.error('?? Max violations reached — auto-submitting your test', {
-duration: 6000,
-id: 'violation-toast',
-});
-}
 }, []);
 
 const handleAutoSubmit = useCallback(() => {

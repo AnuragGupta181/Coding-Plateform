@@ -103,7 +103,7 @@ const CodingTestRoom: React.FC = () => {
     return () => es.close();
   }, [testId]);
 
-  const MAX_VIOLATIONS = 5;
+  const MAX_VIOLATIONS = 999999;
 
   const handleViolation = useCallback((count: number, type: string) => {
     const labels: Record<string, string> = {
@@ -111,19 +111,11 @@ const CodingTestRoom: React.FC = () => {
       window_blur: 'Window switch detected',
       fullscreen_exit: 'Fullscreen exit detected',
     };
-    const remaining = MAX_VIOLATIONS - count;
 
-    if (remaining > 0) {
-      toast.error(`⚠️ ${labels[type] || 'Violation detected'} — ${remaining} warning${remaining !== 1 ? 's' : ''} left before auto-submit`, {
-        duration: 5000,
-        id: 'violation-toast',
-      });
-    } else {
-      toast.error('🚫 Max violations reached — auto-submitting your test', {
-        duration: 6000,
-        id: 'violation-toast',
-      });
-    }
+    toast.error(`⚠️ ${labels[type] || 'Violation detected'} — Violation recorded!`, {
+      duration: 5000,
+      id: 'violation-toast',
+    });
   }, []);
 
   const handleAutoSubmit = useCallback(() => {

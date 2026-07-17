@@ -18,7 +18,28 @@ const Dashboard: React.FC = () => {
     const fetchTests = async () => {
       try {
         const res = await testService.getAvailableTests();
-        setTests(res.data);
+        let availableTests = res.data;
+
+        if (user?.email) {
+          try {
+            const subRes = await testService.getStudentSubmissions(user.email);
+            const submissions = subRes.data;
+            const completedTestIds = new Set(
+              submissions.filter((s: any) => s.status === 'completed').map((s: any) => s.testId)
+            );
+            
+            availableTests = availableTests.map((t: any) => {
+              if (completedTestIds.has(t._id)) {
+                return { ...t, status: 'completed' };
+              }
+              return t;
+            });
+          } catch (subErr) {
+            console.error('Failed to fetch student submissions:', subErr);
+          }
+        }
+
+        setTests(availableTests);
       } catch (err) {
         console.error('Failed to fetch tests:', err);
       } finally {
