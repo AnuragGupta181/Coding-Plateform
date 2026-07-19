@@ -221,7 +221,7 @@ const CodingTestRoom: React.FC = () => {
   };
 
   const handleConfirmFinish = async () => {
-    if (!submissionId || !testData) return;
+    if (!submissionId || !testData || !testId) return;
 
     setIsSubmitting(true);
     setShowFinishModal(false);
@@ -240,7 +240,7 @@ const CodingTestRoom: React.FC = () => {
         await Promise.all(unsubmitted.map(q => {
           const qCodeKey = `${q._id}_${language}`;
           const current = code[qCodeKey];
-          return testService.submitCode(testId, q._id, current, language, submissionId).catch(() => {});
+          return testService.submitCode(testId, q._id, current || '', language, submissionId).catch(() => {});
         }));
       }
 

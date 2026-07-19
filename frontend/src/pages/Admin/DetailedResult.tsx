@@ -8,6 +8,7 @@ interface Question {
   questionText: string;
   options: string[];
   correctOptionIndex: number;
+  points?: number;
 }
 
 interface CodingAnswer {

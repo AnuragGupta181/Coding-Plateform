@@ -22,7 +22,6 @@ const QuestionActionBar: React.FC<QuestionActionBarProps> = ({
   onToggleMark,
   onClearResponse,
   onSaveAndNext,
-  onSave,
   onPrevious,
   isFirst,
   isLast,
