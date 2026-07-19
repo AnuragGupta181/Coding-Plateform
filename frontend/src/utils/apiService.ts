@@ -49,7 +49,7 @@ export const testService = {
 
   getAvailableTests: () => api.get('/tests/available'),
   getTest: (id: string) => api.get(`/test/${id}`),
-  getStudentSubmissions: (email: string) => api.get(`/submissions/me?email=${encodeURIComponent(email)}`),
+  getStudentSubmissions: (email: string) => api.get(`/submissions/me?email=${encodeURIComponent(email)}&_t=${Date.now()}`),
 
   startSubmission: (candidateEmail: string, candidateName: string, testId: string) =>
     api.post('/submission/start', { candidateEmail, candidateName, testId }),

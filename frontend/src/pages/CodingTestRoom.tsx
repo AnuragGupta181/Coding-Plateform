@@ -41,9 +41,12 @@ const CodingTestRoom: React.FC = () => {
   const [submitted, setSubmitted]   = useState<Record<string, boolean>>({});
 
   const [activeTab, setActiveTab]         = useState<'output' | 'submit'>('output');
+  const [leftPanelWidth, setLeftPanelWidth] = useState(420);
+  const [topPanelHeight, setTopPanelHeight] = useState(250);
   const [customInput, setCustomInput]     = useState('');
   const [isRunning, setIsRunning]         = useState(false);
   const [isSubmitting, setIsSubmitting]   = useState(false);
+  const [showFinishModal, setShowFinishModal] = useState(false);
   const [runResult, setRunResult]         = useState<{ stdout: string; stderr: string; status: string } | null>(null);
   const [submitResult, setSubmitResult]   = useState<{ passed: number; total: number; score: number; maxScore: number; verdict: string; results: TestCaseResult[] } | null>(null);
 
@@ -213,10 +216,34 @@ const CodingTestRoom: React.FC = () => {
     }
   };
 
-  const handleFinishTest = async () => {
-    if (!submissionId) return;
+  const handleFinishClick = () => {
+    setShowFinishModal(true);
+  };
+
+  const handleConfirmFinish = async () => {
+    if (!submissionId || !testData) return;
+
     setIsSubmitting(true);
+    setShowFinishModal(false);
+
     try {
+      // Auto-submit unsubmitted code for ALL languages they might have touched
+      // (For simplicity, we check the current language's code)
+      const unsubmitted = testData.codingQuestions.filter(q => {
+        const qCodeKey = `${q._id}_${language}`;
+        const current = code[qCodeKey];
+        const starter = q.starterCode?.[language] || LANG_META[language]?.defaultCode || '';
+        return current && current !== starter && !submitted[q._id];
+      });
+
+      if (unsubmitted.length > 0) {
+        await Promise.all(unsubmitted.map(q => {
+          const qCodeKey = `${q._id}_${language}`;
+          const current = code[qCodeKey];
+          return testService.submitCode(testId, q._id, current, language, submissionId).catch(() => {});
+        }));
+      }
+
       await testService.completeSubmission(submissionId);
       setFinished(true);
     } catch (err) {
@@ -251,6 +278,45 @@ const CodingTestRoom: React.FC = () => {
     <div className="h-screen flex flex-col bg-background text-foreground font-sans overflow-hidden">
       <TestRoomHeader candidateName={user?.name} />
 
+      {isSubmitting && (
+        <div className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center">
+          <div className="w-12 h-12 border-2 border-border border-t-emerald-500 rounded-full animate-spin mb-4" />
+          <p className="text-sm text-emerald-600 font-bold uppercase tracking-widest animate-pulse">Finalizing Submission...</p>
+        </div>
+      )}
+
+      {showFinishModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setShowFinishModal(false)} />
+          <div className="relative bg-card border border-border shadow-2xl w-full max-w-md p-8 animate-in zoom-in-95 duration-200">
+            <h3 className="text-2xl font-bold mb-4 text-foreground">Confirm Submission</h3>
+            
+            {(() => {
+              const unsubmitted = testData.codingQuestions.filter(q => {
+                const qCodeKey = `${q._id}_${language}`;
+                const current = code[qCodeKey];
+                const starter = q.starterCode?.[language] || LANG_META[language]?.defaultCode || '';
+                return current && current !== starter && !submitted[q._id];
+              }).length;
+
+              return unsubmitted > 0 ? (
+                <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded text-amber-600 dark:text-amber-500">
+                  <p className="font-bold mb-1">Unsubmitted Code Detected</p>
+                  <p className="text-sm opacity-90">You have {unsubmitted} question(s) with code that hasn't been submitted yet. If you proceed, we will automatically submit and evaluate it for you.</p>
+                </div>
+              ) : (
+                <p className="text-muted-foreground mb-6">Are you sure you want to finish the assessment? You cannot undo this action.</p>
+              );
+            })()}
+            
+            <div className="flex gap-4 justify-end mt-4">
+              <button onClick={() => setShowFinishModal(false)} className="btn-secondary">Go Back</button>
+              <button onClick={handleConfirmFinish} className="btn-primary flex items-center gap-2 bg-emerald-800 hover:bg-emerald-900 border-emerald-900 text-white">Complete Assessment</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Sub-header: test title, timer, question pills, finish */}
       <div className="bg-background border-b border-border px-4 sm:px-6 py-3 flex items-center gap-3 shrink-0 flex-wrap">
         <div className="min-w-0">
@@ -274,10 +340,10 @@ const CodingTestRoom: React.FC = () => {
               onClick={() => handleQuestionChange(i)}
               className={`w-8 h-8 text-xs font-bold rounded-sm border transition-all ${
                 i === activeQIndex
-                  ? 'bg-primary text-primary-foreground border-cream-900'
+                  ? 'border-2 border-cream-950 ring-2 ring-cream-950/20 scale-105 text-foreground bg-background z-10'
                   : submitted[q._id]
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                    : 'bg-background text-muted-foreground border-border hover:border-cream-400 hover:text-foreground'
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:-translate-y-0.5'
+                    : 'bg-background text-muted-foreground border-border hover:border-cream-400 hover:text-foreground hover:-translate-y-0.5'
               }`}
             >
               {i + 1}
@@ -295,7 +361,7 @@ const CodingTestRoom: React.FC = () => {
         )}
 
         <button
-          onClick={handleFinishTest}
+          onClick={handleFinishClick}
           disabled={isSubmitting}
           className="px-4 py-2 bg-emerald-800 text-white text-[10px] font-black uppercase tracking-widest rounded-sm border border-emerald-900 transition-all hover:bg-emerald-900 disabled:opacity-50"
         >
@@ -304,12 +370,76 @@ const CodingTestRoom: React.FC = () => {
       </div>
 
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        <div className="w-full lg:w-[420px] shrink-0 flex flex-col border-b lg:border-b-0 lg:border-r border-border overflow-y-auto custom-scrollbar bg-background max-h-[35vh] lg:max-h-full">
+        <div 
+          className="w-full shrink-0 flex flex-col border-b lg:border-b-0 overflow-y-auto custom-scrollbar bg-background lg:max-h-full"
+          style={{ 
+            width: window.innerWidth >= 1024 ? leftPanelWidth : '100%',
+            height: window.innerWidth < 1024 ? topPanelHeight : 'auto'
+          }}
+        >
           <ProblemStatement
             question={activeQuestion}
             questionIndex={activeQIndex}
             totalQuestions={testData.codingQuestions.length}
           />
+        </div>
+
+        {/* Draggable Divider (Desktop only) */}
+        <div 
+          className="hidden lg:flex w-2 bg-background border-r border-border hover:bg-cream-950/10 cursor-col-resize flex-col items-center justify-center group z-10 shrink-0"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            const startX = e.clientX;
+            const startWidth = leftPanelWidth;
+            const onMouseMove = (moveEvent: MouseEvent) => {
+              const newWidth = Math.max(300, Math.min(800, startWidth + (moveEvent.clientX - startX)));
+              setLeftPanelWidth(newWidth);
+            };
+            const onMouseUp = () => {
+              document.removeEventListener('mousemove', onMouseMove);
+              document.removeEventListener('mouseup', onMouseUp);
+            };
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+          }}
+        >
+          <div className="w-0.5 h-8 bg-slate-300 group-hover:bg-cream-600 rounded-full transition-colors" />
+        </div>
+
+        {/* Draggable Divider (Mobile only) */}
+        <div 
+          className="flex lg:hidden h-3 bg-background border-b border-border hover:bg-cream-950/10 cursor-row-resize flex-row items-center justify-center group z-10 shrink-0"
+          onTouchStart={(e) => {
+            const startY = e.touches[0].clientY;
+            const startHeight = topPanelHeight;
+            const onTouchMove = (moveEvent: TouchEvent) => {
+              const newHeight = Math.max(150, Math.min(window.innerHeight * 0.7, startHeight + (moveEvent.touches[0].clientY - startY)));
+              setTopPanelHeight(newHeight);
+            };
+            const onTouchEnd = () => {
+              document.removeEventListener('touchmove', onTouchMove);
+              document.removeEventListener('touchend', onTouchEnd);
+            };
+            document.addEventListener('touchmove', onTouchMove, { passive: false });
+            document.addEventListener('touchend', onTouchEnd);
+          }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            const startY = e.clientY;
+            const startHeight = topPanelHeight;
+            const onMouseMove = (moveEvent: MouseEvent) => {
+              const newHeight = Math.max(150, Math.min(window.innerHeight * 0.7, startHeight + (moveEvent.clientY - startY)));
+              setTopPanelHeight(newHeight);
+            };
+            const onMouseUp = () => {
+              document.removeEventListener('mousemove', onMouseMove);
+              document.removeEventListener('mouseup', onMouseUp);
+            };
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+          }}
+        >
+          <div className="w-8 h-0.5 bg-slate-300 group-hover:bg-cream-600 rounded-full transition-colors" />
         </div>
 
         <div className="flex-1 flex flex-col overflow-hidden bg-background">

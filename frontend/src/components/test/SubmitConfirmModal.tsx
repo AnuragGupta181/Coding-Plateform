@@ -44,9 +44,9 @@ const SubmitConfirmModal: React.FC<SubmitConfirmModalProps> = ({
       />
 
       {/* Modal */}
-      <div className="relative bg-white border border-border rounded-sm shadow-2xl w-full max-w-md animate-in">
+      <div className="relative bg-background border border-border rounded-sm shadow-2xl w-full max-w-md animate-in">
         {/* Header */}
-        <div className="px-8 pt-8 pb-6 border-b border-cream-100">
+        <div className="px-8 pt-8 pb-6 border-b border-border">
           <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground mb-2">Assessment Review</div>
           <h3 className="text-2xl font-sans text-foreground-bold">
             {testType === 'mixed' ? 'Proceed to Coding' : 'Confirm Submission'}
@@ -64,7 +64,7 @@ const SubmitConfirmModal: React.FC<SubmitConfirmModalProps> = ({
             <div key={row.label} className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <span className={`w-2.5 h-2.5 rounded-full ${row.dot}`} />
-                <span className="text-sm text-cream-700">{row.label}</span>
+                <span className="text-sm text-foreground">{row.label}</span>
               </div>
               <span className={`text-xl font-sans font-bold ${row.className}`}>
                 {row.value}
@@ -75,8 +75,8 @@ const SubmitConfirmModal: React.FC<SubmitConfirmModalProps> = ({
 
         {/* Warning */}
         {summary.notAnswered > 0 && (
-          <div className="mx-8 mb-6 p-4 bg-amber-50 border border-amber-200 rounded-sm">
-            <p className="text-xs text-amber-800 font-medium flex items-start gap-2">
+          <div className="mx-8 mb-6 p-4 bg-red-950/20 border border-red-900/50 rounded-sm">
+            <p className="text-xs text-red-500 font-medium flex items-start gap-2">
               <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.27 16.5c-.77.833.192 2.5 1.732 2.5z" />
               </svg>

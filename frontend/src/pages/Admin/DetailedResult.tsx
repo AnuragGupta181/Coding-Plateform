@@ -18,6 +18,11 @@ interface CodingAnswer {
   passed: number;
   total: number;
   aiAnalysis?: string;
+  testCaseResults?: {
+    passed: boolean;
+    actualOutput?: string;
+    error?: string;
+  }[];
 }
 
 interface SubmissionDetail {
@@ -286,15 +291,20 @@ const DetailedResult: React.FC = () => {
                       <span className="text-cream-300 font-sans font-bold text-base md:text-lg pt-1 md:pt-0">Q{index + 1}</span>
                       <span className="text-foreground-bold">{q.questionText}</span>
                     </h3>
-                    <span className={`px-3 py-1 rounded-full text-[8px] md:text-[9px] font-black uppercase tracking-widest border shrink-0 ${
-                      !isAnswered
-                        ? 'bg-muted border-border text-muted-foreground'
-                        : isCorrect
-                          ? 'bg-green-50 border-green-100 text-green-700'
-                          : 'bg-red-50 border-red-100 text-red-700'
-                    }`}>
-                      {!isAnswered ? 'Not Answered' : isCorrect ? 'Passed' : 'Failed'}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="bg-muted px-3 py-1 text-[10px] md:text-xs font-bold font-mono rounded text-cream-700">
+                        Score: {isCorrect ? (q.points || 1) : 0} / {q.points || 1}
+                      </span>
+                      <span className={`px-3 py-1 rounded-full text-[8px] md:text-[9px] font-black uppercase tracking-widest border shrink-0 ${
+                        !isAnswered
+                          ? 'bg-muted border-border text-muted-foreground'
+                          : isCorrect
+                            ? 'bg-green-50 border-green-100 text-green-700'
+                            : 'bg-red-50 border-red-100 text-red-700'
+                      }`}>
+                        {!isAnswered ? 'Not Answered' : isCorrect ? 'Passed' : 'Failed'}
+                      </span>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
@@ -400,8 +410,18 @@ const DetailedResult: React.FC = () => {
                                 <div className="mt-6">
                                   <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 border-b border-border pb-2">Test Cases</h4>
                                   <div className="space-y-3">
-                                    {cq.testCases.map((tc: any, i: number) => (
-                                      <div key={i} className="bg-background p-3 rounded border border-border font-mono text-xs">
+                                    {cq.testCases.map((tc: any, i: number) => {
+                                      const tcResult = codingAns?.testCaseResults?.[i];
+                                      return (
+                                      <div key={i} className={`bg-background p-3 rounded border font-mono text-xs ${tcResult ? (tcResult.passed ? 'border-green-500/50 bg-green-50/10' : 'border-red-500/50 bg-red-50/10') : 'border-border'}`}>
+                                        <div className="flex justify-between items-center mb-3">
+                                          <div className="text-slate-500 font-bold font-sans uppercase tracking-widest text-[9px]">Test Case {i + 1}</div>
+                                          {tcResult && (
+                                            <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${tcResult.passed ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                              {tcResult.passed ? 'Passed' : 'Failed'}
+                                            </span>
+                                          )}
+                                        </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                           <div>
                                             <div className="text-slate-400 mb-1">Input:</div>
@@ -412,8 +432,20 @@ const DetailedResult: React.FC = () => {
                                             <pre className="whitespace-pre-wrap">{tc.expectedOutput}</pre>
                                           </div>
                                         </div>
+                                        {tcResult && !tcResult.passed && tcResult.actualOutput && (
+                                          <div className="mt-4 pt-3 border-t border-border/50">
+                                            <div className="text-red-400 mb-1 font-bold">Actual Output:</div>
+                                            <pre className="whitespace-pre-wrap text-red-600 dark:text-red-400">{tcResult.actualOutput}</pre>
+                                          </div>
+                                        )}
+                                        {tcResult && tcResult.error && (
+                                          <div className="mt-4 pt-3 border-t border-border/50">
+                                            <div className="text-red-400 mb-1 font-bold">Error:</div>
+                                            <pre className="whitespace-pre-wrap text-red-600 dark:text-red-400">{tcResult.error}</pre>
+                                          </div>
+                                        )}
                                       </div>
-                                    ))}
+                                    )})}
                                   </div>
                                 </div>
                               )}

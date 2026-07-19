@@ -56,6 +56,10 @@ exports.createTest = async (req, res) => {
     });
 
     await newTest.save();
+    
+    // Invalidate the available tests cache so candidates see this immediately
+    await cache.del('tests:available');
+
     res.status(201).json({ message: 'Test created successfully', test: newTest });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -122,6 +126,7 @@ exports.startTest = async (req, res) => {
 
     // Invalidate cache — test status has changed to 'active'
     await cache.del(`test:data:${id}`);
+    await cache.del('tests:available');
 
     eventController.broadcastEvent(id, { type: 'START', testId: id, startedAt: test.startedAt });
 
@@ -145,6 +150,7 @@ exports.openWaitingRoom = async (req, res) => {
 
     // Invalidate cache — test status changed
     await cache.del(`test:data:${id}`);
+    await cache.del('tests:available');
 
     res.json({ message: 'Waiting room opened', test });
   } catch (error) {
@@ -185,6 +191,7 @@ exports.autoSubmitTest = async (req, res) => {
 
     // Invalidate cache
     await cache.del(`test:data:${id}`);
+    await cache.del('tests:available');
 
     res.json({
       message: 'Active submissions auto-submitted and test completed',
@@ -250,7 +257,7 @@ exports.getTestResults = async (req, res) => {
     // Aggregate to deduplicate: if a user somehow has multiple submissions
     // for the same test, only keep the one with the highest score.
     const submissions = await Submission.aggregate([
-      { $match: { testId: new mongoose.Types.ObjectId(id), status: 'completed' } },
+      { $match: { testId: new mongoose.Types.ObjectId(id) } },
       { $sort: { score: -1, updatedAt: 1 } },
       {
         $group: {

@@ -30,7 +30,12 @@ const submissionSchema = new mongoose.Schema({
       verdict: String,
       passed: Number,
       total: Number,
-      aiAnalysis: String
+      aiAnalysis: String,
+      testCaseResults: [{
+        passed: Boolean,
+        actualOutput: String,
+        error: String
+      }]
     }, { _id: false }),
     default: {}
   },

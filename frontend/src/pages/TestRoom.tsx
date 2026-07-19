@@ -248,13 +248,18 @@ if (isViewed) return 'viewed';
 return 'notViewed';
 };
 
+const localSnapshot = testId && submissionId ? loadTestSession(testId, submissionId) : null;
+const isCurrentlyPending = localSnapshot?.pendingSync?.some((sync) => sync.questionId === currentQuestion._id);
+const savedOption = !isCurrentlyPending ? answers[currentQuestion._id] : undefined;
+
 const answeredCount = testData.questions.filter((q) => answers[q._id] !== undefined).length;
 const markedCount = testData.questions.filter((q) => markedQuestionIds[q._id]).length;
 const viewedCount = testData.questions.filter((q) => viewedQuestionIds[q._id] && answers[q._id] === undefined).length;
 const notViewedCount = testData.questions.filter((q) => !viewedQuestionIds[q._id]).length;
 
-const handleSelectOption = (index: number) => {
+const handleSelectOption = async (index: number) => {
 dispatch(setAnswer({ questionId: currentQuestion._id, answerIndex: index }));
+await saveCurrentAnswer(index);
 };
 
 const handleClearResponse = async () => {
@@ -278,15 +283,21 @@ viewedQuestionIds,
 currentQuestionIndex,
 });
 
-const saveCurrentAnswer = async (): Promise<boolean> => {
-if (!submissionId || !testId || selectedAnswer === undefined) return true;
+const saveCurrentAnswer = async (overrideAnswer?: number): Promise<boolean> => {
+const ans = overrideAnswer !== undefined ? overrideAnswer : selectedAnswer;
+if (!submissionId || !testId || ans === undefined) return true;
+
+const currentSession = buildSessionBase();
+if (overrideAnswer !== undefined) {
+currentSession.answers = { ...currentSession.answers, [currentQuestion._id]: overrideAnswer };
+}
 
 const result = await saveAnswerWithRetry(
 submissionId,
 testId,
 currentQuestion._id,
-selectedAnswer,
-buildSessionBase()
+ans,
+currentSession
 );
 
 if (!result.success) {
@@ -380,8 +391,8 @@ setShowSubmitModal(false);
 };
 
 return (
-<div className="min-h-screen lg:h-[100dvh] flex flex-col lg:overflow-hidden bg-background font-sans text-foreground">
-<TestRoomHeader candidateName={user?.name} />
+<div className="min-h-screen flex flex-col bg-background font-sans text-foreground">
+<TestRoomHeader candidateName={user?.name} testTitle={testData?.title} />
 
 {syncWarning && (
 <div className="bg-amber-50 border-b border-amber-200 px-4 py-2.5">
@@ -396,11 +407,11 @@ return (
 </div>
 )}
 
-<main className="flex-1 lg:overflow-y-auto lg:custom-scrollbar w-full pb-24 lg:pb-10 pt-6 sm:pt-10 px-4 sm:px-6 relative">
-<div className="max-w-7xl mx-auto lg:h-full">
-<div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 lg:gap-10 items-start">
-<div className="hidden lg:flex flex-col gap-4 sticky top-8" style={{ maxHeight: 'calc(100vh - 4rem)' }}>
-<div className="flex-1 overflow-y-auto min-h-0 pr-2 custom-scrollbar">
+<main className="flex-1 w-full pt-6 sm:pt-8 pb-20 lg:pb-8 px-4 sm:px-6 relative flex flex-col">
+<div className="max-w-7xl mx-auto w-full flex-1 flex flex-col">
+<div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 lg:gap-10 flex-1 items-stretch">
+<div className="hidden lg:flex flex-col gap-6 h-full lg:sticky lg:top-8 lg:max-h-[calc(100vh-10rem)] lg:overflow-y-auto custom-scrollbar pb-4 pr-2">
+<div>
 <CandidateQuestionPanel
 questions={testData.questions}
 currentQuestionIndex={currentQuestionIndex}
@@ -428,18 +439,8 @@ className="w-full shrink-0 py-3.5 bg-emerald-800 text-white text-[11px] font-bla
 </button>
 </div>
 
-<div>
-<header className="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-6 sm:mb-8 gap-2">
-<div>
-<div className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground mb-1 sm:mb-2">Live Assessment</div>
-<h1 className="text-xl sm:text-3xl text-foreground-bold">{testData.title}</h1>
-</div>
-<div className="text-xs sm:text-sm font-sans italic text-muted-foreground">
-Question: <span className="font-bold text-foreground">{currentQuestionIndex + 1}</span> of {testData.questions.length}
-</div>
-</header>
-
-<div className="relative">
+<div className="flex flex-col gap-6 lg:gap-8 flex-1">
+<div className="relative flex flex-col flex-1">
 {isSaving && (
 <div className="absolute top-4 right-4 z-10 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
 <span className="w-1.5 h-1.5 bg-cream-400 rounded-full animate-pulse"></span>
@@ -447,12 +448,16 @@ Syncing
 </div>
 )}
 
+<div className="flex flex-col">
 <QuestionCard
 question={currentQuestion}
 selectedOption={selectedAnswer}
+savedOption={savedOption}
 onSelect={handleSelectOption}
 />
+</div>
 
+<div className="mt-6 lg:mt-8">
 <QuestionActionBar
 isMarked={isCurrentMarked}
 hasAnswer={selectedAnswer !== undefined}
@@ -464,7 +469,10 @@ onSave={handleSave}
 onPrevious={handlePrevious}
 isFirst={currentQuestionIndex === 0}
 isLast={currentQuestionIndex === testData.questions.length - 1}
+currentIndex={currentQuestionIndex}
+totalQuestions={testData.questions.length}
 />
+</div>
 </div>
 </div>
 </div>
@@ -513,11 +521,7 @@ onConfirm={handleConfirmSubmit}
 onCancel={() => setShowSubmitModal(false)}
 />
 
-<footer className="hidden lg:block py-12 text-center">
-<p className="text-[10px] text-cream-300 uppercase tracking-[0.2em] font-bold">
-Encrypted Environment &bull; NextGen Protocol 4.0
-</p>
-</footer>
+
 </div>
 );
 };

@@ -11,6 +11,8 @@ interface QuestionActionBarProps {
   onPrevious: () => void;
   isFirst: boolean;
   isLast: boolean;
+  currentIndex: number;
+  totalQuestions: number;
 }
 
 const QuestionActionBar: React.FC<QuestionActionBarProps> = ({
@@ -23,12 +25,14 @@ const QuestionActionBar: React.FC<QuestionActionBarProps> = ({
   onSave,
   onPrevious,
   isFirst,
-  isLast
+  isLast,
+  currentIndex,
+  totalQuestions
 }) => {
   return (
-    <div className="mt-8 pt-6 border-t border-border">
+    <div className="mt-4 pt-4 border-t border-border">
       {/* Action Buttons Row */}
-      <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-6">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-4">
         <button
           type="button"
           onClick={onToggleMark}
@@ -36,7 +40,7 @@ const QuestionActionBar: React.FC<QuestionActionBarProps> = ({
           className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 border rounded-sm text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50 ${
             isMarked
               ? 'bg-amber-500 border-amber-600 text-white hover:bg-amber-600'
-              : 'bg-white border-border text-muted-foreground hover:border-amber-400 hover:text-amber-700'
+              : 'bg-card border-border text-muted-foreground hover:border-amber-400 hover:text-amber-700 dark:hover:bg-amber-950/30'
           }`}
         >
           <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -49,7 +53,7 @@ const QuestionActionBar: React.FC<QuestionActionBarProps> = ({
           type="button"
           onClick={onClearResponse}
           disabled={isSaving || !hasAnswer}
-          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 border border-border rounded-sm text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground transition-all hover:border-red-300 hover:text-red-700 hover:bg-red-50 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-muted-foreground disabled:hover:bg-white"
+          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 border border-border rounded-sm text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground transition-all hover:border-red-300 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 dark:hover:border-red-900 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-muted-foreground disabled:hover:bg-card"
         >
           <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -71,27 +75,11 @@ const QuestionActionBar: React.FC<QuestionActionBarProps> = ({
           Previous
         </button>
 
-        {isLast ? (
-          <button
-            onClick={onSave}
-            disabled={isSaving || !hasAnswer}
-            className="btn-primary flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {isSaving ? (
-              <>
-                <span className="w-3 h-3 border-2 border-cream-50 border-t-transparent rounded-full animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-                Save Answer
-              </>
-            )}
-          </button>
-        ) : (
+        <div className="text-xs font-sans italic text-muted-foreground hidden sm:block">
+          Question: <span className="font-bold text-foreground">{currentIndex + 1}</span> of {totalQuestions}
+        </div>
+
+        {!isLast && (
           <button
             onClick={onSaveAndNext}
             disabled={isSaving}
@@ -100,11 +88,11 @@ const QuestionActionBar: React.FC<QuestionActionBarProps> = ({
             {isSaving ? (
               <>
                 <span className="w-3 h-3 border-2 border-cream-50 border-t-transparent rounded-full animate-spin" />
-                Saving...
+                Wait...
               </>
             ) : (
               <>
-                Save & Next
+                Next Question
                 <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg>

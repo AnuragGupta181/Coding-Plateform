@@ -24,6 +24,21 @@ function calculateScore(submission, test) {
     }
   });
 
+  if (submission.codingAnswers) {
+    let codingScore = 0;
+    if (submission.codingAnswers instanceof Map) {
+      submission.codingAnswers.forEach((ans) => {
+        codingScore += ans.score || 0;
+      });
+    } else {
+      // Plain object
+      Object.values(submission.codingAnswers).forEach((ans) => {
+        codingScore += ans.score || 0;
+      });
+    }
+    totalScore += codingScore;
+  }
+
   return totalScore;
 }
 

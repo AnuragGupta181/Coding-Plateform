@@ -8,6 +8,7 @@ interface SubmissionSummary {
   candidateEmail: string;
   score: number;
   updatedAt: string;
+  status: string;
   violations?: { type: string; timestamp: string; count: number }[];
 }
 
@@ -127,17 +128,19 @@ const ResultsList: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8 pt-6 md:pt-8 border-t border-cream-50">
+                <div className="flex flex-wrap items-start justify-between gap-4 md:gap-6 mb-6 md:mb-8 pt-6 md:pt-8 border-t border-cream-50">
                   <div>
-                    <div className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Score</div>
+                    <div className="text-[8px] sm:text-[9px] uppercase tracking-wider sm:tracking-widest text-muted-foreground font-bold mb-1">Score</div>
                     <div className="text-2xl md:text-3xl font-sans text-foreground-bold">{sub.score}</div>
                   </div>
                   <div>
-                    <div className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Status</div>
-                    <div className="text-[10px] md:text-xs font-bold text-foreground mt-2 uppercase tracking-tighter">Completed</div>
+                    <div className="text-[8px] sm:text-[9px] uppercase tracking-wider sm:tracking-widest text-muted-foreground font-bold mb-1">Status</div>
+                    <div className={`text-[9px] md:text-[10px] font-bold mt-2 uppercase tracking-tighter ${sub.status === 'active' ? 'text-amber-500' : 'text-foreground'}`}>
+                      {sub.status === 'active' ? 'In Progress' : 'Completed'}
+                    </div>
                   </div>
                   <div>
-                    <div className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Violations</div>
+                    <div className="text-[8px] sm:text-[9px] uppercase tracking-wider sm:tracking-widest text-muted-foreground font-bold mb-1">Violations</div>
                     <div className={`text-2xl md:text-3xl font-sans ${(sub.violations?.length || 0) > 0 ? 'text-red-700' : 'text-cream-300'}`}>
                       {sub.violations?.length || 0}
                     </div>

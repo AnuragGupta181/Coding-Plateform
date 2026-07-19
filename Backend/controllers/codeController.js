@@ -62,7 +62,12 @@ exports.submitCode = async (req, res) => {
       score,
       verdict,
       passed,
-      total
+      total,
+      testCaseResults: results.map(r => ({
+        passed: r.passed,
+        actualOutput: r.actualOutput,
+        error: r.error
+      }))
     });
     await submission.save();
 
