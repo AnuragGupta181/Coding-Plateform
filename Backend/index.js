@@ -37,13 +37,13 @@ app.use(compression({
 // ── CORS ──────────────────────────────────────────────────────────────────────
 const corsOptions = config.isProduction
   ? {
-      origin: config.corsOrigins.length > 0 ? config.corsOrigins : false,
-      credentials: true
-    }
+    origin: config.corsOrigins.length > 0 ? config.corsOrigins : false,
+    credentials: true
+  }
   : {
-      origin: config.corsOrigins.length > 0 ? config.corsOrigins : true,
-      credentials: true
-    };
+    origin: config.corsOrigins.length > 0 ? config.corsOrigins : true,
+    credentials: true
+  };
 
 app.set('trust proxy', 1);
 app.use(cors(corsOptions));
@@ -103,7 +103,7 @@ app.get('/health', (_req, res) => {
     environment: config.env,
     uptime: Math.round(process.uptime()),
     memory: {
-      heapUsed: `${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`,
+      heapUsed: `${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MBs`,
       rss: `${Math.round(process.memoryUsage().rss / 1024 / 1024)}MB`
     }
   });
@@ -223,7 +223,7 @@ async function ensureDb() {
   }
 }
 
-connectDB().catch(() => {});
+connectDB().catch(() => { });
 
 // ── Vercel Cron Endpoint ──────────────────────────────────────────────────────
 // Vercel will automatically hit this endpoint every minute based on vercel.json
@@ -295,4 +295,4 @@ async function gracefulShutdown(signal) {
 }
 
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT',  () => gracefulShutdown('SIGINT'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
