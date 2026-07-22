@@ -116,6 +116,28 @@ npm run dev
 
 ---
 
+## 🐳 Docker & Docker Compose Setup
+
+You can also run and deploy the entire application using Docker Compose:
+
+### 1. Prerequisites
+Ensure Docker and Docker Compose are installed on your machine. Ensure your `Backend/.env` file is set up properly before starting containers.
+
+### 2. Build & Start Containers
+Run in background (detached mode) with build flag:
+```bash
+docker compose up -d --build
+```
+*(For legacy v1 Compose: `docker-compose up -d --build`)*
+
+### 3. Management & Monitoring Commands
+- **View Logs (Real-time):** `docker compose logs -f`
+- **View Backend Logs:** `docker compose logs -f backend`
+- **Check Container Status:** `docker compose ps`
+- **Stop & Remove Containers:** `docker compose down`
+
+---
+
 ## 🚀 Production Deployment
 
 ### Backend Build & Run
