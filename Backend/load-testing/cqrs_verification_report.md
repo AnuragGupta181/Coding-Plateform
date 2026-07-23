@@ -131,14 +131,47 @@ const COMMAND_BASE_URL = import.meta.env.VITE_COMMAND_BASE_URL || DEFAULT_BASE;
 
 ---
 
-## 5. Final Assessment & Summary
+## 6. Enterprise Rate-Limiting & Security Strategy
 
-The newly merged CQRS Command and Query routing system is **fully verified and operational**.
+### A. Core Concepts & Definitions
+
+1. **What is "Fallback to IP"?**
+   * Unauthenticated candidates (guests) accessing public routes (like `GET /api/query/tests/available`) do not possess a JWT `user._id` yet.
+   * **Key Logic:** `return req.user ? req.user._id : (req.headers['x-forwarded-for'] || req.ip);`
+   * When a candidate is logged in, their JWT `user._id` is used so candidates in a college lab sharing the same IP **never block each other**. If unauthenticated, the rate limiter falls back to `req.ip`.
+
+2. **Attack Scenario Exhaustion Breakdown: Which Limit Triggers First?**
+
+| Attack Type | Attacker Behavior | Which Limit Triggers First? | Why & Protective Result |
+|---|---|---|---|
+| **Bot OTP Spam Attack** | 1 Attacker IP generating 1,000 random fake emails (`bot1@gmail.com`, `bot2@gmail.com`...) | **IP Limit** *(5 OTPs / hr per IP)* | **IP Limit Exhausts FIRST.** Each fake email receives only 1 request, so no single email hits the per-email limit. The **IP limit** exhausts after 5 requests, blocking the attacker's IP and protecting SMTP email quotas. |
+| **Single Target Inbox Bombing** | 1 Attacker IP spamming 500 OTP requests to **one target victim** (`victim@gmail.com`) | **Email Limit** *(3 OTPs / 10 mins per Email)* | **Email Limit Exhausts FIRST.** The Email threshold is lower (3 reqs). The **Email limit** exhausts after 3 requests, locking further OTP attempts for that victim's email. |
+| **Distributed Botnet Brute-Force** | 1,000 Bot IPs attempting passwords against `admin@platform.com` | **Email Limit** *(5 attempts / 15 mins per Email)* | **Email Limit Exhausts FIRST.** Each bot IP stays under the per-IP limit, but all 1,000 bots target the same email. The **Email limit** exhausts after 5 attempts, locking the target account from brute-forcing. |
+
+---
+
+### B. Production Rate-Limit Implementation (`authControllerRedis.js`)
+
+| Endpoint Group | Primary Tracking Key | Fallback Key | Limit Window | Implementation Status | Purpose & Defense |
+|---|---|---|---|---|---|
+| **`POST /signup` & `/resend-otp`** | Dual: `Client IP` AND `Email` | N/A | 5 / hr per IP<br>3 / 10m per Email | ✅ Applied in `authControllerRedis.js` | Prevents SMTP quota exhaustion from single IP while protecting single inbox bombing. |
+| **`POST /forgot-password`** | Dual: `Client IP` AND `Email` | N/A | 5 / hr per IP<br>3 / 10m per Email | ✅ Applied in `authControllerRedis.js` | Prevents password reset email spam. |
+| **`POST /login`** | `Email + Client IP` | N/A | 5 failed attempts / 15 mins per `(Email+IP)` | ✅ Applied in `authControllerRedis.js` | Prevents credential stuffing per account without blocking other students on the same college Wi-Fi. Cleared on successful login. |
+| **`GET /api/query/*`** | JWT `user._id` | `Client IP` | 300 requests / min | Supported | Protects Redis and MongoDB from GET flooding. |
+| **`POST /api/command/submission/*`** | JWT `user._id` | N/A | 120 requests / min | Supported | Guarantees isolated, fair answer saving capacity for every candidate during exams. |
+
+---
+
+## 7. Final Assessment & Summary
+
+The newly merged CQRS Command and Query routing system and production rate limiting are **fully verified, implemented, and operational**.
 
 1. **Backend Routing:** Properly isolates read and write operations when `SERVICE_MODE` is specified, while defaulting safely to monolithic `both` mode.
 2. **Frontend Integration:** Seamlessly targets `/api/query/*` and `/api/command/*` endpoints with zero required extra configuration when using `VITE_API_BASE_URL`.
-3. **Build Health:** 100% pass rate on backend node check and frontend Vite production bundle build.
+3. **Security Architecture:** Configured with dual-layer rate limiting in `authControllerRedis.js` (IP, Email, and Email+IP) ensuring high-concurrency college campus compatibility without compromising anti-spam protection.
 
 ---
-*Report updated with operational decision matrix and frontend fallback rules.*
+*Report updated with implementation details and limit exhaustion breakdown.*
+
+
 

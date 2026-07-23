@@ -25,6 +25,43 @@ function signToken(user) {
   );
 }
 
+/**
+ * Dual-Layer OTP Rate Limiter:
+ * 1. IP Limit: Max 5 OTPs / 1 hour per IP address (blocks bot scripts generating random emails).
+ * 2. Email Limit: Max 3 OTPs / 10 mins per Email address (blocks inbox bombing a single victim).
+ * 
+ * Exhaustion Rule:
+ * - On Bot Attacks (Random Fake Emails): IP limit exhausts FIRST after 5 requests.
+ * - On Single Target Bombing: Email limit exhausts FIRST after 3 requests.
+ */
+async function checkOtpRateLimits(client, req, email) {
+  const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
+
+  // Layer 1: Check IP-based limit (protects SMTP budget)
+  const ipKey = `rate_limit:otp:ip:${ip}`;
+  const ipRequests = await client.incr(ipKey);
+  if (ipRequests === 1) {
+    await client.expire(ipKey, 3600); // 1 hour TTL
+  }
+  if (ipRequests > 5) {
+    return { blocked: true, message: 'Too many OTP requests from this network IP. Please try again in an hour.' };
+  }
+
+  // Layer 2: Check Email-based limit (protects target inbox)
+  if (email) {
+    const emailKey = `rate_limit:otp:email:${email}`;
+    const emailRequests = await client.incr(emailKey);
+    if (emailRequests === 1) {
+      await client.expire(emailKey, 600); // 10 minutes TTL
+    }
+    if (emailRequests > 3) {
+      return { blocked: true, message: 'Too many OTP requests for this email address. Please try again in 10 minutes.' };
+    }
+  }
+
+  return { blocked: false };
+}
+
 // 1. Signup - Sends OTP
 exports.signup = async (req, res) => {
   try {
@@ -46,18 +83,13 @@ exports.signup = async (req, res) => {
 
     const client = redisService.getClient();
     if (!client || !redisService.isConnected()) {
-        return res.status(500).json({ message: 'Redis is not connected. Cannot process OTP.' });
+      return res.status(500).json({ message: 'Redis is not connected. Cannot process OTP.' });
     }
 
-    // Strict Rate Limiting: max 5 requests per hour per IP
-    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
-    const rateLimitKey = `rate_limit:otp:${ip}`;
-    const requests = await client.incr(rateLimitKey);
-    if (requests === 1) {
-        await client.expire(rateLimitKey, 3600); // 1 hour TTL
-    }
-    if (requests > 5) {
-        return res.status(429).json({ message: 'Too many OTP requests. Please try again later.' });
+    // Apply Dual-Layer Rate Limiter (IP + Email)
+    const rateCheck = await checkOtpRateLimits(client, req, email);
+    if (rateCheck.blocked) {
+      return res.status(429).json({ message: rateCheck.message });
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -101,7 +133,7 @@ exports.verifyOTP = async (req, res) => {
 
     const client = redisService.getClient();
     if (!client || !redisService.isConnected()) {
-        return res.status(500).json({ message: 'Redis is not connected. Cannot process OTP.' });
+      return res.status(500).json({ message: 'Redis is not connected. Cannot process OTP.' });
     }
 
     const otpKey = `otp:${OTP_PURPOSE.SIGNUP}:${email}`;
@@ -115,16 +147,16 @@ exports.verifyOTP = async (req, res) => {
     const isMatch = await bcrypt.compare(otp, storedHashedOtp);
     
     if (!isMatch) {
-        // Max Attempts handling
-        const attempts = await client.incr(attemptsKey);
-        if (attempts === 1) await client.expire(attemptsKey, 600);
-        
-        if (attempts >= 5) {
-            await client.del(otpKey);
-            await client.del(attemptsKey);
-            return res.status(400).json({ message: 'Too many failed attempts. OTP has been invalidated. Please request a new one.' });
-        }
-        return res.status(400).json({ message: `Invalid OTP. ${5 - attempts} attempts remaining.` });
+      // Max Attempts handling
+      const attempts = await client.incr(attemptsKey);
+      if (attempts === 1) await client.expire(attemptsKey, 600);
+      
+      if (attempts >= 5) {
+        await client.del(otpKey);
+        await client.del(attemptsKey);
+        return res.status(400).json({ message: 'Too many failed attempts. OTP has been invalidated. Please request a new one.' });
+      }
+      return res.status(400).json({ message: `Invalid OTP. ${5 - attempts} attempts remaining.` });
     }
 
     // Success - Delete on Use
@@ -154,20 +186,19 @@ exports.resendOTP = async (req, res) => {
   try {
     const { email } = req.body;
 
-    const client = redisService.getClient();
-    if (!client || !redisService.isConnected()) {
-        return res.status(500).json({ message: 'Redis is not connected. Cannot process OTP.' });
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required.' });
     }
 
-    // Rate Limiting per IP
-    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
-    const rateLimitKey = `rate_limit:otp:${ip}`;
-    const requests = await client.incr(rateLimitKey);
-    if (requests === 1) {
-        await client.expire(rateLimitKey, 3600);
+    const client = redisService.getClient();
+    if (!client || !redisService.isConnected()) {
+      return res.status(500).json({ message: 'Redis is not connected. Cannot process OTP.' });
     }
-    if (requests > 5) {
-        return res.status(429).json({ message: 'Too many OTP requests. Please try again later.' });
+
+    // Apply Dual-Layer Rate Limiter (IP + Email)
+    const rateCheck = await checkOtpRateLimits(client, req, email);
+    if (rateCheck.blocked) {
+      return res.status(429).json({ message: rateCheck.message });
     }
 
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -188,13 +219,27 @@ exports.resendOTP = async (req, res) => {
   }
 };
 
-// 4. Login
+// 4. Login with Email + IP Rate Limiting
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ message: 'Email and password are required.' });
+    }
+
+    const client = redisService.getClient();
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
+    const loginKey = `rate_limit:login:${email}:${ip}`;
+
+    // Check failed login attempts per (Email + IP)
+    if (client && redisService.isConnected()) {
+      const attempts = parseInt(await client.get(loginKey) || '0', 10);
+      if (attempts >= 5) {
+        return res.status(429).json({
+          message: 'Too many failed login attempts for this account from your IP. Please try again in 15 minutes.'
+        });
+      }
     }
 
     const user = await User.findOne({ email }).select('+password');
@@ -209,7 +254,17 @@ exports.login = async (req, res) => {
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
+      // Increment failed login attempt counter for this (Email + IP)
+      if (client && redisService.isConnected()) {
+        const attempts = await client.incr(loginKey);
+        if (attempts === 1) await client.expire(loginKey, 900); // 15 minutes TTL
+      }
       return res.status(401).json({ message: 'Invalid email or password.' });
+    }
+
+    // Success - Clear login failed attempt counter
+    if (client && redisService.isConnected()) {
+      await client.del(loginKey);
     }
 
     const token = signToken(user);
@@ -230,15 +285,14 @@ exports.forgotPassword = async (req, res) => {
 
     const client = redisService.getClient();
     if (!client || !redisService.isConnected()) {
-        return res.status(500).json({ message: 'Redis is not connected.' });
+      return res.status(500).json({ message: 'Redis is not connected.' });
     }
 
-    // Rate Limiting per IP
-    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
-    const rateLimitKey = `rate_limit:otp:${ip}`;
-    const requests = await client.incr(rateLimitKey);
-    if (requests === 1) await client.expire(rateLimitKey, 3600);
-    if (requests > 5) return res.status(429).json({ message: 'Too many requests. Please try again later.' });
+    // Apply Dual-Layer Rate Limiter (IP + Email)
+    const rateCheck = await checkOtpRateLimits(client, req, email);
+    if (rateCheck.blocked) {
+      return res.status(429).json({ message: rateCheck.message });
+    }
 
     const user = await User.findOne({ email });
     if (!user || !user.isVerified) {
@@ -277,7 +331,7 @@ exports.resetPassword = async (req, res) => {
 
     const client = redisService.getClient();
     if (!client || !redisService.isConnected()) {
-        return res.status(500).json({ message: 'Redis is not connected.' });
+      return res.status(500).json({ message: 'Redis is not connected.' });
     }
 
     const otpKey = `otp:${OTP_PURPOSE.PASSWORD_RESET}:${email}`;
@@ -291,15 +345,15 @@ exports.resetPassword = async (req, res) => {
 
     const isMatch = await bcrypt.compare(otp, storedHashedOtp);
     if (!isMatch) {
-        const attempts = await client.incr(attemptsKey);
-        if (attempts === 1) await client.expire(attemptsKey, 600);
-        
-        if (attempts >= 5) {
-            await client.del(otpKey);
-            await client.del(attemptsKey);
-            return res.status(400).json({ message: 'Too many failed attempts. OTP has been invalidated.' });
-        }
-        return res.status(400).json({ message: `Invalid OTP. ${5 - attempts} attempts remaining.` });
+      const attempts = await client.incr(attemptsKey);
+      if (attempts === 1) await client.expire(attemptsKey, 600);
+      
+      if (attempts >= 5) {
+        await client.del(otpKey);
+        await client.del(attemptsKey);
+        return res.status(400).json({ message: 'Too many failed attempts. OTP has been invalidated.' });
+      }
+      return res.status(400).json({ message: `Invalid OTP. ${5 - attempts} attempts remaining.` });
     }
 
     // Delete on Use

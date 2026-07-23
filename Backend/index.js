@@ -75,35 +75,39 @@ app.use((req, res, next) => {
 });
 
 // ── Rate Limiting ─────────────────────────────────────────────────────────────
-const generalLimiter = rateLimit({
+// Candidate JWT key generator: rate limits per candidate ID if logged in, fallback to Client IP
+const getRateLimitKey = (req) => req.user?._id?.toString() || (req.headers['x-forwarded-for'] || req.ip);
+
+const queryLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 120,
+  max: 300, // 300 requests/min per user
   standardHeaders: true,
   legacyHeaders: false,
-  message: { message: 'Too many requests, please slow down.' }
+  keyGenerator: getRateLimitKey,
+  message: { message: 'Too many query requests, please slow down.' }
 });
 
-// Stricter limiter for auth endpoints to prevent brute-force attacks
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
+const commandLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120, // 120 requests/min per candidate
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: getRateLimitKey,
+  message: { message: 'Too many submission requests, please slow down.' }
+});
+
+const sseLimiter = rateLimit({
+  windowMs: 60 * 1000,
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { message: 'Too many authentication attempts. Please try again later.' }
-});
-
-// Loose limiter for SSE connections (long-lived, not high-frequency)
-const sseLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
+  keyGenerator: getRateLimitKey,
   message: { message: 'Too many event stream connections.' }
 });
 
-// app.use('/api/', generalLimiter);
-// app.use('/api/auth/', authLimiter);
-// app.use('/api/events/', sseLimiter);
+app.use('/api/query/events', sseLimiter);
+app.use('/api/query', queryLimiter);
+app.use('/api/command', commandLimiter);
 
 // ── Health Check ──────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
