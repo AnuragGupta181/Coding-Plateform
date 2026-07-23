@@ -35,11 +35,11 @@ Applied across `signup`, `resendOTP`, and `forgotPassword`:
 async function checkOtpRateLimits(client, req, email) {
   const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
 
-  // Layer 1: Check IP-based limit (5 OTPs / 1 hour per IP)
+  // Layer 1: Check IP-based limit (allows up to 1,000 OTPs / 1 hour per IP for 500+ student campus drives)
   const ipKey = `rate_limit:otp:ip:${ip}`;
   const ipRequests = await client.incr(ipKey);
   if (ipRequests === 1) await client.expire(ipKey, 3600);
-  if (ipRequests > 5) {
+  if (ipRequests > 1000) {
     return { blocked: true, message: 'Too many OTP requests from this network IP. Please try again in an hour.' };
   }
 

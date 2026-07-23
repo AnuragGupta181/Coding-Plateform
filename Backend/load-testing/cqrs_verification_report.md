@@ -154,8 +154,8 @@ const COMMAND_BASE_URL = import.meta.env.VITE_COMMAND_BASE_URL || DEFAULT_BASE;
 
 | Endpoint Group | Primary Tracking Key | Fallback Key | Limit Window | Implementation Status | Purpose & Defense |
 |---|---|---|---|---|---|
-| **`POST /signup` & `/resend-otp`** | Dual: `Client IP` AND `Email` | N/A | 5 / hr per IP<br>3 / 10m per Email | ✅ Applied in `authControllerRedis.js` | Prevents SMTP quota exhaustion from single IP while protecting single inbox bombing. |
-| **`POST /forgot-password`** | Dual: `Client IP` AND `Email` | N/A | 5 / hr per IP<br>3 / 10m per Email | ✅ Applied in `authControllerRedis.js` | Prevents password reset email spam. |
+| **`POST /signup` & `/resend-otp`** | Dual: `Client IP` AND `Email` | N/A | 1000 / hr per IP<br>3 / 10m per Email | ✅ Applied in `authControllerRedis.js` | Prevents SMTP quota exhaustion while supporting 500+ candidate simultaneous campus drive signups. |
+| **`POST /forgot-password`** | Dual: `Client IP` AND `Email` | N/A | 1000 / hr per IP<br>3 / 10m per Email | ✅ Applied in `authControllerRedis.js` | Prevents password reset email spam. |
 | **`POST /login`** | `Email + Client IP` | N/A | 5 failed attempts / 15 mins per `(Email+IP)` | ✅ Applied in `authControllerRedis.js` | Prevents credential stuffing per account without blocking other students on the same college Wi-Fi. Cleared on successful login. |
 | **`GET /api/query/*`** | JWT `user._id` | `Client IP` | 300 requests / min | Supported | Protects Redis and MongoDB from GET flooding. |
 | **`POST /api/command/submission/*`** | JWT `user._id` | N/A | 120 requests / min | Supported | Guarantees isolated, fair answer saving capacity for every candidate during exams. |
