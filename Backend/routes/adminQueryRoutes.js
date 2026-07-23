@@ -1,0 +1,15 @@
+const express = require('express');
+const router = express.Router();
+const adminController = require('../controllers/adminController');
+const { requireAuth, requireAdmin } = require('../middleware/authMiddleware');
+
+router.use(requireAuth);
+router.use(requireAdmin);
+
+// ── Query (Read-Only) Admin Routes ────────────────────────────────────────────
+router.get('/tests/history', adminController.getTestHistory);
+router.get('/tests/queues', adminController.getWaitingQueues);
+router.get('/test/:id/results', adminController.getTestResults);
+router.get('/submission/:id', adminController.getSubmissionDetails);
+
+module.exports = router;

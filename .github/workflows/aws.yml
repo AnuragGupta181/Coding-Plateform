@@ -33,24 +33,18 @@ on:
     types:
       - completed
 
+permissions:
+  contents: read
+
 env:
   AWS_REGION: ap-south-1
   ECR_REPOSITORY: coding-platform-backend
   ECS_CLUSTER: nextgen-backend
-  ECS_SERVICE: nextgen-service
-  ECS_TASK_DEFINITION: .aws/task-definition.json
-  CONTAINER_NAME: nextgen-container
-
-permissions:
-  contents: read
 
 jobs:
   deploy:
-    name: Deploy
-    runs-on: ubuntu-latest
-
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
-
+    runs-on: ubuntu-latest
     environment: production
 
     steps:
@@ -68,7 +62,7 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build, tag and push Docker image
+      - name: Build, Tag & Push Docker Image
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -79,23 +73,46 @@ jobs:
             -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
             ./Backend
 
-          docker push \
-            $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-      - name: Render Amazon ECS Task Definition
-        id: task-definition
+      ####################################################################
+      # QUERY SERVICE
+      ####################################################################
+
+      - name: Render Query Task Definition
+        id: query-task
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: ${{ env.ECS_TASK_DEFINITION }}
-          container-name: ${{ env.CONTAINER_NAME }}
+          task-definition: .aws/nextgen-query-task-definition.json
+          container-name: nextgen-query-container
           image: ${{ steps.build-image.outputs.image }}
 
-      - name: Deploy to Amazon ECS
+      - name: Deploy Query Service
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
-          task-definition: ${{ steps.task-definition.outputs.task-definition }}
+          task-definition: ${{ steps.query-task.outputs.task-definition }}
           cluster: ${{ env.ECS_CLUSTER }}
-          service: ${{ env.ECS_SERVICE }}
+          service: nextgen-QueryService
+          wait-for-service-stability: true
+
+      ####################################################################
+      # COMMAND SERVICE
+      ####################################################################
+
+      - name: Render Command Task Definition
+        id: command-task
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: .aws/nextgen-command-task-definition.json
+          container-name: nextgen-command-container
+          image: ${{ steps.build-image.outputs.image }}
+
+      - name: Deploy Command Service
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.command-task.outputs.task-definition }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          service: nextgen-CommandService
           wait-for-service-stability: true

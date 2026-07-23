@@ -6,6 +6,13 @@ WORKDIR /app
 ARG VITE_API_BASE_URL
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 
+# CQRS split-host overrides (optional — both fall back to VITE_API_BASE_URL if unset)
+ARG VITE_QUERY_BASE_URL
+ENV VITE_QUERY_BASE_URL=${VITE_QUERY_BASE_URL}
+
+ARG VITE_COMMAND_BASE_URL
+ENV VITE_COMMAND_BASE_URL=${VITE_COMMAND_BASE_URL}
+
 COPY package.json ./
 RUN npm install --no-audit --no-fund
 

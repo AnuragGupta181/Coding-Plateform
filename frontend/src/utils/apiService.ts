@@ -2,96 +2,131 @@ import axios from 'axios';
 
 const trimTrailingSlash = (value: string) => value.replace(/\/+$/, '');
 
-const API_BASE_URL = trimTrailingSlash(
+const DEFAULT_BASE = trimTrailingSlash(
   import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:5000/api' : '/api')
 );
 
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+// ── CQRS Base URLs ────────────────────────────────────────────────────────────
+// In a split-host CQRS deployment you can set:
+//   VITE_QUERY_BASE_URL   → points to the query (read) service
+//   VITE_COMMAND_BASE_URL → points to the command (write) service
+// Both fall back to VITE_API_BASE_URL when not set (monolith / "both" mode).
+const QUERY_BASE_URL = trimTrailingSlash(
+  import.meta.env.VITE_QUERY_BASE_URL || DEFAULT_BASE
+);
+const COMMAND_BASE_URL = trimTrailingSlash(
+  import.meta.env.VITE_COMMAND_BASE_URL || DEFAULT_BASE
+);
+const AUTH_BASE_URL = DEFAULT_BASE;
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response && error.response.status === 401) {
-      // Token is expired or invalid
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      
-      // Redirect to login if not already there
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
+const authInterceptor = (instance: ReturnType<typeof axios.create>) => {
+  instance.interceptors.request.use((config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
-    return Promise.reject(error);
-  }
+    return config;
+  });
+
+  instance.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      if (error.response && error.response.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      }
+      return Promise.reject(error);
+    }
+  );
+
+  return instance;
+};
+
+// Three axios instances: one per service boundary
+const authApi = authInterceptor(
+  axios.create({ baseURL: AUTH_BASE_URL, headers: { 'Content-Type': 'application/json' } })
+);
+const queryApi = authInterceptor(
+  axios.create({ baseURL: `${QUERY_BASE_URL}/query`, headers: { 'Content-Type': 'application/json' } })
+);
+const commandApi = authInterceptor(
+  axios.create({ baseURL: `${COMMAND_BASE_URL}/command`, headers: { 'Content-Type': 'application/json' } })
 );
 
 export const testService = {
-  signup: (name: string, email: string, password: string) => api.post('/auth/signup', { name, email, password }),
-  verifyOTP: (email: string, otp: string) => api.post('/auth/verify', { email, otp }),
-  resendOTP: (email: string) => api.post('/auth/resend-otp', { email }),
-  login: (email: string, password: string) => api.post('/auth/login', { email, password }),
-  forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }),
+  // ── Auth (unchanged — always /api/auth/...) ─────────────────────────────────
+  signup: (name: string, email: string, password: string) =>
+    authApi.post('/auth/signup', { name, email, password }),
+  verifyOTP: (email: string, otp: string) =>
+    authApi.post('/auth/verify', { email, otp }),
+  resendOTP: (email: string) =>
+    authApi.post('/auth/resend-otp', { email }),
+  login: (email: string, password: string) =>
+    authApi.post('/auth/login', { email, password }),
+  forgotPassword: (email: string) =>
+    authApi.post('/auth/forgot-password', { email }),
   resetPassword: (email: string, otp: string, password: string) =>
-    api.post('/auth/reset-password', { email, otp, password }),
+    authApi.post('/auth/reset-password', { email, otp, password }),
 
-  getAvailableTests: () => api.get('/tests/available'),
-  getTest: (id: string) => api.get(`/test/${id}`),
-  getStudentSubmissions: (email: string) => api.get(`/submissions/me?email=${encodeURIComponent(email)}&_t=${Date.now()}`),
+  // ── Query Routes (GET /api/query/...) ───────────────────────────────────────
+  getAvailableTests: () =>
+    queryApi.get('/tests/available'),
+  getTest: (id: string) =>
+    queryApi.get(`/test/${id}`),
+  getStudentSubmissions: (email: string) =>
+    queryApi.get(`/submissions/me?email=${encodeURIComponent(email)}&_t=${Date.now()}`),
 
+  getTestHistory: () =>
+    queryApi.get('/admin/tests/history'),
+  getWaitingQueues: () =>
+    queryApi.get('/admin/tests/queues'),
+  getTestResults: (testId: string) =>
+    queryApi.get(`/admin/test/${testId}/results`),
+  getSubmissionDetails: (subId: string) =>
+    queryApi.get(`/admin/submission/${subId}`),
+
+  // ── Command Routes (POST /api/command/...) ──────────────────────────────────
   startSubmission: (candidateEmail: string, candidateName: string, testId: string) =>
-    api.post('/submission/start', { candidateEmail, candidateName, testId }),
-
+    commandApi.post('/submission/start', { candidateEmail, candidateName, testId }),
   saveAnswer: (submissionId: string, questionId: string, answerIndex: number) =>
-    api.post(`/submission/${submissionId}/save-answer`, { questionId, answerIndex }),
-
+    commandApi.post(`/submission/${submissionId}/save-answer`, { questionId, answerIndex }),
   clearAnswer: (submissionId: string, questionId: string) =>
-    api.post(`/submission/${submissionId}/clear-answer`, { questionId }),
-
+    commandApi.post(`/submission/${submissionId}/clear-answer`, { questionId }),
   completeSubmission: (submissionId: string) =>
-    api.post(`/submission/${submissionId}/complete`),
-
+    commandApi.post(`/submission/${submissionId}/complete`),
   logViolation: (submissionId: string, violation: { type: string; timestamp: number; count: number }) =>
-    api.post(`/submission/${submissionId}/log-violation`, violation),
+    commandApi.post(`/submission/${submissionId}/log-violation`, violation),
 
-  createTest: (testData: unknown) => api.post('/admin/test', testData),
-  openWaitingRoom: (testId: string) => api.post(`/admin/test/${testId}/open-waiting-room`),
-  startTest: (testId: string) => api.post(`/admin/test/${testId}/start`),
-  completeTest: (testId: string) => api.post(`/admin/test/${testId}/complete`),
-  autoSubmitTest: (testId: string) => api.post(`/admin/test/${testId}/auto-submit`),
-
-  getTestHistory: () => api.get('/admin/tests/history'),
-  getWaitingQueues: () => api.get('/admin/tests/queues'),
-  getTestResults: (testId: string) => api.get(`/admin/test/${testId}/results`),
-  getSubmissionDetails: (subId: string) => api.get(`/admin/submission/${subId}`),
-  createCodingQuestion: (testId: string, data: unknown) => api.post(`/admin/test/${testId}/coding-question`, data),
+  createTest: (testData: unknown) =>
+    commandApi.post('/admin/test', testData),
+  openWaitingRoom: (testId: string) =>
+    commandApi.post(`/admin/test/${testId}/open-waiting-room`),
+  startTest: (testId: string) =>
+    commandApi.post(`/admin/test/${testId}/start`),
+  completeTest: (testId: string) =>
+    commandApi.post(`/admin/test/${testId}/complete`),
+  autoSubmitTest: (testId: string) =>
+    commandApi.post(`/admin/test/${testId}/auto-submit`),
+  createCodingQuestion: (testId: string, data: unknown) =>
+    commandApi.post(`/admin/test/${testId}/coding-question`, data),
 
   // Code execution
   runCode: (sourceCode: string, language: string, stdin?: string) =>
-    api.post('/code/run', { sourceCode, language, stdin }),
+    commandApi.post('/code/run', { sourceCode, language, stdin }),
   submitCode: (testId: string, questionId: string, sourceCode: string, language: string, submissionId: string) =>
-    api.post(`/code/submit/${testId}/${questionId}`, { sourceCode, language, submissionId }),
+    commandApi.post(`/code/submit/${testId}/${questionId}`, { sourceCode, language, submissionId }),
   analyzeCode: (sourceCode: string, language: string, title: string, submissionId?: string, questionId?: string, description?: string, testCases?: any[]) =>
-    api.post('/code/analyze', { sourceCode, language, title, submissionId, questionId, description, testCases }),
-  chatWithCode: (sourceCode: string, language: string, title: string, messages: {role: string, content: string}[]) =>
-    api.post('/code/chat', { sourceCode, language, title, messages }),
+    commandApi.post('/code/analyze', { sourceCode, language, title, submissionId, questionId, description, testCases }),
+  chatWithCode: (sourceCode: string, language: string, title: string, messages: { role: string; content: string }[]) =>
+    commandApi.post('/code/chat', { sourceCode, language, title, messages }),
 };
 
 export const createEventSourceUrl = (path: string) => {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  return `${API_BASE_URL}${normalizedPath}`;
+  return `${QUERY_BASE_URL}/query${normalizedPath}`;
 };
 
 export const getApiErrorMessage = (error: unknown, fallback: string) => {
