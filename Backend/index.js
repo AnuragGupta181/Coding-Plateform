@@ -7,11 +7,20 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const config = require('./config');
 
-const testRoutes = require('./routes/testRoutes');
 const authRoutes = require('./routes/authRoutes');
-const adminRoutes = require('./routes/adminRoutes');
-const eventRoutes = require('./routes/eventRoutes');
-const codeRoutes = require('./routes/codeRoutes');
+const queryRoutes = require('./routes/queryRoutes');
+const commandRoutes = require('./routes/commandRoutes');
+
+// ── CQRS Service Mode ─────────────────────────────────────────────────────────
+// SERVICE_MODE controls which route groups are registered:
+//   "query"   → only GET routes under /api/query/...
+//   "command" → only POST/PUT/PATCH/DELETE routes under /api/command/...
+//   "both"    → all routes on both prefixes (default for monolith / local dev)
+const SERVICE_MODE = (process.env.SERVICE_MODE || 'both').toLowerCase();
+if (!['query', 'command', 'both'].includes(SERVICE_MODE)) {
+  console.error(`❌ Invalid SERVICE_MODE "${SERVICE_MODE}". Must be "query", "command", or "both". Exiting.`);
+  process.exit(1);
+}
 const { completeExpiredTests } = require('./services/testLifecycleService');
 const { broadcastEvent } = require('./controllers/eventController');
 
@@ -37,13 +46,13 @@ app.use(compression({
 // ── CORS ──────────────────────────────────────────────────────────────────────
 const corsOptions = config.isProduction
   ? {
-      origin: config.corsOrigins.length > 0 ? config.corsOrigins : false,
-      credentials: true
-    }
+    origin: config.corsOrigins.length > 0 ? config.corsOrigins : false,
+    credentials: true
+  }
   : {
-      origin: config.corsOrigins.length > 0 ? config.corsOrigins : true,
-      credentials: true
-    };
+    origin: config.corsOrigins.length > 0 ? config.corsOrigins : true,
+    credentials: true
+  };
 
 app.set('trust proxy', 1);
 app.use(cors(corsOptions));
@@ -55,7 +64,7 @@ app.use(express.json({ limit: '1mb' }));
 // holding a connection slot indefinitely.
 app.use((req, res, next) => {
   // Don't apply timeout to SSE connections — they are intentionally long-lived
-  if (req.path.startsWith('/api/events')) return next();
+  if (req.path.startsWith('/api/query/events')) return next();
 
   res.setTimeout(15000, () => {
     if (!res.headersSent) {
@@ -103,8 +112,8 @@ app.get('/health', (_req, res) => {
     environment: config.env,
     uptime: Math.round(process.uptime()),
     memory: {
-      heapUsed: `${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`,
-      rss: `${Math.round(process.memoryUsage().rss / 1024 / 1024)}MB`
+      heapUsed: `${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}mbs`,
+      rss: `${Math.round(process.memoryUsage().rss / 1024 / 1024)}mb`
     }
   });
 });
@@ -125,11 +134,18 @@ app.use(async (req, res, next) => {
 });
 
 // ── Routes ────────────────────────────────────────────────────────────────────
-app.use('/api', testRoutes);
+// Auth is always available regardless of SERVICE_MODE (login/signup needed by both services)
 app.use('/api/auth', authRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/events', eventRoutes);
-app.use('/api/code', codeRoutes);
+
+if (SERVICE_MODE === 'query' || SERVICE_MODE === 'both') {
+  app.use('/api/query', queryRoutes);
+  console.log('📖 Query routes registered at /api/query/...');
+}
+
+if (SERVICE_MODE === 'command' || SERVICE_MODE === 'both') {
+  app.use('/api/command', commandRoutes);
+  console.log('✏️  Command routes registered at /api/command/...');
+}
 
 // ── MongoDB Connection (Optimized for Vercel serverless) ──────────────────────
 // PERMANENT cold-start / frozen-container safety:
@@ -223,7 +239,7 @@ async function ensureDb() {
   }
 }
 
-connectDB().catch(() => {});
+connectDB().catch(() => { });
 
 // ── Vercel Cron Endpoint ──────────────────────────────────────────────────────
 // Vercel will automatically hit this endpoint every minute based on vercel.json
@@ -257,7 +273,7 @@ if (process.env.DISABLE_CRON !== 'true') {
 
 // ── Start Server ──────────────────────────────────────────────────────────────
 const server = app.listen(config.port, () => {
-  console.log(`🚀 Server running on port ${config.port}`);
+  console.log(`🚀 Server running on port ${config.port} [SERVICE_MODE=${SERVICE_MODE}]`);
 });
 
 // ── Graceful Shutdown ─────────────────────────────────────────────────────────
@@ -295,4 +311,4 @@ async function gracefulShutdown(signal) {
 }
 
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT',  () => gracefulShutdown('SIGINT'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
