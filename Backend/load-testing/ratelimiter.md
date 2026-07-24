@@ -76,3 +76,35 @@ When any rate limit is triggered, a diagnostic log is output to server stdout:
 ```
 
 This log provides the exact Key (`IP_Email` or `User_ID`), Path, and Timestamp for rapid debugging during live drives.
+
+---
+
+## 5. How to Disable or Modify Rate Limiters (Future Reference)
+
+### Option A: Disable HTTP Rate Limiters Completely (`Backend/index.js`)
+Comment out the middleware mounts in `Backend/index.js`:
+```javascript
+// app.use('/api/auth', authLimiter);
+// app.use('/api/query/events', sseLimiter);
+// app.use('/api/query', queryLimiter);
+// app.use('/api/command', commandLimiter);
+```
+
+### Option B: Increase Quotas (e.g. for Stress/Load Testing) (`Backend/index.js`)
+Change the `max` options in `Backend/index.js`:
+```javascript
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10000, // Change 15 to 10000 (effectively disabled)
+  ...
+});
+```
+
+### Option C: Disable Redis OTP Rate Limits (`Backend/controllers/authControllerRedis.js`)
+Comment out the `checkOtpRateLimits` block inside `signup` and `resendOTP` functions:
+```javascript
+// const rateCheck = await checkOtpRateLimits(client, req, email);
+// if (rateCheck.blocked) {
+//   return res.status(429).json({ message: rateCheck.message });
+// }
+```
