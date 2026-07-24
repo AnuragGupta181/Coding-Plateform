@@ -43,8 +43,8 @@ const ActiveQueueTimer: React.FC<{ startedAt: string; durationInMinutes: number 
 
   return (
     <div className={`flex items-center gap-2.5 px-4 py-2 rounded-sm border transition-colors ${
-      isExpired 
-        ? 'bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400' 
+      isExpired
+        ? 'bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400'
         : 'bg-muted/70 border-border text-foreground'
     }`}>
       <svg className="w-4 h-4 text-muted-foreground shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -85,7 +85,7 @@ export const QueueItem: React.FC<QueueItemProps> = ({
 
         <div className="flex flex-wrap gap-3 w-full lg:w-auto">
           {queue.status === 'scheduled' && (
-            <button 
+            <button
               disabled={loadingAction === 'allow_entry'}
               onClick={async () => {
                 setLoadingAction('allow_entry');
@@ -98,7 +98,7 @@ export const QueueItem: React.FC<QueueItemProps> = ({
             </button>
           )}
           {isWaiting && (
-            <button 
+            <button
               disabled={loadingAction === 'start_test'}
               onClick={async () => {
                 setLoadingAction('start_test');
@@ -111,7 +111,7 @@ export const QueueItem: React.FC<QueueItemProps> = ({
             </button>
           )}
           {isActive && (
-            <button 
+            <button
               disabled={loadingAction === 'force_complete'}
               onClick={async () => {
                 setLoadingAction('force_complete');

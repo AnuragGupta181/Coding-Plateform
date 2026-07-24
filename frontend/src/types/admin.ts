@@ -22,4 +22,19 @@ export interface QueueSummary {
   waitingUsers: WaitingUser[];
 }
 
-export type AdminSection = 'overview' | 'queue' | 'history' | 'create' | 'aichat';
+export interface Violation {
+  type: string;
+  timestamp: string;
+  count: number;
+}
+
+export interface ActiveUser {
+  id: string;
+  name: string;
+  email: string;
+  startTime: string;
+  violations: Violation[];
+  answeredCount: number;
+}
+
+export type AdminSection = 'overview' | 'monitoring' | 'history' | 'create' | 'aichat';

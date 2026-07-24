@@ -54,7 +54,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       <nav className="flex-1 px-4 lg:px-6 py-6 lg:py-8 space-y-2">
         {[
           { id: 'overview', label: 'Active Sessions' },
-          { id: 'queue', label: 'Waiting Queues' },
+          { id: 'monitoring', label: 'Realtime Monitoring' },
           { id: 'history', label: 'Test Repository' },
           { id: 'create', label: 'Design Session' },
           { id: 'aichat', label: 'Ask AI Assistant ✨' },

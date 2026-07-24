@@ -113,10 +113,33 @@ const CodingTestRoom: React.FC = () => {
     if (!testId) return;
     const es = new EventSource(createEventSourceUrl(`/events/test/${testId}`));
     es.onmessage = e => {
-      if (JSON.parse(e.data).type === 'AUTO_SUBMIT') setFinished(true);
+      try {
+        const data = JSON.parse(e.data);
+        if (data.type === 'AUTO_SUBMIT' || data.type === 'TEST_COMPLETED') {
+          setFinished(true);
+          dispatch(completeTest());
+        } else if (data.type === 'FORCE_SUBMIT' && data.targetEmail === user?.email) {
+          setFinished(true);
+          dispatch(completeTest());
+          toast.error('Your test session has been ended by the proctor.', { duration: 4000 });
+          setTimeout(() => navigate('/dashboard'), 2500);
+        } else if (data.type === 'PROCTOR_MESSAGE' && data.targetEmail === user?.email) {
+          toast.error(`PROCTOR MESSAGE:\n${data.message}`, {
+            duration: 5000,
+            style: {
+              fontSize: '1.25rem',
+              fontWeight: 'bold',
+              padding: '20px',
+              border: '4px solid #ef4444',
+              backgroundColor: '#fef2f2',
+              color: '#7f1d1d'
+            }
+          });
+        }
+      } catch (err) {}
     };
     return () => es.close();
-  }, [testId]);
+  }, [testId, dispatch, navigate, user?.email]);
 
   const MAX_VIOLATIONS = 999999;
 

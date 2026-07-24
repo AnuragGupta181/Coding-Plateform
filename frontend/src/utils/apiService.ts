@@ -85,6 +85,8 @@ export const testService = {
     queryApi.get('/admin/tests/queues'),
   getTestResults: (testId: string) =>
     queryApi.get(`/admin/test/${testId}/results`),
+  getActiveTestUsers: (testId: string) =>
+    queryApi.get(`/admin/test/${testId}/active-users`),
   getSubmissionDetails: (subId: string) =>
     queryApi.get(`/admin/submission/${subId}`),
 
@@ -112,6 +114,10 @@ export const testService = {
     commandApi.post(`/admin/test/${testId}/auto-submit`),
   createCodingQuestion: (testId: string, data: unknown) =>
     commandApi.post(`/admin/test/${testId}/coding-question`, data),
+  sendProctorMessage: (testId: string, candidateEmail: string, message: string) =>
+    commandApi.post(`/admin/test/${testId}/message`, { candidateEmail, message }),
+  forceSubmitCandidate: (submissionId: string) =>
+    commandApi.post(`/admin/submission/${submissionId}/force-submit`),
 
   // Code execution
   runCode: (sourceCode: string, language: string, stdin?: string) =>

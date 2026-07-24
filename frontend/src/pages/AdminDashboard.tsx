@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import testService from '../utils/apiService';
 import { QueueItem } from '../components/admin/QueueItem';
 import { AdminSidebar } from '../components/admin/AdminSidebar';
 import { TestRepositoryTable } from '../components/admin/TestRepositoryTable';
 import { AIChatTab } from  '../components/admin/AIChatTab';
+import { RealtimeMonitoringPage } from '../components/admin/RealtimeMonitoringPage';
 import type { TestSummary, QueueSummary, AdminSection } from '../types/admin';
 
 const AdminDashboard: React.FC = () => {
@@ -52,12 +53,8 @@ const AdminDashboard: React.FC = () => {
     fetchQueues();
     let interval: ReturnType<typeof setInterval>;
 
-    if (activeSection === 'overview' || activeSection === 'queue') {
+    if (activeSection === 'overview' || activeSection === 'monitoring') {
       interval = setInterval(() => {
-        if (activeSection === 'overview' && queuesRef.current.length === 0) {
-          return;
-        }
-        
         fetchQueues();
         fetchTests();
       }, 5000);
@@ -105,7 +102,7 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const queues_waiting = useMemo(() => queues.filter(q => q.status === 'waiting'), [queues]);
+
 
   return (
     <div className="flex h-screen bg-background text-foreground font-sans overflow-hidden flex-col lg:flex-row relative">
@@ -190,31 +187,8 @@ const AdminDashboard: React.FC = () => {
             </div>
           )}
 
-          {activeSection === 'queue' && (
-            <div className="animate-fade-in">
-              <header className="mb-8 lg:mb-16">
-                <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground mb-2">Traffic Analysis</div>
-                <h2 className="text-3xl lg:text-4xl font-sans text-foreground-bold mb-2">Waiting Queues</h2>
-                <p className="text-sm lg:text-base text-muted-foreground font-light italic">Detailed monitoring of candidates positioned in the secure holding area.</p>
-              </header>
-              <div className="space-y-4">
-                {queues_waiting.length === 0 ? (
-                  <div className="py-20 lg:py-32 text-center border border-dashed border-border-hover rounded-sm text-muted-foreground font-light italic px-4">
-                    All queues are currently clear.
-                  </div>
-                ) : (
-                  queues_waiting.map(q => (
-                    <QueueItem 
-                      key={q.testId} 
-                      queue={q} 
-                      onOpenWaitingRoom={handleOpenWaitingRoom}
-                      onStartTest={handleStartTest}
-                      onMarkCompleted={handleMarkCompleted}
-                    />
-                  ))
-                )}
-              </div>
-            </div>
+          {activeSection === 'monitoring' && (
+            <RealtimeMonitoringPage queues={queues} />
           )}
 
           {activeSection === 'history' && (

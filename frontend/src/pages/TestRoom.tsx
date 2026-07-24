@@ -218,16 +218,34 @@ if (!testId) return;
 
 const eventSource = new EventSource(createEventSourceUrl(`/events/test/${testId}`));
 eventSource.onmessage = (event) => {
-const data = JSON.parse(event.data);
-if (data.type === 'AUTO_SUBMIT') {
-dispatch(completeTest());
-}
+  try {
+    const data = JSON.parse(event.data);
+    if (data.type === 'AUTO_SUBMIT') {
+      dispatch(completeTest());
+    } else if (data.type === 'FORCE_SUBMIT' && data.targetEmail === user?.email) {
+      dispatch(completeTest());
+      toast.error('Your test session has been ended by the proctor.', { duration: 4000 });
+      setTimeout(() => navigate('/dashboard'), 2500);
+    } else if (data.type === 'PROCTOR_MESSAGE' && data.targetEmail === user?.email) {
+      toast.error(`PROCTOR MESSAGE:\n${data.message}`, {
+        duration: 5000,
+        style: {
+          fontSize: '1.25rem',
+          fontWeight: 'bold',
+          padding: '20px',
+          border: '4px solid #ef4444',
+          backgroundColor: '#fef2f2',
+          color: '#7f1d1d'
+        }
+      });
+    }
+  } catch { /* malformed event — ignore */ }
 };
 
 return () => {
 eventSource.close();
 };
-}, [dispatch, testId]);
+}, [dispatch, testId, navigate, user?.email]);
 
 if (status === 'error') return <ErrorView />;
 if (!testData || status === 'loading') return <LoadingView />;

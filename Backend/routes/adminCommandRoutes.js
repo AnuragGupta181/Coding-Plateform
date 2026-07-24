@@ -20,4 +20,10 @@ router.post('/parse-questions', upload.single('file'), adminController.parseQues
 // Coding question management
 router.post('/test/:id/coding-question', adminController.createCodingQuestion);
 
+// Proctor communication
+router.post('/test/:id/message', adminController.sendProctorMessage);
+
+// Force-submit a single candidate's submission
+router.post('/submission/:id/force-submit', adminController.forceSubmitCandidate);
+
 module.exports = router;
