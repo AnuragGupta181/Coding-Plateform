@@ -43,7 +43,10 @@ exports.parseQuestionsFromExcel = async (req, res) => {
 
 exports.createTest = async (req, res) => {
   try {
-    const { title, description, durationInMinutes, questions, codingQuestions, testType } = req.body;
+    const { title, description, durationInMinutes, questions, codingQuestions, testType, scheduledFor } = req.body;
+
+    const testScheduledDate = scheduledFor ? new Date(scheduledFor) : null;
+    const isImmediate = !testScheduledDate;
 
     const newTest = new Test({
       title,
@@ -52,7 +55,8 @@ exports.createTest = async (req, res) => {
       testType: testType || 'mcq',
       questions: questions || [],
       codingQuestions: codingQuestions || [],
-      status: 'scheduled'
+      scheduledFor: testScheduledDate,
+      status: isImmediate ? 'waiting' : 'scheduled'
     });
 
     await newTest.save();
@@ -219,7 +223,7 @@ exports.getWaitingQueues = async (req, res) => {
 
     // Run all 3 DB queries in PARALLEL instead of sequentially (~3x faster)
     const [tests, activeSubmissions, completedSubmissions] = await Promise.all([
-      Test.find({ status: { $ne: 'completed' } }, 'title status durationInMinutes startedAt').lean(),
+      Test.find({ status: { $ne: 'completed' } }, 'title status durationInMinutes startedAt scheduledFor').lean(),
       Submission.aggregate([
         { $match: { status: 'active' } },
         { $group: { _id: '$testId', count: { $sum: 1 } } }
@@ -240,6 +244,7 @@ exports.getWaitingQueues = async (req, res) => {
       status: test.status,
       durationInMinutes: test.durationInMinutes,
       startedAt: test.startedAt,
+      scheduledFor: test.scheduledFor,
       activeSubmissionCount: activeMap.get(String(test._id)) || 0,
       completedSubmissionCount: completedMap.get(String(test._id)) || 0,
       waitingUsers: queueMap.get(String(test._id)) || []

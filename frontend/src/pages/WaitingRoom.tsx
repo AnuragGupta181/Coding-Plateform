@@ -9,7 +9,43 @@ const WaitingRoom: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useSelector((state: RootState) => state.auth);
   const [statusMessage, setStatusMessage] = useState('Awaiting administrator signal to commence...');
+  const [scheduledFor, setScheduledFor] = useState<string | null>(null);
+  const [timerText, setTimerText] = useState<string>('00:00');
+  const [timerLabel, setTimerLabel] = useState<string>('Waiting Time Elapsed');
   const testTypeRef = useRef<string>('mcq');
+
+  // Live ticking clock — strictly "Time Left Until Test Starts"
+  useEffect(() => {
+    if (!scheduledFor) {
+      setTimerLabel('Status');
+      setTimerText('Waiting for Admin to Start');
+      return;
+    }
+
+    const updateTimer = () => {
+      const target = new Date(scheduledFor).getTime();
+      const diffSec = Math.max(0, Math.floor((target - Date.now()) / 1000));
+      
+      if (diffSec <= 0) {
+        setTimerLabel('Status');
+        setTimerText('Starting soon...');
+      } else {
+        setTimerLabel('Time Left Until Test Starts');
+        const hours = Math.floor(diffSec / 3600);
+        const mins = Math.floor((diffSec % 3600) / 60);
+        const secs = diffSec % 60;
+        
+        const hStr = hours > 0 ? `${hours}h ` : '';
+        const mStr = `${mins < 10 ? '0' : ''}${mins}m `;
+        const sStr = `${secs < 10 ? '0' : ''}${secs}s`;
+        setTimerText(`${hStr}${mStr}${sStr}`);
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [scheduledFor]);
 
   // Fetch test metadata, connect EventSource to register in queue, and poll for status changes
   useEffect(() => {
@@ -25,7 +61,7 @@ const WaitingRoom: React.FC = () => {
     eventSource.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        if (data.type === 'START_TEST' || data.type === 'ALLOW_ENTRY') {
+        if (data.type === 'START_TEST') {
           setStatusMessage('Signal received. Initializing environment...');
           setTimeout(() => {
             const route = testTypeRef.current === 'coding'
@@ -43,6 +79,9 @@ const WaitingRoom: React.FC = () => {
       try {
         const res = await testService.getTest(testId);
         testTypeRef.current = res.data.testType ?? 'mcq';
+        if (res.data.scheduledFor) {
+          setScheduledFor(res.data.scheduledFor);
+        }
         
         if (res.data.status === 'active') {
           setStatusMessage('Signal received. Initializing environment...');
@@ -90,6 +129,11 @@ const WaitingRoom: React.FC = () => {
             <p className="text-sm font-bold tracking-widest uppercase text-foreground-bold">
               {statusMessage}
             </p>
+
+            <div className="bg-primary/10 border border-primary/20 px-6 py-4 rounded-sm animate-fade-in w-full max-w-xs">
+              <div className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground mb-1">{timerLabel}</div>
+              <div className="text-3xl font-mono font-black text-primary tracking-wider">{timerText}</div>
+            </div>
 
             <p className="text-xs text-muted-foreground max-w-xs mx-auto leading-relaxed">
               Please maintain focus. The assessment environment will synchronize automatically across all participants.

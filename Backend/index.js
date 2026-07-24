@@ -293,10 +293,13 @@ app.get('/api/cron/complete-expired-tests', async (req, res) => {
   }
 });
 
-// ── Expired Test Cleanup (every 15 seconds) ───────────────────────────────────
+const { startScheduleWatcher } = require('./services/scheduleWatcher');
+
+// ── Expired Test Cleanup & Schedule Watcher ───────────────────────────────────
 // Set DISABLE_CRON=true on all-but-one instance when horizontally scaling.
 // Standard Node.js background timers (Ideal for EC2/VPS deployments)
 if (process.env.DISABLE_CRON !== 'true') {
+  startScheduleWatcher();
   setInterval(async () => {
     try {
       await completeExpiredTests();

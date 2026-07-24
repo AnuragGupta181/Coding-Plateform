@@ -20,7 +20,7 @@ exports.getAvailableTests = async (req, res) => {
     // .lean() skips Mongoose document overhead — returns plain JS objects (~40% faster)
     const tests = await Test.find(
       { status: { $in: ['scheduled', 'waiting', 'active'] } },
-      'title description durationInMinutes status createdAt startedAt completedAt testType'
+      'title description durationInMinutes status createdAt startedAt completedAt testType scheduledFor'
     ).lean();
     
     // 3. Store in cache for 60 seconds (short TTL since test statuses change)

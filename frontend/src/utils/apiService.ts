@@ -58,8 +58,8 @@ const commandApi = authInterceptor(
 
 export const testService = {
   // ── Auth (unchanged — always /api/auth/...) ─────────────────────────────────
-  signup: (name: string, email: string, password: string) =>
-    authApi.post('/auth/signup', { name, email, password }),
+  signup: (name: string, email: string, password: string, mobileNumber?: string) =>
+    authApi.post('/auth/signup', { name, email, password, mobileNumber }),
   verifyOTP: (email: string, otp: string) =>
     authApi.post('/auth/verify', { email, otp }),
   resendOTP: (email: string) =>

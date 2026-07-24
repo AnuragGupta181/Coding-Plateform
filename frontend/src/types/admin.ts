@@ -17,6 +17,7 @@ export interface QueueSummary {
   status: string;
   durationInMinutes?: number;
   startedAt?: string;
+  scheduledFor?: string;
   activeSubmissionCount: number;
   completedSubmissionCount: number;
   waitingUsers: WaitingUser[];
