@@ -15,6 +15,8 @@ export interface QueueSummary {
   testId: string;
   title: string;
   status: string;
+  durationInMinutes?: number;
+  startedAt?: string;
   activeSubmissionCount: number;
   completedSubmissionCount: number;
   waitingUsers: WaitingUser[];

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { QueueSummary } from '../../types/admin';
 
 const Spinner = ({ red }: { red?: boolean }) => (
@@ -14,6 +14,49 @@ interface QueueItemProps {
   onStartTest: (id: string) => void;
   onMarkCompleted: (id: string) => void;
 }
+
+const ActiveQueueTimer: React.FC<{ startedAt: string; durationInMinutes: number }> = ({ startedAt, durationInMinutes }) => {
+  const [timeLeft, setTimeLeft] = useState<string>('');
+  const [isExpired, setIsExpired] = useState<boolean>(false);
+
+  useEffect(() => {
+    const update = () => {
+      const startMs = new Date(startedAt).getTime();
+      const endMs = startMs + durationInMinutes * 60 * 1000;
+      const diffSec = Math.floor(Math.max(0, endMs - Date.now()) / 1000);
+
+      if (diffSec <= 0) {
+        setTimeLeft('00:00');
+        setIsExpired(true);
+      } else {
+        const mins = Math.floor(diffSec / 60);
+        const secs = diffSec % 60;
+        setTimeLeft(`${mins}:${secs < 10 ? '0' : ''}${secs}`);
+        setIsExpired(false);
+      }
+    };
+
+    update();
+    const timer = setInterval(update, 1000);
+    return () => clearInterval(timer);
+  }, [startedAt, durationInMinutes]);
+
+  return (
+    <div className={`flex items-center gap-2.5 px-4 py-2 rounded-sm border transition-colors ${
+      isExpired 
+        ? 'bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400' 
+        : 'bg-muted/70 border-border text-foreground'
+    }`}>
+      <svg className="w-4 h-4 text-muted-foreground shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <div>
+        <div className="text-[9px] uppercase font-bold tracking-widest text-muted-foreground font-sans">Time Remaining</div>
+        <div className="font-mono text-base font-black tracking-widest">{timeLeft}</div>
+      </div>
+    </div>
+  );
+};
 
 export const QueueItem: React.FC<QueueItemProps> = ({
   queue,
@@ -110,15 +153,19 @@ export const QueueItem: React.FC<QueueItemProps> = ({
       )}
 
       {isActive && (
-        <div className="flex gap-8 lg:gap-16 pt-6 lg:pt-8 border-t border-cream-50">
-          <div>
-            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Live Sessions</div>
-            <div className="text-3xl lg:text-4xl font-sans text-foreground-bold">{queue.activeSubmissionCount}</div>
+        <div className="flex gap-8 lg:gap-16 pt-6 lg:pt-8 border-t border-cream-50 items-center justify-between flex-wrap">
+          <div className="flex gap-8 lg:gap-16">
+            <div>
+              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Live Sessions</div>
+              <div className="text-3xl lg:text-4xl font-sans text-foreground-bold">{queue.activeSubmissionCount}</div>
+            </div>
+            <div>
+              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Audit Files</div>
+              <div className="text-3xl lg:text-4xl font-sans text-foreground-bold">{queue.completedSubmissionCount}</div>
+            </div>
           </div>
-          <div>
-            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Audit Files</div>
-            <div className="text-3xl lg:text-4xl font-sans text-foreground-bold">{queue.completedSubmissionCount}</div>
-          </div>
+
+          <ActiveQueueTimer startedAt={queue.startedAt || new Date().toISOString()} durationInMinutes={queue.durationInMinutes || 60} />
         </div>
       )}
     </div>

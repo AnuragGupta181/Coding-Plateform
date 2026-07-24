@@ -219,7 +219,7 @@ exports.getWaitingQueues = async (req, res) => {
 
     // Run all 3 DB queries in PARALLEL instead of sequentially (~3x faster)
     const [tests, activeSubmissions, completedSubmissions] = await Promise.all([
-      Test.find({ status: { $ne: 'completed' } }, 'title status').lean(),
+      Test.find({ status: { $ne: 'completed' } }, 'title status durationInMinutes startedAt').lean(),
       Submission.aggregate([
         { $match: { status: 'active' } },
         { $group: { _id: '$testId', count: { $sum: 1 } } }
@@ -238,6 +238,8 @@ exports.getWaitingQueues = async (req, res) => {
       testId: String(test._id),
       title: test.title,
       status: test.status,
+      durationInMinutes: test.durationInMinutes,
+      startedAt: test.startedAt,
       activeSubmissionCount: activeMap.get(String(test._id)) || 0,
       completedSubmissionCount: completedMap.get(String(test._id)) || 0,
       waitingUsers: queueMap.get(String(test._id)) || []

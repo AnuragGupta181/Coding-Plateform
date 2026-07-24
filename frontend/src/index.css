@@ -70,6 +70,22 @@ body {
   font-family: "Inter", system-ui, -apple-system, sans-serif;
 }
 
+select {
+  background-color: var(--background);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+
+select option {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+:root.dark select option {
+  background-color: #18181b;
+  color: #fafafa;
+}
+
 h1, h2, h3, h4 {
   font-weight: 600;
   letter-spacing: -0.01em;

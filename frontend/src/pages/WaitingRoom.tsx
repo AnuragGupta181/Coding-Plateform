@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../store';
-import testService from '../utils/apiService';
+import testService, { createEventSourceUrl } from '../utils/apiService';
 
 const WaitingRoom: React.FC = () => {
   const { id: testId } = useParams<{ id: string }>();
@@ -11,9 +11,33 @@ const WaitingRoom: React.FC = () => {
   const [statusMessage, setStatusMessage] = useState('Awaiting administrator signal to commence...');
   const testTypeRef = useRef<string>('mcq');
 
-  // Fetch test metadata and poll for status changes
+  // Fetch test metadata, connect EventSource to register in queue, and poll for status changes
   useEffect(() => {
     if (!testId) return;
+
+    const email = user?.email || '';
+    const name = user?.name || 'Candidate';
+
+    // 1. Open EventSource connection to register candidate in live Admin Queue & listen for real-time events
+    const sseUrl = `/events/test/${testId}?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}`;
+    const eventSource = new EventSource(createEventSourceUrl(sseUrl), { withCredentials: true });
+
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'START_TEST' || data.type === 'ALLOW_ENTRY') {
+          setStatusMessage('Signal received. Initializing environment...');
+          setTimeout(() => {
+            const route = testTypeRef.current === 'coding'
+              ? `/coding-test/${testId}`
+              : `/test/${testId}`;
+            navigate(route);
+          }, 1000);
+        }
+      } catch (err) {
+        console.error('SSE Error in WaitingRoom:', err);
+      }
+    };
 
     const checkTestStatus = async () => {
       try {
@@ -23,34 +47,31 @@ const WaitingRoom: React.FC = () => {
         if (res.data.status === 'active') {
           setStatusMessage('Signal received. Initializing environment...');
           setTimeout(() => {
-            // Route to the correct test room based on testType
             const route = testTypeRef.current === 'coding'
               ? `/coding-test/${testId}`
               : `/test/${testId}`;
             navigate(route);
-          }, 1500);
+          }, 1000);
         }
       } catch (err) {
         console.error('Error checking test status:', err);
       }
     };
 
-    // Initial check
     checkTestStatus();
-
-    // Poll every 3 seconds (Vercel serverless friendly)
     const interval = setInterval(checkTestStatus, 3000);
 
-    return () => clearInterval(interval);
-  }, [testId, navigate]);
+    return () => {
+      clearInterval(interval);
+      eventSource.close();
+    };
+  }, [testId, navigate, user?.name, user?.email]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-foreground font-sans">
       <div className="max-w-xl w-full text-center">
         <div className="mb-12">
-          <div className="w-12 h-12 border-2 border-cream-950 flex items-center justify-center text-foreground-bold font-sans font-bold text-2xl mx-auto mb-6">
-            N
-          </div>
+          <img src="/logo.svg" alt="NextGen Logo" className="h-16 md:h-20 w-auto mx-auto mb-6" />
           <div className="text-[10px] font-bold uppercase tracking-[0.4em] text-muted-foreground mb-2">Secure Holding Area</div>
           <h2 className="text-5xl font-sans text-foreground-bold mb-4">The Waiting Room</h2>
           <p className="text-muted-foreground italic font-light">

@@ -50,11 +50,11 @@ const ProblemStatement: React.FC<ProblemStatementProps> = ({ question, questionI
             <div className="px-3 py-3 space-y-2">
               <div>
                 <span className="text-muted-foreground font-bold uppercase tracking-wider text-[10px]">Input</span>
-                <pre className="mt-1 text-foreground font-mono bg-background border border-cream-100 p-2 rounded-sm">{ex.input}</pre>
+                <pre className="mt-1 text-foreground font-mono bg-muted/40 border border-border p-2.5 rounded-sm whitespace-pre-wrap">{ex.input}</pre>
               </div>
               <div>
                 <span className="text-muted-foreground font-bold uppercase tracking-wider text-[10px]">Output</span>
-                <pre className="mt-1 text-emerald-400 font-mono bg-emerald-950/30 border border-emerald-900/50 p-2 rounded-sm">{ex.output}</pre>
+                <pre className="mt-1 text-emerald-700 dark:text-emerald-400 font-mono font-bold bg-emerald-500/10 border border-emerald-500/20 p-2.5 rounded-sm whitespace-pre-wrap">{ex.output}</pre>
               </div>
               {ex.explanation && (
                 <div className="text-muted-foreground italic pt-1 text-xs">{ex.explanation}</div>
@@ -68,7 +68,7 @@ const ProblemStatement: React.FC<ProblemStatementProps> = ({ question, questionI
     {question.constraints && (
       <div className="border-t border-border pt-4">
         <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Constraints</p>
-        <pre className="text-xs text-cream-700 font-mono whitespace-pre-wrap bg-background border border-cream-100 p-3 rounded-sm">{question.constraints}</pre>
+        <pre className="text-xs text-foreground font-mono whitespace-pre-wrap bg-muted/40 border border-border p-3 rounded-sm">{question.constraints}</pre>
       </div>
     )}
   </div>

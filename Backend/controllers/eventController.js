@@ -124,7 +124,7 @@ exports.getWaitingQueueSnapshot = getWaitingQueueSnapshot;
 // ── SSE Connection Handler ────────────────────────────────────────────────────
 exports.getEvents = async (req, res) => {
   const { testId } = req.params;
-  const { query } = url.parse(req.url, true);
+  const query = req.query || {};
 
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache, no-transform');

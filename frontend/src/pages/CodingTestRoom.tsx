@@ -1,18 +1,17 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import useProtecting from '../hooks/useProtecting';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import Editor from '@monaco-editor/react';
 import type { RootState } from '../store';
-import { startTest } from '../store/testSlice';
+import { startTest, completeTest } from '../store/testSlice';
 import testService, { createEventSourceUrl } from '../utils/apiService';
 import ProblemStatement, { type CodingQuestion, type TestCaseResult } from '../components/coding/ProblemStatement';
 import OutputPanel from '../components/coding/OutputPanel';
 import TestRoomHeader from '../components/test/TestRoomHeader';
 
 import { LANG_META } from '../constants/langMeta';
-import { useCountdown } from '../hooks/useCountdown';
 
 interface TestData {
   _id: string; title: string; status: string;
@@ -61,6 +60,12 @@ const CodingTestRoom: React.FC = () => {
       try {
         const res = await testService.getTest(testId);
         const t = res.data as TestData;
+        if (t.status === 'completed') {
+          setFinished(true);
+          dispatch(completeTest());
+          setLoading(false);
+          return;
+        }
         if (t.status !== 'active' || !t.codingQuestions?.length) { navigate('/dashboard'); return; }
         setTestData(t);
 
@@ -69,6 +74,13 @@ const CodingTestRoom: React.FC = () => {
         const submissionRes = await testService.startSubmission(email, name, testId);
         const fetchedSubmission = submissionRes.data;
         
+        if (fetchedSubmission.status === 'completed') {
+          setFinished(true);
+          dispatch(completeTest());
+          setLoading(false);
+          return;
+        }
+
         setInitialViolations(fetchedSubmission.violations?.length || 0);
         setSubmissionId(fetchedSubmission._id);
 
@@ -138,37 +150,6 @@ const CodingTestRoom: React.FC = () => {
     enabled: !!testData && !finished,
     initialViolations,
   });
-
-  const stateRef = useRef({ activeQuestion, currentCode, language });
-  useEffect(() => {
-    stateRef.current = { activeQuestion, currentCode, language };
-  }, [activeQuestion, currentCode, language]);
-
-  const handleTimeExpire = useCallback(() => {
-    setFinished(true); // Lock the UI instantly
-    if (!testId || !submissionId) return;
-
-    // Introduce Jitter to prevent Thundering Herd
-    const randomDelay = Math.random() * 15000;  
-    setTimeout(async () => {
-      try {
-        const { activeQuestion: aq, currentCode: cc, language: lang } = stateRef.current;
-        // Auto-save whatever code is currently in the editor
-        if (aq && cc.trim()) {
-          await testService.submitCode(testId, aq._id, cc, lang, submissionId).catch(() => {});
-        }
-        await testService.completeSubmission(submissionId);
-      } catch (err) {
-        console.error('Auto-submit failed:', err);
-      }
-    }, randomDelay);
-  }, [testId, submissionId]);
-
-  const { display: timerDisplay, isWarning } = useCountdown(
-    testData?.durationInMinutes ?? 60,
-    testData?.startedAt ?? null,
-    handleTimeExpire
-  );
 
   const handleQuestionChange = (idx: number) => {
     setActiveQIndex(idx);
@@ -262,9 +243,7 @@ const CodingTestRoom: React.FC = () => {
 
   if (finished) return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
-      <div className="w-16 h-16 border-2 border-cream-950 flex items-center justify-center text-foreground-bold font-sans font-bold text-3xl mb-8">
-        N
-      </div>
+      <img src="/logo.svg" alt="NextGen Logo" className="h-16 md:h-20 w-auto mx-auto mb-8" />
       <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground mb-2">Protocol Finished</div>
       <h2 className="text-4xl font-sans text-foreground-bold mb-4">Submission Confirmed</h2>
       <p className="text-muted-foreground mb-12 max-w-md font-light italic">Your code has been securely persisted. You may now exit the assessment environment.</p>
@@ -276,7 +255,13 @@ const CodingTestRoom: React.FC = () => {
 
   return (
     <div className="h-screen flex flex-col bg-background text-foreground font-sans overflow-hidden">
-      <TestRoomHeader candidateName={user?.name} />
+      <TestRoomHeader
+        candidateName={user?.name}
+        testTitle={testData?.title}
+        onAction={handleFinishClick}
+        actionText="Submit Assessment"
+        isSaving={isSubmitting}
+      />
 
       {isSubmitting && (
         <div className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center">
@@ -317,33 +302,28 @@ const CodingTestRoom: React.FC = () => {
         </div>
       )}
 
-      {/* Sub-header: test title, timer, question pills, finish */}
-      <div className="bg-background border-b border-border px-4 sm:px-6 py-3 flex items-center gap-3 shrink-0 flex-wrap">
+      {/* Sub-header: test title, timer, question pills, back to mcq */}
+      <div className="bg-card border-b border-border px-4 sm:px-6 py-2.5 flex items-center gap-3 shrink-0 flex-wrap">
         <div className="min-w-0">
-          <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground">Coding Assessment</div>
-          <h1 className="text-sm sm:text-base font-sans text-foreground-bold truncate">{testData.title}</h1>
+          <div className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">Coding Assessment</div>
+          <h1 className="text-sm sm:text-base font-sans font-bold text-foreground truncate">{testData.title}</h1>
         </div>
 
         <div className="flex-1" />
 
-        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-xs font-mono font-bold border ${
-          isWarning ? 'text-red-800 border-red-200 bg-red-50 animate-pulse' : 'text-foreground-bold border-border bg-background'
-        }`}>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground font-sans">Time</span>
-          {timerDisplay}
-        </div>
-
-        <div className="flex gap-1 flex-wrap">
+        {/* Question Selector Pills */}
+        <div className="flex gap-1.5 flex-wrap items-center">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mr-1 hidden sm:inline">Questions:</span>
           {testData.codingQuestions.map((q, i) => (
             <button
               key={q._id}
               onClick={() => handleQuestionChange(i)}
-              className={`w-8 h-8 text-xs font-bold rounded-sm border transition-all ${
+              className={`w-7 h-7 sm:w-8 sm:h-8 text-xs font-bold rounded-sm border transition-all duration-200 cursor-pointer hover:-translate-y-0.5 active:translate-y-0 ${
                 i === activeQIndex
-                  ? 'border-2 border-cream-950 ring-2 ring-cream-950/20 scale-105 text-foreground bg-background z-10'
+                  ? 'border-2 border-primary ring-2 ring-primary/20 scale-105 text-primary-foreground bg-primary shadow-sm z-10'
                   : submitted[q._id]
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:-translate-y-0.5'
-                    : 'bg-background text-muted-foreground border-border hover:border-cream-400 hover:text-foreground hover:-translate-y-0.5'
+                    ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 hover:border-emerald-500 hover:shadow-xs'
+                    : 'bg-muted/40 text-muted-foreground border-border hover:border-foreground/40 hover:text-foreground hover:shadow-xs'
               }`}
             >
               {i + 1}
@@ -351,22 +331,16 @@ const CodingTestRoom: React.FC = () => {
           ))}
         </div>
 
+        {/* Back to MCQ Action Button */}
         {testData.testType === 'mixed' && (
           <button
             onClick={() => navigate(`/test/${testId}`)}
-            className="px-4 py-2 bg-background text-foreground text-[10px] font-black uppercase tracking-widest rounded-sm border border-border transition-all hover:bg-background"
+            className="px-3.5 py-1.5 bg-muted hover:bg-muted/80 text-foreground text-[10px] font-bold uppercase tracking-widest rounded-sm border border-border transition-all duration-200 shadow-xs hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-1.5 cursor-pointer"
           >
-            Back to MCQ
+            <span>&larr;</span>
+            <span>Back to MCQ</span>
           </button>
         )}
-
-        <button
-          onClick={handleFinishClick}
-          disabled={isSubmitting}
-          className="px-4 py-2 bg-emerald-800 text-white text-[10px] font-black uppercase tracking-widest rounded-sm border border-emerald-900 transition-all hover:bg-emerald-900 disabled:opacity-50"
-        >
-          Finish Test
-        </button>
       </div>
 
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
@@ -443,42 +417,54 @@ const CodingTestRoom: React.FC = () => {
         </div>
 
         <div className="flex-1 flex flex-col overflow-hidden bg-background">
-          <div className="h-11 bg-background border-b border-border flex items-center px-3 gap-3 shrink-0">
-            <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hidden sm:block">Language</label>
-            <select
-              value={language}
-              onChange={e => handleLanguageChange(e.target.value)}
-              className="bg-background border border-border text-foreground text-xs px-3 py-1.5 rounded-sm focus:outline-none focus:border-cream-400 font-bold uppercase tracking-wider"
-            >
-              {allowedLangs.map(l => (
-                <option key={l} value={l}>{LANG_META[l]?.label ?? l}</option>
-              ))}
-            </select>
+          <div className="h-12 bg-card border-b border-border flex items-center px-4 gap-3 shrink-0">
+            <div className="flex items-center gap-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hidden sm:block">Language</label>
+              <select
+                value={language}
+                onChange={e => handleLanguageChange(e.target.value)}
+                className="bg-background dark:bg-zinc-900 border border-border dark:border-zinc-700 text-foreground dark:text-zinc-100 text-xs px-3 py-1.5 rounded-sm focus:outline-none focus:border-primary font-bold uppercase tracking-wider cursor-pointer hover:border-foreground/40 transition-colors"
+              >
+                {allowedLangs.map(l => (
+                  <option key={l} value={l} className="bg-background dark:bg-zinc-900 text-foreground dark:text-zinc-100 font-bold uppercase tracking-wider py-1">
+                    {LANG_META[l]?.label ?? l}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <div className="flex-1" />
 
+            {/* Distinct Run Code Button */}
             <button
               onClick={handleRun}
               disabled={isRunning || isSubmitting}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-background hover:bg-background border border-border text-foreground text-[10px] font-black uppercase tracking-widest rounded-sm transition-all disabled:opacity-40"
+              className="flex items-center gap-1.5 px-4 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 text-[10px] font-bold uppercase tracking-widest rounded-sm border border-slate-300 dark:border-slate-700 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-40 shadow-xs hover:shadow-md cursor-pointer"
             >
-              {isRunning
-                ? <span className="w-3 h-3 border border-border-hover border-t-cream-900 rounded-full animate-spin" />
-                : null
-              }
-              Run
+              {isRunning ? (
+                <span className="w-3 h-3 border-2 border-slate-600 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <svg className="w-3.5 h-3.5 text-slate-700 dark:text-slate-300" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              )}
+              <span>Run Code</span>
             </button>
 
+            {/* Distinct Submit Code Button */}
             <button
               onClick={handleSubmit}
               disabled={isRunning || isSubmitting}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-widest rounded-sm transition-all disabled:opacity-40"
+              className="flex items-center gap-1.5 px-4 py-1.5 bg-primary hover:brightness-110 text-primary-foreground text-[10px] font-bold uppercase tracking-widest rounded-sm border border-primary-foreground/30 dark:border-emerald-400/80 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-40 shadow-sm hover:shadow-md cursor-pointer"
             >
-              {isSubmitting
-                ? <span className="w-3 h-3 border border-border border-t-transparent rounded-full animate-spin" />
-                : null
-              }
-              Submit
+              {isSubmitting ? (
+                <span className="w-3 h-3 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+              <span>Submit Code</span>
             </button>
           </div>
 
