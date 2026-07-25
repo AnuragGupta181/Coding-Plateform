@@ -166,7 +166,7 @@ const parseCodingRows = (rows: Record<string, string>[]): { questions: CodingQue
       difficulty: (['easy', 'medium', 'hard'].includes(diff.toLowerCase()) ? diff.toLowerCase() : 'medium') as 'easy' | 'medium' | 'hard',
       points: isNaN(pts) || pts < 1 ? 10 : pts,
       examples, testCases,
-      allowedLanguages: ['javascript', 'python', 'cpp', 'java'],
+      allowedLanguages: ['javascript', 'python', 'cpp', 'java', 'c'],
       starterCode: {},
     });
   });

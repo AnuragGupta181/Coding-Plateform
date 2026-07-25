@@ -88,7 +88,7 @@ exports.createCodingQuestion = async (req, res) => {
       constraints: constraints || '',
       examples: examples || [],
       testCases: testCases || [],
-      allowedLanguages: allowedLanguages || ['javascript', 'python', 'cpp', 'java'],
+      allowedLanguages: allowedLanguages || ['javascript', 'python', 'cpp', 'java', 'c'],
       starterCode: starterCode || {},
       points: points || 10,
       difficulty: difficulty || 'medium',

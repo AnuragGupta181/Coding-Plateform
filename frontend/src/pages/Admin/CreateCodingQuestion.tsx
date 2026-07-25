@@ -6,10 +6,54 @@ interface Example { input: string; output: string; explanation: string; }
 interface TestCase { input: string; expectedOutput: string; isHidden: boolean; }
 
 const STARTER_TEMPLATES: Record<string, string> = {
-  javascript: '// Write your solution here\nfunction solve(input) {\n  \n}\n\nconst lines = require("fs").readFileSync("/dev/stdin","utf8").trim();\nconsole.log(solve(lines));\n',
-  python:     '# Write your solution here\nimport sys\n\ndef solve(data):\n    pass\n\nprint(solve(sys.stdin.read().strip()))\n',
-  cpp:        '#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    string line;\n    getline(cin, line);\n    // solve here\n    cout << "" << endl;\n    return 0;\n}\n',
-  java:       'import java.util.*;\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // solve here\n    }\n}\n',
+  javascript: `// Write your solution here
+function solve(input) {
+  
+}
+`,
+  python: `# Write your solution inside solve()
+def solve(data: str):
+    # Write your logic here
+    pass
+`,
+  cpp: `#include <bits/stdc++.h>
+using namespace std;
+
+void solve() {
+    // Write your solution here
+}
+
+int main() {
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
+    solve();
+    return 0;
+}
+`,
+  java: `import java.util.*;
+
+public class Main {
+    public static void solve(Scanner sc) {
+        // Write your solution here
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        solve(sc);
+    }
+}
+`,
+  c: `#include <stdio.h>
+
+void solve() {
+    // Write your solution here
+}
+
+int main() {
+    solve();
+    return 0;
+}
+`,
 };
 
 const SUPPORTED_LANGS = ['javascript', 'python', 'cpp', 'java', 'c'];
@@ -23,7 +67,7 @@ const CreateCodingQuestion: React.FC = () => {
   const [constraints, setConstraints] = useState('');
   const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
   const [points, setPoints] = useState(10);
-  const [allowedLanguages, setAllowedLanguages] = useState<string[]>(['javascript', 'python', 'cpp', 'java']);
+  const [allowedLanguages, setAllowedLanguages] = useState<string[]>(['javascript', 'python', 'cpp', 'java', 'c']);
   const [examples, setExamples] = useState<Example[]>([{ input: '', output: '', explanation: '' }]);
   const [testCases, setTestCases] = useState<TestCase[]>([
     { input: '', expectedOutput: '', isHidden: false },

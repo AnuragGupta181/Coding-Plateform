@@ -63,7 +63,7 @@ const CreateTest: React.FC = () => {
   const handleAddCodingQuestion = () => {
     setCodingQuestions([...codingQuestions, {
       title: '', description: '', difficulty: 'medium', points: 10, constraints: '',
-      examples: [], testCases: [{ input: '', expectedOutput: '', isHidden: false }], allowedLanguages: ['javascript', 'python', 'cpp', 'java'], starterCode: {}
+      examples: [], testCases: [{ input: '', expectedOutput: '', isHidden: false }], allowedLanguages: ['javascript', 'python', 'cpp', 'java', 'c'], starterCode: {}
     }]);
   };
 

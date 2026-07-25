@@ -103,6 +103,24 @@ async function submitToJudge0Endpoint(base, headers, languageId, sourceCode, std
   throw new Error('Code execution timed out at this endpoint.');
 }
 
+function wrapSourceCode(sourceCode, language) {
+  if (!sourceCode) return sourceCode;
+
+  if (language === 'python' && !sourceCode.includes('sys.stdin') && !sourceCode.includes('import sys')) {
+    return `${sourceCode}\n\nimport sys\nif __name__ == "__main__":\n    raw = sys.stdin.read().strip()\n    if raw:\n        res = solve(raw)\n        if res is not None:\n            print(str(res).lower() if isinstance(res, bool) else res)\n`;
+  }
+
+  if (language === 'javascript' && !sourceCode.includes('readFileSync') && !sourceCode.includes('fs.read')) {
+    return `${sourceCode}\n\nconst fs = require("fs");\nconst input = fs.readFileSync(0, "utf-8").trim();\nif (input) {\n  const res = solve(input);\n  if (res !== undefined) console.log(typeof res === "boolean" ? String(res) : res);\n}\n`;
+  }
+
+  if (language === 'c' && !sourceCode.includes('main(')) {
+    return `#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\n${sourceCode}\n\nint main() {\n    solve();\n    return 0;\n}\n`;
+  }
+
+  return sourceCode;
+}
+
 /**
  * Submit code to Judge0 and wait for the result.
  * Includes explicit fallback logic.
@@ -113,6 +131,8 @@ async function executeCode({ sourceCode, language, stdin = '', expectedOutput = 
     throw new Error(`Unsupported language: ${language}. Supported: ${Object.keys(LANGUAGE_MAP).join(', ')}`);
   }
 
+  const finalSourceCode = wrapSourceCode(sourceCode, language);
+
   let lastErrorMessage = '';
 
   // 1st Attempt: Try the Self-Hosted Instance (if configured in .env)
@@ -122,7 +142,7 @@ async function executeCode({ sourceCode, language, stdin = '', expectedOutput = 
       const headers = getHeaders('self-hosted');
       console.log(`[Judge0] Attempting Self-Hosted API: ${baseUrl}`);
       
-      return await submitToJudge0Endpoint(baseUrl, headers, languageId, sourceCode, stdin, expectedOutput);
+      return await submitToJudge0Endpoint(baseUrl, headers, languageId, finalSourceCode, stdin, expectedOutput);
     } catch (error) {
       console.warn(`[Judge0] Self-Hosted API failed: ${error.message}. Falling back to next option...`);
       lastErrorMessage = error.message;
@@ -135,7 +155,7 @@ async function executeCode({ sourceCode, language, stdin = '', expectedOutput = 
     const headers = getHeaders('public');
     console.log(`[Judge0] Attempting Public Free API: ${baseUrl}`);
     
-    return await submitToJudge0Endpoint(baseUrl, headers, languageId, sourceCode, stdin, expectedOutput);
+    return await submitToJudge0Endpoint(baseUrl, headers, languageId, finalSourceCode, stdin, expectedOutput);
   } catch (error) {
     console.warn(`[Judge0] Public Free API failed: ${error.message}. Falling back to next option...`);
     lastErrorMessage = error.message;
@@ -148,7 +168,7 @@ async function executeCode({ sourceCode, language, stdin = '', expectedOutput = 
       const headers = getHeaders('rapidapi');
       console.log(`[Judge0] Attempting RapidAPI: ${baseUrl}`);
       
-      return await submitToJudge0Endpoint(baseUrl, headers, languageId, sourceCode, stdin, expectedOutput);
+      return await submitToJudge0Endpoint(baseUrl, headers, languageId, finalSourceCode, stdin, expectedOutput);
     } catch (error) {
       console.error(`[Judge0] RapidAPI failed: ${error.message}. All endpoints exhausted.`);
       lastErrorMessage = error.message;

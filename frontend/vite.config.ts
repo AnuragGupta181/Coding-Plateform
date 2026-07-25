@@ -9,6 +9,7 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'https://api.nextgen.kaarma.studio',
+        // target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
       },

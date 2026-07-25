@@ -25,7 +25,7 @@ const codingQuestionSchema = new mongoose.Schema({
   constraints: { type: String, default: '' },
   examples: [exampleSchema],
   testCases: [testCaseSchema],
-  allowedLanguages: { type: [String], default: ['javascript', 'python', 'cpp', 'java'] },
+  allowedLanguages: { type: [String], default: ['javascript', 'python', 'cpp', 'java', 'c'] },
   starterCode: {                                    // { python: "def solve():\n  pass", ... }
     type: Map,
     of: String,
