@@ -57,11 +57,11 @@ const ResultsList: React.FC = () => {
     <div className="min-h-screen bg-background font-sans text-foreground pb-20">
       <nav className="bg-background border-b border-border mb-6 md:mb-10">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-20 flex justify-between items-center">
-          <div className="flex items-center gap-2 md:gap-3">
-            <Link to="/admin" className="w-8 h-8 border border-cream-950 flex items-center justify-center text-foreground-bold font-sans font-bold text-lg shrink-0">
-              N
+          <div className="flex items-center gap-3">
+            <Link to="/admin" className="flex items-center gap-3">
+              <img src="/logo.svg" alt="NextGen Logo" className="h-10 md:h-12 w-auto" />
+              <span className="text-xs uppercase font-bold tracking-[0.2em] text-muted-foreground border-l border-border pl-3 hidden sm:inline">Admin</span>
             </Link>
-            <span className="text-base md:text-lg font-sans font-bold text-foreground-bold tracking-wide truncate">NextGen Admin</span>
           </div>
         </div>
       </nav>

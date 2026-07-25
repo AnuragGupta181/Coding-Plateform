@@ -7,6 +7,7 @@ export interface TestSummary {
   durationInMinutes: number;
   status: 'scheduled' | 'waiting' | 'active' | 'completed';
   testType?: 'mcq' | 'coding' | 'mixed';
+  scheduledFor?: string;
 }
 
 interface TestCardProps {
@@ -24,7 +25,7 @@ export const TestCard: React.FC<TestCardProps> = ({ test, onEnter }) => {
         </div>
         <p className="text-sm text-muted-foreground line-clamp-2 font-light leading-relaxed mb-6">{test.description}</p>
         
-        <div className="flex items-center gap-6 pt-6 border-t border-border">
+          <div className="flex items-center gap-6 pt-6 border-t border-border">
           <div className="flex flex-col">
             <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-tighter">Duration</span>
             <span className="text-sm font-bold text-foreground">{test.durationInMinutes} mins</span>
@@ -33,6 +34,20 @@ export const TestCard: React.FC<TestCardProps> = ({ test, onEnter }) => {
             <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-tighter">Format</span>
             <span className="text-sm font-bold text-foreground">MCQ Only</span>
           </div>
+          {test.status === 'scheduled' && test.scheduledFor && (
+            <div className="flex flex-col">
+              <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-tighter">Scheduled For</span>
+              <span className="text-sm font-bold text-indigo-400">
+                {new Date(test.scheduledFor).toLocaleString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                  hour12: true
+                })}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 

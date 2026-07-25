@@ -10,6 +10,7 @@ router.use(requireAdmin);
 router.get('/tests/history', adminController.getTestHistory);
 router.get('/tests/queues', adminController.getWaitingQueues);
 router.get('/test/:id/results', adminController.getTestResults);
+router.get('/test/:id/active-users', adminController.getActiveTestUsers);
 router.get('/submission/:id', adminController.getSubmissionDetails);
 
 module.exports = router;

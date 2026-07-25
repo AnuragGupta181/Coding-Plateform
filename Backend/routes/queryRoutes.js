@@ -8,13 +8,16 @@ const { requireAuth } = require('../middleware/authMiddleware');
 // ── Query Service Routes (GET /api/query/...) ─────────────────────────────────
 // All read-only routes. Safe to run on a read-replica or separate service.
 
+// SSE events (GET only — long-lived streams)
+// Must be mounted BEFORE requireAuth because EventSource cannot send Authorization headers
+router.use('/events', eventRoutes);
+
 // Public + auth-gated test reads
+// Note: router.use(middleware, subRouter) applies middleware to EVERYTHING defined after it if path is omitted,
+// so /events must be defined above this line!
 router.use(requireAuth, testQueryRoutes);
 
 // Admin reads (requireAuth + requireAdmin enforced inside adminQueryRoutes)
 router.use('/admin', adminQueryRoutes);
-
-// SSE events (GET only — long-lived streams)
-router.use('/events', eventRoutes);
 
 module.exports = router;

@@ -107,15 +107,15 @@ export const SubmitResult: React.FC<SubmitResultProps> = ({ isSubmitting, result
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                 <div>
                   <span className="text-muted-foreground font-bold uppercase tracking-wider text-[10px]">Input</span>
-                  <pre className="mt-1 bg-background border border-cream-100 p-2 rounded-sm text-cream-800 font-mono whitespace-pre-wrap">{r.input}</pre>
+                  <pre className="mt-1 bg-muted/40 border border-border p-2 rounded-sm text-foreground font-mono whitespace-pre-wrap">{r.input}</pre>
                 </div>
                 <div>
                   <span className="text-muted-foreground font-bold uppercase tracking-wider text-[10px]">Expected Output</span>
-                  <pre className="mt-1 bg-emerald-950/30 border border-emerald-900/50 p-2 rounded-sm text-emerald-400 font-mono whitespace-pre-wrap">{r.expectedOutput}</pre>
+                  <pre className="mt-1 bg-emerald-500/10 border border-emerald-500/20 p-2 rounded-sm text-emerald-700 dark:text-emerald-400 font-mono font-bold whitespace-pre-wrap">{r.expectedOutput}</pre>
                 </div>
                 <div className="md:col-span-2">
                   <span className="text-muted-foreground font-bold uppercase tracking-wider text-[10px]">Actual Output</span>
-                  <pre className={`mt-1 bg-background border p-2 rounded-sm font-mono whitespace-pre-wrap ${r.passed ? 'border-cream-100 text-emerald-800' : 'border-red-200 text-red-700'}`}>
+                  <pre className={`mt-1 bg-muted/40 border p-2 rounded-sm font-mono whitespace-pre-wrap ${r.passed ? 'border-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-bold' : 'border-red-500/20 text-red-700 dark:text-red-400 font-bold bg-red-500/10'}`}>
                     {r.actualOutput || (r.stderr ? 'Runtime Error / Compilation Error' : '(Empty)')}
                   </pre>
                   {!r.passed && r.stderr && (

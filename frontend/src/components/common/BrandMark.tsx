@@ -8,15 +8,17 @@ interface BrandMarkProps {
 }
 
 const sizeClasses = {
-  sm: 'w-8 h-8 text-lg',
-  md: 'w-10 h-10 text-xl',
-  lg: 'w-16 h-16 text-3xl'
+  sm: 'h-8',
+  md: 'h-12',
+  lg: 'h-16'
 };
 
 const BrandBox = ({ size = 'md', className = '' }: Omit<BrandMarkProps, 'to'>) => (
-  <div className={`${sizeClasses[size]} bg-muted/40 backdrop-blur-md border border-border flex items-center justify-center text-foreground-bold font-sans font-bold shadow-sm mx-auto ${className}`}>
-    N
-  </div>
+  <img
+    src="/logo.svg"
+    alt="NextGen Logo"
+    className={`${sizeClasses[size] || 'h-12'} w-auto object-contain transition-transform hover:scale-105 ${className}`}
+  />
 );
 
 const BrandMark: React.FC<BrandMarkProps> = ({ to, size = 'md', className }) => {
@@ -32,3 +34,4 @@ const BrandMark: React.FC<BrandMarkProps> = ({ to, size = 'md', className }) => 
 };
 
 export default BrandMark;
+

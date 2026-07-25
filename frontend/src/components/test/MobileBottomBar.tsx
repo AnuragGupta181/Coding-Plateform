@@ -55,7 +55,7 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
       <button
         onClick={onOpenSubmitModal}
         disabled={isSaving}
-        className="px-3 py-2 bg-emerald-800 text-white text-[9px] font-black uppercase tracking-widest rounded-sm border border-emerald-900 transition-all hover:bg-emerald-900 disabled:opacity-50 flex items-center gap-1 shrink-0"
+        className="px-3 py-2 bg-emerald-800 hover:bg-emerald-700 dark:bg-emerald-900/90 dark:hover:bg-emerald-800 text-white text-[9px] font-black uppercase tracking-widest rounded-sm border border-emerald-600 dark:border-emerald-400/80 transition-all disabled:opacity-50 flex items-center gap-1 shrink-0 cursor-pointer"
       >
         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />

@@ -113,11 +113,28 @@ const CreateTest: React.FC = () => {
     setTimeout(() => setImportSuccess(null), 5000);
   };
 
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [scheduleMode, setScheduleMode] = useState<'immediate' | 'schedule'>('immediate');
+  const [scheduledDateTime, setScheduledDateTime] = useState('');
+
   // ─── Submit ───────────────────────────────────────────────────────────────
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleOpenScheduleModal = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!title.trim()) {
+      alert('Please enter a test title.');
+      return;
+    }
+    setShowScheduleModal(true);
+  };
+
+  const handleConfirmDeploy = async () => {
     if (isLoading) return;
+    if (scheduleMode === 'schedule' && !scheduledDateTime) {
+      alert('Please select a valid date and time for the scheduled test.');
+      return;
+    }
+
     setIsLoading(true);
     try {
       // Auto-determine testType based on populated questions
@@ -134,7 +151,10 @@ const CreateTest: React.FC = () => {
         questions: validQuestions,
         codingQuestions,
         testType: finalTestType,
+        scheduledFor: scheduleMode === 'schedule' ? new Date(scheduledDateTime).toISOString() : null
       });
+
+      setShowScheduleModal(false);
       navigate('/admin');
     } catch (err) {
       console.error('Failed to create test', err);
@@ -149,11 +169,11 @@ const CreateTest: React.FC = () => {
       {/* Nav */}
       <nav className="bg-background border-b border-border mb-6 md:mb-10">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-20 flex justify-between items-center">
-          <div className="flex items-center gap-2 md:gap-3">
-            <Link to="/admin" className="w-8 h-8 border border-cream-950 flex items-center justify-center text-foreground-bold font-sans font-bold text-lg shrink-0">
-              N
+          <div className="flex items-center gap-3">
+            <Link to="/admin" className="flex items-center gap-3">
+              <img src="/logo.svg" alt="NextGen Logo" className="h-10 md:h-12 w-auto" />
+              <span className="text-xs uppercase font-bold tracking-[0.2em] text-muted-foreground border-l border-border pl-3 hidden sm:inline">Design</span>
             </Link>
-            <span className="text-base md:text-lg font-sans font-bold text-foreground-bold tracking-wide truncate">NextGen Design</span>
           </div>
         </div>
       </nav>
@@ -175,7 +195,7 @@ const CreateTest: React.FC = () => {
         <p className="text-xs md:text-base text-muted-foreground mt-2 font-light italic">Define the technical parameters and evaluative criteria for your next session.</p>
       </header>
 
-      <form onSubmit={handleSubmit} className="max-w-4xl mx-auto px-4 md:px-6 space-y-8 md:space-y-12">
+      <form onSubmit={handleOpenScheduleModal} className="max-w-4xl mx-auto px-4 md:px-6 space-y-8 md:space-y-12">
 
         {/* ── Test Basics ── */}
         <section className="bg-background p-5 md:p-12 rounded-sm border border-border shadow-sm space-y-6 md:space-y-10">
@@ -528,6 +548,92 @@ const CreateTest: React.FC = () => {
           onImport={handleImport}
           onClose={() => setShowUploader(false)}
         />
+      )}
+
+      {/* ── Schedule Test Modal ── */}
+      {showScheduleModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-background border border-border rounded-sm shadow-premium p-6 md:p-10 max-w-md w-full animate-slide-in space-y-6">
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary mb-1">Deployment Options</div>
+              <h3 className="text-xl md:text-2xl font-sans text-foreground-bold">Schedule or Launch Test</h3>
+              <p className="text-xs text-muted-foreground mt-1">Choose when candidates can begin this assessment environment.</p>
+            </div>
+
+            <div className="space-y-4">
+              <label className="flex items-center gap-3 p-4 border border-border rounded-sm cursor-pointer hover:border-primary/40 transition-colors">
+                <input
+                  type="radio"
+                  name="scheduleMode"
+                  checked={scheduleMode === 'immediate'}
+                  onChange={() => setScheduleMode('immediate')}
+                  className="accent-primary"
+                />
+                <div>
+                  <div className="text-xs font-bold text-foreground uppercase tracking-wide">Start Immediately</div>
+                  <div className="text-[10px] text-muted-foreground">Opens waiting room right now for candidate entry.</div>
+                </div>
+              </label>
+
+              <label className="flex items-center gap-3 p-4 border border-border rounded-sm cursor-pointer hover:border-primary/40 transition-colors">
+                <input
+                  type="radio"
+                  name="scheduleMode"
+                  checked={scheduleMode === 'schedule'}
+                  onChange={() => setScheduleMode('schedule')}
+                  className="accent-primary"
+                />
+                <div>
+                  <div className="text-xs font-bold text-foreground uppercase tracking-wide">Schedule for Later</div>
+                  <div className="text-[10px] text-muted-foreground">Auto-opens waiting room 5 minutes prior to scheduled start time.</div>
+                </div>
+              </label>
+
+              {scheduleMode === 'schedule' && (
+                <div className="pt-2 animate-fade-in">
+                  <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-2">
+                    Target Date & Time
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={scheduledDateTime}
+                    onChange={e => setScheduledDateTime(e.target.value)}
+                    className="w-full bg-muted/30 border border-border rounded-sm p-3 text-xs text-foreground font-mono outline-none focus:border-primary"
+                    required
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t border-border">
+              <button
+                type="button"
+                onClick={() => setShowScheduleModal(false)}
+                className="btn-secondary flex-1 py-2.5 text-center text-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeploy}
+                disabled={isLoading}
+                className="btn-primary flex-1 py-2.5 text-center text-xs flex items-center justify-center gap-2"
+              >
+                {isLoading ? (
+                  <>
+                    <svg className="animate-spin h-3 w-3 text-current" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Deploying…
+                  </>
+                ) : (
+                  'Confirm & Deploy'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

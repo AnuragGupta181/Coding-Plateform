@@ -22,9 +22,7 @@ export const CompletedView: React.FC = () => {
   const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
-      <div className="w-16 h-16 border-2 border-cream-950 flex items-center justify-center text-foreground-bold font-sans font-bold text-3xl mb-8">
-        N
-      </div>
+      <img src="/logo.svg" alt="NextGen Logo" className="h-16 md:h-20 w-auto mx-auto mb-8" />
       <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground mb-2">Protocol Finished</div>
       <h2 className="text-4xl font-sans text-foreground-bold mb-4">Submission Confirmed</h2>
       <p className="text-muted-foreground mb-12 max-w-md font-light italic">Your responses have been securely persisted. You may now exit the assessment environment.</p>

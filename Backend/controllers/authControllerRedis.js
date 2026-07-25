@@ -65,7 +65,7 @@ async function checkOtpRateLimits(client, req, email) {
 // 1. Signup - Sends OTP
 exports.signup = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, mobileNumber } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Name, email, and password are required.' });
@@ -95,10 +95,11 @@ exports.signup = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 12);
 
     if (!user) {
-      user = new User({ name, email, password: hashedPassword, isVerified: false });
+      user = new User({ name, email, password: hashedPassword, mobileNumber: mobileNumber || null, isVerified: false });
     } else {
       user.name = name;
       user.password = hashedPassword;
+      user.mobileNumber = mobileNumber || null;
       user.isVerified = false;
     }
     await user.save();

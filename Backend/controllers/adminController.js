@@ -43,7 +43,10 @@ exports.parseQuestionsFromExcel = async (req, res) => {
 
 exports.createTest = async (req, res) => {
   try {
-    const { title, description, durationInMinutes, questions, codingQuestions, testType } = req.body;
+    const { title, description, durationInMinutes, questions, codingQuestions, testType, scheduledFor } = req.body;
+
+    const testScheduledDate = scheduledFor ? new Date(scheduledFor) : null;
+    const isImmediate = !testScheduledDate;
 
     const newTest = new Test({
       title,
@@ -52,7 +55,8 @@ exports.createTest = async (req, res) => {
       testType: testType || 'mcq',
       questions: questions || [],
       codingQuestions: codingQuestions || [],
-      status: 'scheduled'
+      scheduledFor: testScheduledDate,
+      status: isImmediate ? 'waiting' : 'scheduled'
     });
 
     await newTest.save();
@@ -219,7 +223,7 @@ exports.getWaitingQueues = async (req, res) => {
 
     // Run all 3 DB queries in PARALLEL instead of sequentially (~3x faster)
     const [tests, activeSubmissions, completedSubmissions] = await Promise.all([
-      Test.find({ status: { $ne: 'completed' } }, 'title status').lean(),
+      Test.find({ status: { $ne: 'completed' } }, 'title status durationInMinutes startedAt scheduledFor').lean(),
       Submission.aggregate([
         { $match: { status: 'active' } },
         { $group: { _id: '$testId', count: { $sum: 1 } } }
@@ -238,6 +242,9 @@ exports.getWaitingQueues = async (req, res) => {
       testId: String(test._id),
       title: test.title,
       status: test.status,
+      durationInMinutes: test.durationInMinutes,
+      startedAt: test.startedAt,
+      scheduledFor: test.scheduledFor,
       activeSubmissionCount: activeMap.get(String(test._id)) || 0,
       completedSubmissionCount: completedMap.get(String(test._id)) || 0,
       waitingUsers: queueMap.get(String(test._id)) || []
@@ -283,6 +290,88 @@ exports.getSubmissionDetails = async (req, res) => {
     if (!submission) return res.status(404).json({ message: 'Submission not found' });
 
     res.json(submission);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getActiveTestUsers = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Fetch active submissions for this test
+    const submissions = await Submission.find(
+      { testId: id, status: 'active' },
+      'candidateName candidateEmail startTime violations answers codingAnswers'
+    ).lean();
+
+    const users = submissions.map(sub => {
+      // Safely count answers from Mongoose Map or object
+      const mcqCount = sub.answers ? Object.keys(sub.answers).length : 0;
+      const codingCount = sub.codingAnswers ? Object.keys(sub.codingAnswers).length : 0;
+      
+      return {
+        id: sub._id,
+        name: sub.candidateName || 'Unknown',
+        email: sub.candidateEmail,
+        startTime: sub.startTime,
+        violations: sub.violations || [],
+        answeredCount: mcqCount + codingCount
+      };
+    });
+
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.sendProctorMessage = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { candidateEmail, message } = req.body;
+
+    if (!candidateEmail || !message) {
+      return res.status(400).json({ message: 'Candidate email and message are required' });
+    }
+
+    eventController.broadcastEvent(id, {
+      type: 'PROCTOR_MESSAGE',
+      targetEmail: candidateEmail,
+      message
+    });
+
+    res.json({ message: 'Proctor message sent successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.forceSubmitCandidate = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const submission = await Submission.findById(id).populate('testId');
+    if (!submission) return res.status(404).json({ message: 'Submission not found' });
+
+    if (submission.status === 'completed') {
+      return res.status(400).json({ message: 'Submission already completed' });
+    }
+
+    // Run the full scoring flow — identical to what completeSubmission does
+    const { calculateScore } = require('../services/testLifecycleService');
+    submission.score = calculateScore(submission, submission.testId);
+    submission.status = 'completed';
+    submission.completedAt = new Date();
+    await submission.save();
+
+    // Targeted SSE — only this candidate's client will act on it
+    eventController.broadcastEvent(String(submission.testId._id || submission.testId), {
+      type: 'FORCE_SUBMIT',
+      targetEmail: submission.candidateEmail
+    });
+
+    res.json({ message: 'Candidate force-submitted and graded. They cannot rejoin.' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -52,6 +52,7 @@ const testSchema = new mongoose.Schema({
   },
   startedAt: { type: Date, default: null },
   completedAt: { type: Date, default: null },
+  scheduledFor: { type: Date, default: null },
   questions: [questionSchema],               // MCQ questions
   codingQuestions: [codingQuestionSchema]    // Coding questions
 }, { timestamps: true });

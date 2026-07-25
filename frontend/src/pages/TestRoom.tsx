@@ -218,16 +218,34 @@ if (!testId) return;
 
 const eventSource = new EventSource(createEventSourceUrl(`/events/test/${testId}`));
 eventSource.onmessage = (event) => {
-const data = JSON.parse(event.data);
-if (data.type === 'AUTO_SUBMIT') {
-dispatch(completeTest());
-}
+  try {
+    const data = JSON.parse(event.data);
+    if (data.type === 'AUTO_SUBMIT') {
+      dispatch(completeTest());
+    } else if (data.type === 'FORCE_SUBMIT' && data.targetEmail === user?.email) {
+      dispatch(completeTest());
+      toast.error('Your test session has been ended by the proctor.', { duration: 4000 });
+      setTimeout(() => navigate('/dashboard'), 2500);
+    } else if (data.type === 'PROCTOR_MESSAGE' && data.targetEmail === user?.email) {
+      toast.error(`PROCTOR MESSAGE:\n${data.message}`, {
+        duration: 5000,
+        style: {
+          fontSize: '1.25rem',
+          fontWeight: 'bold',
+          padding: '20px',
+          border: '4px solid #ef4444',
+          backgroundColor: '#fef2f2',
+          color: '#7f1d1d'
+        }
+      });
+    }
+  } catch { /* malformed event — ignore */ }
 };
 
 return () => {
 eventSource.close();
 };
-}, [dispatch, testId]);
+}, [dispatch, testId, navigate, user?.email]);
 
 if (status === 'error') return <ErrorView />;
 if (!testData || status === 'loading') return <LoadingView />;
@@ -392,7 +410,13 @@ setShowSubmitModal(false);
 
 return (
 <div className="min-h-screen flex flex-col bg-background font-sans text-foreground">
-<TestRoomHeader candidateName={user?.name} testTitle={testData?.title} />
+<TestRoomHeader
+  candidateName={user?.name}
+  testTitle={testData?.title}
+  onAction={handleOpenSubmitModal}
+  actionText={testData?.testType === 'mixed' ? 'Proceed to Coding' : 'Submit Assessment'}
+  isSaving={isSaving}
+/>
 
 {syncWarning && (
 <div className="bg-amber-50 border-b border-amber-200 px-4 py-2.5">
@@ -426,17 +450,6 @@ getQuestionState={getCandidateQuestionState}
 onQuestionSelect={goToQuestion}
 />
 </div>
-
-<button
-onClick={handleOpenSubmitModal}
-disabled={isSaving}
-className="w-full shrink-0 py-3.5 bg-emerald-800 text-white text-[11px] font-black uppercase tracking-widest rounded-sm border border-emerald-900 transition-all hover:bg-emerald-900 hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
->
-<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-<path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-</svg>
-{testData?.testType === 'mixed' ? 'Proceed to Coding' : 'Submit Assessment'}
-</button>
 </div>
 
 <div className="flex flex-col gap-6 lg:gap-8 flex-1">
