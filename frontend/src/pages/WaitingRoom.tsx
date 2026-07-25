@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../store';
 import testService, { createEventSourceUrl } from '../utils/apiService';
+import InstructionsContent from '../components/common/InstructionsContent';
+import { MinimalFooter } from '../components/common/MinimalFooter';
 
 const WaitingRoom: React.FC = () => {
   const { id: testId } = useParams<{ id: string }>();
@@ -12,7 +14,10 @@ const WaitingRoom: React.FC = () => {
   const [scheduledFor, setScheduledFor] = useState<string | null>(null);
   const [timerText, setTimerText] = useState<string>('00:00');
   const [timerLabel, setTimerLabel] = useState<string>('Waiting Time Elapsed');
+  const [showLatePopup, setShowLatePopup] = useState(false);
+  
   const testTypeRef = useRef<string>('mcq');
+  const hasWaitedRef = useRef<boolean>(false);
 
   // Live ticking clock — strictly "Time Left Until Test Starts"
   useEffect(() => {
@@ -47,6 +52,13 @@ const WaitingRoom: React.FC = () => {
     return () => clearInterval(interval);
   }, [scheduledFor]);
 
+  const handleStartTest = () => {
+    const route = testTypeRef.current === 'coding'
+      ? `/coding-test/${testId}`
+      : `/test/${testId}`;
+    navigate(route);
+  };
+
   // Fetch test metadata, connect EventSource to register in queue, and poll for status changes
   useEffect(() => {
     if (!testId) return;
@@ -63,12 +75,8 @@ const WaitingRoom: React.FC = () => {
         const data = JSON.parse(event.data);
         if (data.type === 'START_TEST') {
           setStatusMessage('Signal received. Initializing environment...');
-          setTimeout(() => {
-            const route = testTypeRef.current === 'coding'
-              ? `/coding-test/${testId}`
-              : `/test/${testId}`;
-            navigate(route);
-          }, 1000);
+          hasWaitedRef.current = true;
+          setTimeout(handleStartTest, 1000);
         }
       } catch (err) {
         console.error('SSE Error in WaitingRoom:', err);
@@ -85,12 +93,15 @@ const WaitingRoom: React.FC = () => {
         
         if (res.data.status === 'active') {
           setStatusMessage('Signal received. Initializing environment...');
-          setTimeout(() => {
-            const route = testTypeRef.current === 'coding'
-              ? `/coding-test/${testId}`
-              : `/test/${testId}`;
-            navigate(route);
-          }, 1000);
+          if (!hasWaitedRef.current) {
+            // Late joiner! Show popup instead of redirecting instantly.
+            setShowLatePopup(true);
+          } else {
+            setTimeout(handleStartTest, 1000);
+          }
+        } else {
+          // If we see it's waiting/inactive, they have legitimately waited.
+          hasWaitedRef.current = true;
         }
       } catch (err) {
         console.error('Error checking test status:', err);
@@ -107,49 +118,87 @@ const WaitingRoom: React.FC = () => {
   }, [testId, navigate, user?.name, user?.email]);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-foreground font-sans">
-      <div className="max-w-xl w-full text-center">
-        <div className="mb-12">
-          <img src="/logo.svg" alt="NextGen Logo" className="h-16 md:h-20 w-auto mx-auto mb-6" />
-          <div className="text-[10px] font-bold uppercase tracking-[0.4em] text-muted-foreground mb-2">Secure Holding Area</div>
-          <h2 className="text-5xl font-sans text-foreground-bold mb-4">The Waiting Room</h2>
-          <p className="text-muted-foreground italic font-light">
-            Protocol initialized for candidate <span className="font-bold text-foreground">{user?.name}</span>.
-          </p>
-        </div>
-
-        <div className="bg-background border border-border p-12 rounded-sm shadow-premium mb-12">
-          <div className="flex flex-col items-center gap-8">
-            <div className="flex gap-3">
-              <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
-              <span className="w-2 h-2 bg-cream-400 rounded-full animate-pulse delay-150"></span>
-              <span className="w-2 h-2 bg-cream-200 rounded-full animate-pulse delay-300"></span>
+    <div className="min-h-screen bg-background flex flex-col p-4 md:p-8 text-foreground font-sans">
+      <div className="flex-1 flex flex-col items-center justify-center w-full max-w-7xl mx-auto py-6">
+        <div className="w-full flex flex-col md:flex-row gap-8 lg:gap-12 items-start">
+          
+          {/* Left Side: Header & Timer */}
+          <div className="w-full md:w-[40%] flex flex-col sticky top-8 space-y-6">
+            <div>
+              <img src="/logo.svg" alt="NextGen Logo" className="h-10 md:h-12 w-auto mb-4" />
+              <div className="text-[10px] font-mono font-bold uppercase tracking-[0.4em] text-muted-foreground mb-1">
+                Secure Holding Area
+              </div>
+              <h2 className="text-3xl md:text-4xl font-sans font-bold text-foreground-bold mb-3 tracking-tight">
+                The Waiting Room
+              </h2>
+              <p className="text-muted-foreground italic font-light text-xs leading-relaxed">
+                Protocol initialized for candidate <span className="font-bold text-foreground font-sans">{user?.name}</span>.
+              </p>
             </div>
 
-            <p className="text-sm font-bold tracking-widest uppercase text-foreground-bold">
-              {statusMessage}
-            </p>
+            {/* Timer & Status Box */}
+            <div className="bg-card/50 backdrop-blur-xl border border-border/80 p-6 rounded-lg shadow-2xl relative overflow-hidden group">
+              <div className="flex flex-col items-center gap-5 text-center">
+                <div className="flex gap-2">
+                  <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
+                  <span className="w-2 h-2 bg-primary/60 rounded-full animate-pulse delay-150"></span>
+                  <span className="w-2 h-2 bg-primary/30 rounded-full animate-pulse delay-300"></span>
+                </div>
 
-            <div className="bg-primary/10 border border-primary/20 px-6 py-4 rounded-sm animate-fade-in w-full max-w-xs">
-              <div className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground mb-1">{timerLabel}</div>
-              <div className="text-3xl font-mono font-black text-primary tracking-wider">{timerText}</div>
+                <p className="text-xs font-bold tracking-wider uppercase text-foreground-bold">
+                  {statusMessage}
+                </p>
+
+                <div className="bg-background/80 border border-border/80 px-6 py-5 rounded-md shadow-inner w-full">
+                  <div className="text-[9px] font-mono uppercase font-bold tracking-widest text-muted-foreground mb-2">
+                    {timerLabel}
+                  </div>
+                  <div className="text-3xl md:text-4xl font-mono font-black text-primary tracking-widest">
+                    {timerText}
+                  </div>
+                </div>
+              </div>
             </div>
+          </div>
 
-            <p className="text-xs text-muted-foreground max-w-xs mx-auto leading-relaxed">
-              Please maintain focus. The assessment environment will synchronize automatically across all participants.
-            </p>
+          {/* Right Side: Instructions */}
+          <div className="w-full md:w-[60%] max-h-[65vh] overflow-y-auto custom-scrollbar pr-1">
+            <InstructionsContent />
           </div>
         </div>
+      </div>
 
-        <div className="space-y-4 opacity-50 text-[10px] uppercase tracking-widest font-bold text-muted-foreground">
-          <p>Connectivity: Stable</p>
-          <p>Encryption: Active</p>
+      <div className="w-full mt-auto pt-4">
+        <MinimalFooter />
+      </div>
+
+      {/* Late Joiner Popup */}
+      {showLatePopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+          <div className="bg-card border border-border p-8 rounded-sm shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative">
+            <div className="absolute top-0 left-0 w-full h-1 bg-primary"></div>
+            <h2 className="text-3xl font-sans text-foreground-bold mb-4">The test has already started!</h2>
+            <p className="text-muted-foreground mb-6">
+              You are joining late. Please review the instructions carefully before entering the assessment.
+            </p>
+            
+            <InstructionsContent />
+
+            <div className="mt-8 flex justify-end">
+              <button 
+                onClick={handleStartTest}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-8 py-3.5 rounded-md border border-emerald-400/30 shadow-lg shadow-emerald-900/40 hover:shadow-emerald-500/20 transition-all flex items-center gap-2 cursor-pointer text-xs md:text-sm uppercase tracking-widest"
+              >
+                <span>Acknowledge & Start Test</span>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-
-      <div className="fixed bottom-12 text-[10px] text-cream-300 uppercase tracking-widest font-bold">
-        NextGen Technical Assessment Protocol
-      </div>
+      )}
     </div>
   );
 };
