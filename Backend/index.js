@@ -147,8 +147,8 @@ app.get('/health', (_req, res) => {
     environment: config.env,
     uptime: Math.round(process.uptime()),
     memory: {
-      heapUsed: `${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}mbs`,
-      rss: `${Math.round(process.memoryUsage().rss / 1024 / 1024)}mb`
+      heapUsed: `${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}mB`,
+      rss: `${Math.round(process.memoryUsage().rss / 1024 / 1024)}mB`
     }
   });
 });
