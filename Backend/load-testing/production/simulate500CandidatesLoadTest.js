@@ -135,16 +135,7 @@ async function run500CandidatesLoadTest() {
   console.log(`👥 Simulating ${TOTAL_CANDIDATES} candidates in batches of ${CONCURRENCY}...`);
 
   try {
-    // 1. Fetch available test
-    const testsRes = await axios.get(`${API_URL}/api/query/tests/available`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (!testsRes.data || testsRes.data.length === 0) {
-      throw new Error('No tests found in database.');
-    }
-    const testId = testsRes.data[0]._id;
-
-    // 2. Connect DB with retry resilience and ensure status is ACTIVE
+    // 1. Connect MongoDB Atlas & Ensure active test
     const mongoose = require('mongoose');
     const mongoUri = 'mongodb+srv://sarthakkaushik927_db_user:nuY7XWS0tB6chKhN@tests.t306qgl.mongodb.net/Coding-platform?appName=Tests';
     for (let attempt = 1; attempt <= 3; attempt++) {
@@ -157,16 +148,25 @@ async function run500CandidatesLoadTest() {
       }
     }
     
-    // Check if test has questions & coding questions
-    const testDoc = await mongoose.connection.db.collection('tests').findOne({ _id: new mongoose.Types.ObjectId(testId) });
-    const realQuestions = testDoc?.questions || [];
-    const realCodingQuestions = testDoc?.codingQuestions || [];
-
-    await mongoose.connection.db.collection('tests').updateOne(
-      { _id: new mongoose.Types.ObjectId(testId) },
-      { $set: { status: 'active' } }
-    );
+    let testDoc = await mongoose.connection.db.collection('tests').findOne({ status: 'active' });
+    if (!testDoc) {
+      testDoc = await mongoose.connection.db.collection('tests').findOne({});
+      if (testDoc) {
+        await mongoose.connection.db.collection('tests').updateOne(
+          { _id: testDoc._id },
+          { $set: { status: 'active' } }
+        );
+      }
+    }
     await mongoose.disconnect();
+
+    if (!testDoc) {
+      throw new Error('No tests found in MongoDB database.');
+    }
+
+    const testId = testDoc._id.toString();
+    const realQuestions = testDoc.questions || [];
+    const realCodingQuestions = testDoc.codingQuestions || [];
 
     console.log(`✅ Target Test ID: ${testId} (${realQuestions.length} MCQs, ${realCodingQuestions.length} Coding Qs) | All 500 candidates starting...`);
 
