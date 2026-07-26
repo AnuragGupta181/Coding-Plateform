@@ -8,17 +8,17 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://coding-plateform-t2vc.vercel.app',
+        target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
       },
       '/admin/queues': {
-        target: 'https://coding-plateform-t2vc.vercel.app',
+        target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
       },
       '/health': {
-        target: 'https://coding-plateform-t2vc.vercel.app',
+        target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
       },
