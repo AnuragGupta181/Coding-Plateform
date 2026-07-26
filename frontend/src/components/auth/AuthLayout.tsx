@@ -1,6 +1,6 @@
 import React from 'react';
 import BrandMark from '../common/BrandMark';
-import { Footer } from '../common/Footer';
+import { MinimalFooter } from '../common/MinimalFooter';
 
 interface AuthLayoutProps {
   title: string;
@@ -35,7 +35,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ title, subtitle, children, foot
         </div>
       </div>
 
-      <Footer />
+      <MinimalFooter />
     </div>
   );
 };

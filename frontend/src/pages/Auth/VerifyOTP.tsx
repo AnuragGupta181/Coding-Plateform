@@ -101,7 +101,7 @@ const VerifyOTP: React.FC = () => {
           />
         </div>
 
-        <button type="submit" disabled={isLoading || otp.length !== 6} className="w-full flex justify-center py-3 px-4 border border-transparent rounded-sm text-xs font-bold uppercase tracking-widest text-primary-foreground bg-primary hover:bg-primary focus:outline-none transition-all disabled:opacity-50 shadow-lg shadow-cream-200">
+        <button type="submit" disabled={isLoading || otp.length !== 6} className="w-full flex justify-center py-3 px-4 border border-border hover:border-primary rounded-sm text-xs font-bold uppercase tracking-widest text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none transition-all disabled:opacity-50 shadow-md cursor-pointer">
           {isLoading ? 'Verifying...' : 'Authorize Access'}
         </button>
       </form>
