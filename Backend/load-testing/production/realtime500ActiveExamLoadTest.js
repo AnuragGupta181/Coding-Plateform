@@ -8,7 +8,7 @@ const token = jwt.sign({ id: '6a369defd17d256a5583944b', role: 'admin' }, JWT_SE
 
 const TOTAL_STUDENTS = parseInt(process.env.TOTAL_STUDENTS || '500', 10);
 
-async function simulateActiveStudent(studentIndex, testId, codingQuestionId, globalStats) {
+async function simulateActiveStudent(studentIndex, testId, codingQuestionId, realQuestions, globalStats) {
   const email = `realtime_student_${Date.now()}_${studentIndex}_${Math.floor(Math.random()*10000)}@example.com`;
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
   
@@ -30,14 +30,22 @@ async function simulateActiveStudent(studentIndex, testId, codingQuestionId, glo
     await axios.get(`${API_URL}/api/query/test/${testId}`, { headers });
     globalStats.apiCalls++;
 
-    // 3. Simulate Active 30-Second Exam Duration with Intermittent Actions
-    // Candidates save answers every 3-5 seconds while all 500 stay active concurrently
-    for (let q = 1; q <= 4; q++) {
-      await new Promise(r => setTimeout(r, 2000 + Math.random() * 3000));
-      
+    // 3. Save Answers against Real Question ObjectIDs
+    if (realQuestions && realQuestions.length > 0) {
+      for (const qObj of realQuestions) {
+        await new Promise(r => setTimeout(r, 1000 + Math.random() * 2000));
+        const correctIdx = qObj.correctOptionIndex !== undefined ? qObj.correctOptionIndex : 0;
+        await axios.post(`${API_URL}/api/command/submission/${submissionId}/save-answer`, {
+          questionId: qObj._id.toString(),
+          answerIndex: correctIdx
+        }, { headers });
+        globalStats.apiCalls++;
+        globalStats.mcqAnswersSaved++;
+      }
+    } else {
       await axios.post(`${API_URL}/api/command/submission/${submissionId}/save-answer`, {
-        questionId: `mcq_q_${q}`,
-        answerIndex: (q % 4)
+        questionId: `mcq_default`,
+        answerIndex: 0
       }, { headers });
       globalStats.apiCalls++;
       globalStats.mcqAnswersSaved++;
@@ -118,7 +126,7 @@ async function runRealtime500ExamTest() {
       }
     }
     
-    const testDoc = await mongoose.connection.db.collection('tests').findOne({ _id: new mongoose.Types.ObjectId(testId) });
+    const realQuestions = testDoc?.questions || [];
     const codingQuestionId = testDoc?.codingQuestions?.[0]?._id?.toString() || null;
 
     await mongoose.connection.db.collection('tests').updateOne(
@@ -127,14 +135,14 @@ async function runRealtime500ExamTest() {
     );
     await mongoose.disconnect();
 
-    console.log(`✅ Exam Active: Test ID ${testId} | All 500 students entering exam room NOW...`);
+    console.log(`✅ Exam Active: Test ID ${testId} (${realQuestions.length} MCQs) | All 500 students entering exam room NOW...`);
 
     const globalStart = Date.now();
 
     // Launch ALL 500 students AT THE EXACT SAME TIME in parallel!
     const studentPromises = [];
     for (let s = 1; s <= TOTAL_STUDENTS; s++) {
-      studentPromises.push(simulateActiveStudent(s, testId, codingQuestionId, globalStats));
+      studentPromises.push(simulateActiveStudent(s, testId, codingQuestionId, realQuestions, globalStats));
     }
 
     // Monitor progress live every 5 seconds while all 500 are in the exam

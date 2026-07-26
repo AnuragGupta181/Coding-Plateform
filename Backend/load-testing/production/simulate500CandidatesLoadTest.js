@@ -9,7 +9,7 @@ const token = jwt.sign({ id: '6a369defd17d256a5583944b', role: 'admin' }, JWT_SE
 const TOTAL_CANDIDATES = parseInt(process.env.TOTAL_CANDIDATES || '500', 10);
 const CONCURRENCY = parseInt(process.env.CONCURRENCY || '25', 10);
 
-async function simulateCandidateFlow(candidateIndex, testId, codingQuestionId) {
+async function simulateCandidateFlow(candidateIndex, testId, codingQuestionId, realQuestions) {
   const email = `candidate500_${Date.now()}_${candidateIndex}_${Math.random()}@example.com`;
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
   
@@ -28,11 +28,22 @@ async function simulateCandidateFlow(candidateIndex, testId, codingQuestionId) {
     await axios.get(`${API_URL}/api/query/test/${testId}`, { headers });
     stats.steps++;
 
-    // 3. Save Multiple MCQ Answers (Questions 1 to 4)
-    for (let q = 1; q <= 4; q++) {
+    // 3. Save Answers against Real Question ObjectIDs
+    if (realQuestions && realQuestions.length > 0) {
+      for (const qObj of realQuestions) {
+        const correctIdx = qObj.correctOptionIndex !== undefined ? qObj.correctOptionIndex : 0;
+        await axios.post(`${API_URL}/api/command/submission/${submissionId}/save-answer`, {
+          questionId: qObj._id.toString(),
+          answerIndex: correctIdx
+        }, { headers });
+        stats.steps++;
+        stats.mcqSaved++;
+      }
+    } else {
+      // Fallback if no MCQ questions
       await axios.post(`${API_URL}/api/command/submission/${submissionId}/save-answer`, {
-        questionId: `mcq_question_${q}`,
-        answerIndex: Math.floor(Math.random() * 4)
+        questionId: `mcq_default`,
+        answerIndex: 0
       }, { headers });
       stats.steps++;
       stats.mcqSaved++;
@@ -115,8 +126,9 @@ async function run500CandidatesLoadTest() {
       }
     }
     
-    // Check if test has coding questions
+    // Check if test has questions & coding questions
     const testDoc = await mongoose.connection.db.collection('tests').findOne({ _id: new mongoose.Types.ObjectId(testId) });
+    const realQuestions = testDoc?.questions || [];
     const codingQuestionId = testDoc?.codingQuestions?.[0]?._id?.toString() || null;
 
     await mongoose.connection.db.collection('tests').updateOne(
@@ -125,7 +137,7 @@ async function run500CandidatesLoadTest() {
     );
     await mongoose.disconnect();
 
-    console.log(`✅ Target Test ID: ${testId} | Coding Question ID: ${codingQuestionId || 'None (MCQ + Code Run Mode)'}`);
+    console.log(`✅ Target Test ID: ${testId} (${realQuestions.length} MCQs) | Coding Question ID: ${codingQuestionId || 'None (MCQ + Code Run Mode)'}`);
 
     const globalStart = Date.now();
     let completedCount = 0;
@@ -141,7 +153,7 @@ async function run500CandidatesLoadTest() {
       const batchPromises = [];
       
       for (let j = 0; j < batchSize; j++) {
-        batchPromises.push(simulateCandidateFlow(i + j + 1, testId, codingQuestionId));
+        batchPromises.push(simulateCandidateFlow(i + j + 1, testId, codingQuestionId, realQuestions));
       }
 
       const results = await Promise.all(batchPromises);
