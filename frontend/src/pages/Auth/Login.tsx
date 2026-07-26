@@ -8,19 +8,25 @@ import AlertMessage from '../../components/common/AlertMessage';
 import FormField from '../../components/common/FormField';
 import AuthFooterLink from '../../components/auth/AuthFooterLink';
 import AuthLayout from '../../components/auth/AuthLayout';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { isLoading, error } = useSelector((state: RootState) => state.auth);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!turnstileToken) {
+      dispatch(setError('Please complete the bot verification.'));
+      return;
+    }
     dispatch(setLoading(true));
     try {
-      const res = await testService.login(email, password);
+      const res = await testService.login(email, password, turnstileToken);
       dispatch(setAuth({ user: res.data.user, token: res.data.token }));
       
       if (res.data.user.role === 'admin') {
@@ -35,7 +41,7 @@ const Login: React.FC = () => {
 
   return (
     <AuthLayout title="Welcome Back" subtitle="Enter your credentials to access the platform" footer="NextGen Assessment Systems">
-      <form className="space-y-6" onSubmit={handleSubmit}>
+      <form className="space-y-4" onSubmit={handleSubmit}>
         <AlertMessage message={error} />
 
         <FormField
@@ -58,8 +64,16 @@ const Login: React.FC = () => {
           placeholder="Password"
         />
 
-        <button type="submit" disabled={isLoading} className="w-full flex justify-center py-3 px-4 border border-transparent rounded-sm text-xs font-bold uppercase tracking-widest text-primary-foreground bg-primary hover:bg-primary focus:outline-none transition-all disabled:opacity-50 shadow-lg shadow-cream-200">
-          {isLoading ? 'Processing...' : 'Sign In'}
+        <div className="flex justify-center my-3">
+          <Turnstile 
+            siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || "1x00000000000000000000AA"} 
+            onSuccess={(token) => setTurnstileToken(token)}
+            options={{ theme: 'dark' }}
+          />
+        </div>
+
+        <button type="submit" disabled={isLoading || !turnstileToken} className="w-full flex justify-center py-3 px-4 border border-border hover:border-primary rounded-sm text-xs font-bold uppercase tracking-widest text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none transition-all disabled:opacity-50 shadow-md cursor-pointer">
+          {isLoading ? 'Processing...' : !turnstileToken ? 'Complete Captcha Below' : 'Sign In'}
         </button>
       </form>
 

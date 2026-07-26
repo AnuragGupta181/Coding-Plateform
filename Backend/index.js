@@ -67,17 +67,17 @@ app.use(express.json({ limit: '1mb' }));
 // ── Request Timeout ───────────────────────────────────────────────────────────
 // If any DB query or async operation hangs for >15s, fail fast instead of
 // holding a connection slot indefinitely.
-// app.use((req, res, next) => {
-//   // Don't apply timeout to SSE connections — they are intentionally long-lived
-//   if (req.path.startsWith('/api/query/events')) return next();
-// 
-//   res.setTimeout(15000, () => {
-//     if (!res.headersSent) {
-//       res.status(503).json({ message: 'Request timed out. Please try again.' });
-//     }
-//   });
-//   next();
-// });
+app.use((req, res, next) => {
+  // Don't apply timeout to SSE connections — they are intentionally long-lived
+  if (req.path.startsWith('/api/query/events')) return next();
+
+  res.setTimeout(20000, () => {
+    if (!res.headersSent) {
+      res.status(503).json({ message: 'Request timed out. Please try again.' });
+    }
+  });
+  next();
+});
 
 // ── Rate Limiting ─────────────────────────────────────────────────────────────
 const getRateLimitKey = (req) => req.user?._id?.toString() || (req.headers['x-forwarded-for'] || req.ip);

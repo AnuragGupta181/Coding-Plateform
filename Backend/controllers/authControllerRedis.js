@@ -63,17 +63,54 @@ async function checkOtpRateLimits(client, req, email) {
   return { blocked: false };
 }
 
-// 1. Signup - Sends OTP
+async function verifyTurnstileToken(token, ip) {
+  if (!token) return false;
+  const secret = process.env.TURNSTILE_SECRET_KEY || '1x0000000000000000000000000000000AA';
+  
+  try {
+    const formData = new URLSearchParams();
+    formData.append('secret', secret);
+    formData.append('response', token);
+    
+    // Only send remoteip if it's a valid public IP (Cloudflare rejects loopback ::1 / 127.0.0.1)
+    if (ip && ip !== '::1' && ip !== '127.0.0.1' && !ip.includes('127.0.0.1') && !ip.includes('::ffff:')) {
+      formData.append('remoteip', ip);
+    }
+
+    const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    const data = await res.json();
+    if (!data.success) {
+      console.warn('⚠️ Cloudflare Turnstile Verification Failed:', data['error-codes']);
+    }
+    return data.success;
+  } catch (err) {
+    console.error('Turnstile verification error:', err);
+    return false;
+  }
+}
+
+// 1. Signup / Request OTP
 exports.signup = async (req, res) => {
   try {
-    const { name, email, password, mobileNumber } = req.body;
+    const { name, email, password, mobileNumber, turnstileToken } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Name, email, and password are required.' });
     }
 
     if (password.length < PASSWORD_MIN_LENGTH) {
-      return res.status(400).json({ message: `Password must be at least ${PASSWORD_MIN_LENGTH} characters.` });
+      return res.status(400).json({ message: `Password must be at least ${PASSWORD_MIN_LENGTH} characters long.` });
+    }
+
+    // Verify Turnstile
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
+    const isValidBotCheck = await verifyTurnstileToken(turnstileToken, ip);
+    if (!isValidBotCheck) {
+      return res.status(403).json({ message: 'Bot verification failed. Please try again.' });
     }
 
     // Check if user already exists
@@ -224,7 +261,7 @@ exports.resendOTP = async (req, res) => {
 // 4. Login with Email + IP Rate Limiting
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, turnstileToken } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ message: 'Email and password are required.' });
@@ -232,6 +269,12 @@ exports.login = async (req, res) => {
 
     const client = redisService.getClient();
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
+
+    const isValidBotCheck = await verifyTurnstileToken(turnstileToken, ip);
+    if (!isValidBotCheck) {
+      return res.status(403).json({ message: 'Bot verification failed. Please try again.' });
+    }
+
     const loginKey = `rate_limit:login:${email}:${ip}`;
 
     // Check failed login attempts per (Email + IP)

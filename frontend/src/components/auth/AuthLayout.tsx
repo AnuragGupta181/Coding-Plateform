@@ -1,5 +1,6 @@
 import React from 'react';
 import BrandMark from '../common/BrandMark';
+import { Footer } from '../common/Footer';
 
 interface AuthLayoutProps {
   title: string;
@@ -11,26 +12,30 @@ interface AuthLayoutProps {
 
 const AuthLayout: React.FC<AuthLayoutProps> = ({ title, subtitle, children, footer, logoLinksHome = true }) => {
   return (
-    <div className="min-h-screen bg-background flex flex-col justify-center py-12 px-6 lg:px-8 font-sans">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <div className="mb-8">
-          <BrandMark to={logoLinksHome ? '/' : undefined} size="md" />
-        </div>
-        <h2 className="text-3xl font-sans font-bold text-foreground-bold tracking-tight">{title}</h2>
-        <p className="mt-2 text-sm text-muted-foreground font-light italic">{subtitle}</p>
-      </div>
-
-      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-background py-10 px-8 border border-border shadow-sm rounded-sm">
-          {children}
+    <div className="min-h-screen bg-background flex flex-col justify-between font-sans">
+      <div className="flex-1 flex flex-col justify-center py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-md text-center">
+          <div className="mb-4 sm:mb-6">
+            <BrandMark to={logoLinksHome ? '/' : undefined} size="md" />
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-sans font-bold text-foreground-bold tracking-tight">{title}</h2>
+          <p className="mt-1 text-xs sm:text-sm text-muted-foreground font-light italic">{subtitle}</p>
         </div>
 
-        {footer && (
-          <p className="mt-10 text-center text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-bold">
-            {footer}
-          </p>
-        )}
+        <div className="mt-4 sm:mt-6 mx-auto w-full max-w-md">
+          <div className="bg-background py-6 px-4 sm:px-8 border border-border shadow-sm rounded-sm">
+            {children}
+          </div>
+
+          {footer && (
+            <p className="mt-6 text-center text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-bold">
+              {footer}
+            </p>
+          )}
+        </div>
       </div>
+
+      <Footer />
     </div>
   );
 };

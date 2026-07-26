@@ -51,7 +51,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         <h1 className="text-xl lg:text-2xl font-sans text-foreground-bold">Dashboard</h1>
       </div>
       
-      <nav className="flex-1 px-4 lg:px-6 py-6 lg:py-8 space-y-2">
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden px-4 lg:px-6 py-6 lg:py-8 space-y-2">
         {[
           { id: 'overview', label: 'Active Sessions' },
           { id: 'monitoring', label: 'Realtime Monitoring' },
