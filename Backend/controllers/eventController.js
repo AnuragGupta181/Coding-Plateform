@@ -32,6 +32,8 @@ if (REDIS_URL) {
       .catch((err) => {
         useRedis = false;
         console.warn('⚠️  Redis connection failed, falling back to in-memory SSE:', err.message);
+        try { redisPublisher.disconnect(); } catch {}
+        try { redisSubscriber.disconnect(); } catch {}
       });
 
     redisPublisher.on('error', (err) => console.error('Redis Publisher Error:', err.message));

@@ -22,6 +22,7 @@ if (process.env.REDIS_URL) {
     .then(() => console.log('✅ Redis cache client connected'))
     .catch((err) => {
       console.warn('⚠️  Redis cache client failed to connect:', err.message);
+      try { client.disconnect(); } catch {}
       client = null; // Fall back to no-cache mode
     });
 
