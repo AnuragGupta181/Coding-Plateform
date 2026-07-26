@@ -15,14 +15,15 @@ interface QueueItemProps {
   onMarkCompleted: (id: string) => void;
 }
 
-const ActiveQueueTimer: React.FC<{ startedAt: string; durationInMinutes: number }> = ({ startedAt, durationInMinutes }) => {
+const ActiveQueueTimer: React.FC<{ startedAt?: string; durationInMinutes: number }> = ({ startedAt, durationInMinutes }) => {
   const [timeLeft, setTimeLeft] = useState<string>('');
   const [isExpired, setIsExpired] = useState<boolean>(false);
+  const [stableStartMs] = useState<number>(() => startedAt ? new Date(startedAt).getTime() : Date.now());
 
   useEffect(() => {
+    const startMs = startedAt ? new Date(startedAt).getTime() : stableStartMs;
     const update = () => {
-      const startMs = new Date(startedAt).getTime();
-      const endMs = startMs + durationInMinutes * 60 * 1000;
+      const endMs = startMs + (durationInMinutes || 60) * 60 * 1000;
       const diffSec = Math.floor(Math.max(0, endMs - Date.now()) / 1000);
 
       if (diffSec <= 0) {
@@ -39,7 +40,7 @@ const ActiveQueueTimer: React.FC<{ startedAt: string; durationInMinutes: number 
     update();
     const timer = setInterval(update, 1000);
     return () => clearInterval(timer);
-  }, [startedAt, durationInMinutes]);
+  }, [startedAt, durationInMinutes, stableStartMs]);
 
   return (
     <div className={`flex items-center gap-2.5 px-4 py-2 rounded-sm border transition-colors ${
@@ -179,7 +180,7 @@ export const QueueItem: React.FC<QueueItemProps> = ({
             </div>
           </div>
 
-          <ActiveQueueTimer startedAt={queue.startedAt || new Date().toISOString()} durationInMinutes={queue.durationInMinutes || 60} />
+          <ActiveQueueTimer startedAt={queue.startedAt} durationInMinutes={queue.durationInMinutes || 60} />
         </div>
       )}
     </div>

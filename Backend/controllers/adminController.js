@@ -243,7 +243,7 @@ exports.getWaitingQueues = async (req, res) => {
       title: test.title,
       status: test.status,
       durationInMinutes: test.durationInMinutes,
-      startedAt: test.startedAt,
+      startedAt: test.startedAt || (test.status === 'active' ? test.updatedAt || test.createdAt : null),
       scheduledFor: test.scheduledFor,
       activeSubmissionCount: activeMap.get(String(test._id)) || 0,
       completedSubmissionCount: completedMap.get(String(test._id)) || 0,
