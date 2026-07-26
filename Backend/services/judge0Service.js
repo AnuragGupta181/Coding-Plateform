@@ -140,11 +140,10 @@ async function executeCode({ sourceCode, language, stdin = '', expectedOutput = 
     try {
       const baseUrl = process.env.JUDGE0_BASE_URL;
       const headers = getHeaders('self-hosted');
-      console.log(`[Judge0] Attempting Self-Hosted API: ${baseUrl}`);
       
       return await submitToJudge0Endpoint(baseUrl, headers, languageId, finalSourceCode, stdin, expectedOutput);
     } catch (error) {
-      console.warn(`[Judge0] Self-Hosted API failed: ${error.message}. Falling back to next option...`);
+      console.warn(`⚠️ [Judge0] Self-Hosted API failed (${error.message}). Switching to Public Free API...`);
       lastErrorMessage = error.message;
     }
   }
@@ -153,11 +152,10 @@ async function executeCode({ sourceCode, language, stdin = '', expectedOutput = 
   try {
     const baseUrl = 'https://ce.judge0.com';
     const headers = getHeaders('public');
-    console.log(`[Judge0] Attempting Public Free API: ${baseUrl}`);
     
     return await submitToJudge0Endpoint(baseUrl, headers, languageId, finalSourceCode, stdin, expectedOutput);
   } catch (error) {
-    console.warn(`[Judge0] Public Free API failed: ${error.message}. Falling back to next option...`);
+    console.warn(`⚠️ [Judge0] Public Free API failed (${error.message}). Switching to RapidAPI...`);
     lastErrorMessage = error.message;
   }
 
@@ -166,11 +164,10 @@ async function executeCode({ sourceCode, language, stdin = '', expectedOutput = 
     try {
       const baseUrl = `https://${process.env.JUDGE0_RAPIDAPI_HOST || 'judge0-ce.p.rapidapi.com'}`;
       const headers = getHeaders('rapidapi');
-      console.log(`[Judge0] Attempting RapidAPI: ${baseUrl}`);
       
       return await submitToJudge0Endpoint(baseUrl, headers, languageId, finalSourceCode, stdin, expectedOutput);
     } catch (error) {
-      console.error(`[Judge0] RapidAPI failed: ${error.message}. All endpoints exhausted.`);
+      console.error(`❌ [Judge0] RapidAPI failed (${error.message}). All endpoints exhausted.`);
       lastErrorMessage = error.message;
     }
   }

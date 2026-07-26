@@ -43,11 +43,12 @@ const CodingTestRoom: React.FC = () => {
   const [leftPanelWidth, setLeftPanelWidth] = useState(420);
   const [topPanelHeight, setTopPanelHeight] = useState(250);
   const [customInput, setCustomInput]     = useState('');
-  const [isRunning, setIsRunning]         = useState(false);
-  const [isSubmitting, setIsSubmitting]   = useState(false);
+  const [isRunning, setIsRunning]         = useState<Record<string, boolean>>({});
+  const [isCodeSubmitting, setIsCodeSubmitting] = useState<Record<string, boolean>>({});
+  const [isFinishingTest, setIsFinishingTest] = useState(false);
   const [showFinishModal, setShowFinishModal] = useState(false);
-  const [runResult, setRunResult]         = useState<{ stdout: string; stderr: string; status: string } | null>(null);
-  const [submitResult, setSubmitResult]   = useState<{ passed: number; total: number; score: number; maxScore: number; verdict: string; results: TestCaseResult[] } | null>(null);
+  const [runResult, setRunResult]         = useState<Record<string, { stdout: string; stderr: string; status: string }>>({});
+  const [submitResult, setSubmitResult]   = useState<Record<string, { passed: number; total: number; score: number; maxScore: number; verdict: string; results: TestCaseResult[] }>>({});
 
   const activeQuestion = testData?.codingQuestions[activeQIndex] ?? null;
   const codeKey = activeQuestion ? `${activeQuestion._id}_${language}` : '';
@@ -135,6 +136,19 @@ const CodingTestRoom: React.FC = () => {
               color: '#7f1d1d'
             }
           });
+        } else if (data.type === 'CODE_SUBMIT_RESULT' && data.targetEmail === user?.email) {
+          setIsCodeSubmitting(prev => ({ ...prev, [data.questionId]: false }));
+          setSubmitResult(prev => ({ ...prev, [data.questionId]: data.result }));
+          if (data.result.passed === data.result.total) {
+            setSubmitted(prev => ({ ...prev, [data.questionId]: true }));
+            toast.success(`✅ Question Evaluated: ${data.result.passed}/${data.result.total} Test Cases Passed!`, { duration: 5000 });
+          } else {
+            toast.error(`⚠️ Question Evaluated: ${data.result.passed}/${data.result.total} Test Cases Passed.`, { duration: 5000 });
+          }
+        } else if (data.type === 'CODE_RUN_RESULT' && data.targetEmail === user?.email) {
+          setIsRunning(prev => ({ ...prev, [data.questionId]: false }));
+          setRunResult(prev => ({ ...prev, [data.questionId]: data.result }));
+          toast.success('🚀 Code Execution Completed!', { duration: 3000 });
         }
       } catch (err) {}
     };
@@ -176,47 +190,38 @@ const CodingTestRoom: React.FC = () => {
 
   const handleQuestionChange = (idx: number) => {
     setActiveQIndex(idx);
-    setRunResult(null);
-    setSubmitResult(null);
     setActiveTab('output');
   };
 
   const handleLanguageChange = (lang: string) => {
     setLanguage(lang);
-    setRunResult(null);
-    setSubmitResult(null);
   };
 
   const handleRun = async () => {
-    if (!currentCode.trim()) return;
-    setIsRunning(true);
+    if (!currentCode.trim() || !activeQuestion) return;
+    const qId = activeQuestion._id;
+    setIsRunning(prev => ({ ...prev, [qId]: true }));
     setActiveTab('output');
-    setRunResult(null);
     try {
-      const res = await testService.runCode(currentCode, language, customInput);
-      setRunResult(res.data);
+      await testService.runCode(currentCode, language, customInput);
+      toast.success('Run Code job queued...');
     } catch {
-      setRunResult({ stdout: '', stderr: 'Failed to connect to execution service.', status: 'Error' });
-    } finally {
-      setIsRunning(false);
+      setRunResult(prev => ({ ...prev, [qId]: { stdout: '', stderr: 'Failed to connect to execution service.', status: 'Error' } }));
+      setIsRunning(prev => ({ ...prev, [qId]: false }));
     }
   };
 
   const handleSubmit = async () => {
     if (!testId || !activeQuestion || !submissionId) return;
-    setIsSubmitting(true);
+    const qId = activeQuestion._id;
+    setIsCodeSubmitting(prev => ({ ...prev, [qId]: true }));
     setActiveTab('submit');
-    setSubmitResult(null);
     try {
-      const res = await testService.submitCode(testId, activeQuestion._id, currentCode, language, submissionId);
-      setSubmitResult(res.data);
-      if (res.data.passed === res.data.total) {
-        setSubmitted(prev => ({ ...prev, [activeQuestion._id]: true }));
-      }
+      await testService.submitCode(testId, qId, currentCode, language, submissionId);
+      toast.success('Code submission queued...');
     } catch {
-      setSubmitResult({ passed: 0, total: 0, score: 0, maxScore: 0, verdict: 'Submission failed', results: [] });
-    } finally {
-      setIsSubmitting(false);
+      setSubmitResult(prev => ({ ...prev, [qId]: { passed: 0, total: 0, score: 0, maxScore: 0, verdict: 'Submission failed', results: [] } }));
+      setIsCodeSubmitting(prev => ({ ...prev, [qId]: false }));
     }
   };
 
@@ -227,7 +232,7 @@ const CodingTestRoom: React.FC = () => {
   const handleConfirmFinish = async () => {
     if (!submissionId || !testData || !testId) return;
 
-    setIsSubmitting(true);
+    setIsFinishingTest(true);
     setShowFinishModal(false);
 
     try {
@@ -253,7 +258,7 @@ const CodingTestRoom: React.FC = () => {
     } catch (err) {
       console.error('Failed to finish test', err);
     } finally {
-      setIsSubmitting(false);
+      setIsFinishingTest(false);
     }
   };
 
@@ -283,10 +288,10 @@ const CodingTestRoom: React.FC = () => {
         testTitle={testData?.title}
         onAction={handleFinishClick}
         actionText="Submit Assessment"
-        isSaving={isSubmitting}
+        isSaving={isFinishingTest}
       />
 
-      {isSubmitting && (
+      {isFinishingTest && (
         <div className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center">
           <div className="w-12 h-12 border-2 border-border border-t-emerald-500 rounded-full animate-spin mb-4" />
           <p className="text-sm text-emerald-600 font-bold uppercase tracking-widest animate-pulse">Finalizing Submission...</p>
@@ -461,10 +466,10 @@ const CodingTestRoom: React.FC = () => {
             {/* Distinct Run Code Button */}
             <button
               onClick={handleRun}
-              disabled={isRunning || isSubmitting}
+              disabled={isRunning[activeQuestion._id] || isCodeSubmitting[activeQuestion._id] || isFinishingTest}
               className="flex items-center gap-1.5 px-4 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 text-[10px] font-bold uppercase tracking-widest rounded-sm border border-slate-300 dark:border-slate-700 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-40 shadow-xs hover:shadow-md cursor-pointer"
             >
-              {isRunning ? (
+              {isRunning[activeQuestion._id] ? (
                 <span className="w-3 h-3 border-2 border-slate-600 border-t-transparent rounded-full animate-spin" />
               ) : (
                 <svg className="w-3.5 h-3.5 text-slate-700 dark:text-slate-300" fill="currentColor" viewBox="0 0 24 24">
@@ -477,10 +482,10 @@ const CodingTestRoom: React.FC = () => {
             {/* Distinct Submit Code Button */}
             <button
               onClick={handleSubmit}
-              disabled={isRunning || isSubmitting}
+              disabled={isRunning[activeQuestion._id] || isCodeSubmitting[activeQuestion._id] || isFinishingTest}
               className="flex items-center gap-1.5 px-4 py-1.5 bg-primary hover:brightness-110 text-primary-foreground text-[10px] font-bold uppercase tracking-widest rounded-sm border border-primary-foreground/30 dark:border-emerald-400/80 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-40 shadow-sm hover:shadow-md cursor-pointer"
             >
-              {isSubmitting ? (
+              {isCodeSubmitting[activeQuestion._id] ? (
                 <span className="w-3 h-3 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
               ) : (
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -519,10 +524,10 @@ const CodingTestRoom: React.FC = () => {
             onTabChange={setActiveTab}
             customInput={customInput}
             onCustomInputChange={setCustomInput}
-            isRunning={isRunning}
-            runResult={runResult}
-            isSubmitting={isSubmitting}
-            submitResult={submitResult}
+            isRunning={isRunning[activeQuestion._id] || false}
+            runResult={runResult[activeQuestion._id] || null}
+            isSubmitting={isCodeSubmitting[activeQuestion._id] || false}
+            submitResult={submitResult[activeQuestion._id] || null}
           />
         </div>
       </div>

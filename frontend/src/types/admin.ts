@@ -38,4 +38,4 @@ export interface ActiveUser {
   answeredCount: number;
 }
 
-export type AdminSection = 'overview' | 'monitoring' | 'history' | 'create' | 'aichat';
+export type AdminSection = 'overview' | 'monitoring' | 'system' | 'queues' | 'history' | 'create' | 'aichat';

@@ -118,6 +118,8 @@ export const testService = {
     commandApi.post(`/admin/test/${testId}/message`, { candidateEmail, message }),
   forceSubmitCandidate: (submissionId: string) =>
     commandApi.post(`/admin/submission/${submissionId}/force-submit`),
+  clearQueues: () =>
+    commandApi.post('/admin/queues/clear'),
 
   // Code execution
   runCode: (sourceCode: string, language: string, stdin?: string) =>

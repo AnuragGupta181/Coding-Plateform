@@ -2,7 +2,7 @@ const axios = require('axios');
 const jwt = require('jsonwebtoken');
 require('dotenv').config({ path: '../../.env' });
 
-const API_URL = process.env.API_URL || 'https://api.nextgen.kaarma.studio';
+const API_URL = process.env.API_URL || 'http://localhost:5000';
 const JWT_SECRET = process.env.JWT_SECRET || 'd7e069017ddb5613a6231bff1c0540b35559a1806839514a378e527b8aa9c816';
 const token = jwt.sign({ id: '6a369defd17d256a5583944b', role: 'admin' }, JWT_SECRET);
 
@@ -199,6 +199,32 @@ async function run500CandidatesLoadTest() {
 
       const percent = Math.round(((i + batchSize) / TOTAL_CANDIDATES) * 100);
       console.log(`⏳ Progress: ${i + batchSize}/${TOTAL_CANDIDATES} Candidates (${percent}%) | Completed: ${completedCount} | Errors: ${totalErrors}`);
+    }
+
+    // Wait until background BullMQ workers finish processing all queued jobs
+    console.log('\n⏳ All 500 candidate HTTP requests sent! Waiting for BullMQ background workers to complete processing all queued jobs...');
+    while (true) {
+      try {
+        const res = await axios.get(`${API_URL}/admin/queues/api/queues`);
+        const queues = res.data?.queues || [];
+        let activeJobs = 0;
+        let waitingJobs = 0;
+
+        for (const q of queues) {
+          activeJobs += q.counts?.active || 0;
+          waitingJobs += q.counts?.waiting || 0;
+        }
+
+        if (activeJobs === 0 && waitingJobs === 0) {
+          console.log('✅ All BullMQ background queues cleared! All code executions completed by workers.\n');
+          break;
+        } else {
+          console.log(`⚡ [BullMQ Background Processing] ${activeJobs} Active Workers | ${waitingJobs} Queued Jobs Remaining...`);
+        }
+      } catch (err) {
+        break;
+      }
+      await new Promise(r => setTimeout(r, 2000));
     }
 
     const totalTimeSec = ((Date.now() - globalStart) / 1000).toFixed(2);

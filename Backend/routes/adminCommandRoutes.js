@@ -26,4 +26,7 @@ router.post('/test/:id/message', adminController.sendProctorMessage);
 // Force-submit a single candidate's submission
 router.post('/submission/:id/force-submit', adminController.forceSubmitCandidate);
 
+// Clear BullMQ queues
+router.post('/queues/clear', adminController.clearQueues);
+
 module.exports = router;

@@ -1,6 +1,9 @@
 {
   "rewrites": [
     { "source": "/api/(.*)", "destination": "https://api.nextgen.kaarma.studio/api/$1" },
+    { "source": "/admin/queues/(.*)", "destination": "https://api.nextgen.kaarma.studio/admin/queues/$1" },
+    { "source": "/admin/queues", "destination": "https://api.nextgen.kaarma.studio/admin/queues" },
+    { "source": "/health", "destination": "https://api.nextgen.kaarma.studio/health" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

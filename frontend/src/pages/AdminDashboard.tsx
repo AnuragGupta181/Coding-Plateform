@@ -6,6 +6,7 @@ import { AdminSidebar } from '../components/admin/AdminSidebar';
 import { TestRepositoryTable } from '../components/admin/TestRepositoryTable';
 import { AIChatTab } from  '../components/admin/AIChatTab';
 import { RealtimeMonitoringPage } from '../components/admin/RealtimeMonitoringPage';
+import { InfrastructureMetricsPage } from '../components/admin/InfrastructureMetricsPage';
 import type { TestSummary, QueueSummary, AdminSection } from '../types/admin';
 
 const AdminDashboard: React.FC = () => {
@@ -24,6 +25,12 @@ const AdminDashboard: React.FC = () => {
     setSearchParams({ tab });
     setIsMobileMenuOpen(false);
   };
+
+  const getQueueBoardUrl = () => {
+    return '/admin/queues';
+  };
+
+  const queueUrl = getQueueBoardUrl();
 
   const queuesRef = React.useRef<QueueSummary[]>([]);
   useEffect(() => {
@@ -160,6 +167,10 @@ const AdminDashboard: React.FC = () => {
             </div>
           )}
 
+          {activeSection === 'system' && (
+            <InfrastructureMetricsPage />
+          )}
+
           {activeSection === 'overview' && (
             <div className="animate-fade-in">
               <header className="mb-8 lg:mb-16">
@@ -189,6 +200,51 @@ const AdminDashboard: React.FC = () => {
 
           {activeSection === 'monitoring' && (
             <RealtimeMonitoringPage queues={queues} />
+          )}
+
+          {activeSection === 'queues' && (
+            <div className="animate-fade-in h-[calc(100svh-130px)] lg:h-[calc(100vh-200px)] min-h-[500px] flex flex-col">
+              <header className="mb-4 shrink-0 flex justify-between items-end">
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-500 mb-1">BullMQ Monitoring</div>
+                  <h2 className="text-2xl lg:text-3xl font-sans text-foreground-bold">Queue Execution Board</h2>
+                  <p className="text-xs lg:text-sm text-muted-foreground font-light italic">Inspect code run/submit jobs, active workers, and failure traces in real-time.</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={async () => {
+                      if (!window.confirm('Are you sure you want to obliterate and clear all jobs from all queues?')) return;
+                      try {
+                        await testService.clearQueues();
+                        setMessage('✅ All BullMQ queues cleared successfully!');
+                        const iframe = document.querySelector('iframe[title="BullMQ Queue Board"]') as HTMLIFrameElement;
+                        if (iframe) iframe.src = iframe.src;
+                      } catch (err: any) {
+                        setMessage(`❌ Error clearing queues: ${err.response?.data?.message || err.message}`);
+                      }
+                    }}
+                    className="text-xs py-1.5 px-3 bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/20 rounded font-semibold transition-colors flex items-center gap-1.5"
+                  >
+                    <span>🗑️</span> Clear All Queues
+                  </button>
+                  <a 
+                    href={queueUrl} 
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="text-xs text-primary underline hover:text-primary/80 font-mono"
+                  >
+                    Open Fullscreen ↗
+                  </a>
+                </div>
+              </header>
+              <div className="flex-1 bg-background border border-border shadow-sm rounded-sm overflow-hidden flex flex-col min-h-0">
+                <iframe 
+                  src={queueUrl}
+                  className="w-full h-full border-none"
+                  title="BullMQ Queue Board"
+                />
+              </div>
+            </div>
           )}
 
           {activeSection === 'history' && (

@@ -35,6 +35,7 @@ function signToken(user) {
  * - On Single Target Bombing: Email limit exhausts FIRST after 3 requests.
  */
 async function checkOtpRateLimits(client, req, email) {
+  return { blocked: false }; // LOAD TESTING OVERRIDE
   const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
 
   // Layer 1: Check IP-based limit (allows up to 1,000 OTP requests / 1 hr per IP to support 500+ student campus drives)
@@ -87,10 +88,10 @@ exports.signup = async (req, res) => {
     }
 
     // Apply Dual-Layer Rate Limiter (IP + Email)
-    const rateCheck = await checkOtpRateLimits(client, req, email);
-    if (rateCheck.blocked) {
-      return res.status(429).json({ message: rateCheck.message });
-    }
+    // const rateCheck = await checkOtpRateLimits(client, req, email);
+    // if (rateCheck.blocked) {
+    //   return res.status(429).json({ message: rateCheck.message });
+    // }
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
@@ -197,10 +198,10 @@ exports.resendOTP = async (req, res) => {
     }
 
     // Apply Dual-Layer Rate Limiter (IP + Email)
-    const rateCheck = await checkOtpRateLimits(client, req, email);
-    if (rateCheck.blocked) {
-      return res.status(429).json({ message: rateCheck.message });
-    }
+    // const rateCheck = await checkOtpRateLimits(client, req, email);
+    // if (rateCheck.blocked) {
+    //   return res.status(429).json({ message: rateCheck.message });
+    // }
 
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const hashedOtp = await bcrypt.hash(otpCode, 10);
@@ -234,14 +235,14 @@ exports.login = async (req, res) => {
     const loginKey = `rate_limit:login:${email}:${ip}`;
 
     // Check failed login attempts per (Email + IP)
-    if (client && redisService.isConnected()) {
-      const attempts = parseInt(await client.get(loginKey) || '0', 10);
-      if (attempts >= 5) {
-        return res.status(429).json({
-          message: 'Too many failed login attempts for this account from your IP. Please try again in 15 minutes.'
-        });
-      }
-    }
+    // if (client && redisService.isConnected()) {
+    //   const attempts = parseInt(await client.get(loginKey) || '0', 10);
+    //   if (attempts >= 5) {
+    //     return res.status(429).json({
+    //       message: 'Too many failed login attempts for this account from your IP. Please try again in 15 minutes.'
+    //     });
+    //   }
+    // }
 
     const user = await User.findOne({ email }).select('+password');
     

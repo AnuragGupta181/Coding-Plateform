@@ -1,21 +1,31 @@
 const { executeCode, runAgainstTestCases } = require('../services/judge0Service');
+const { enqueueRunCode, enqueueSubmitCode } = require('../services/codeExecutionQueue');
 const Test = require('../models/test');
+const Submission = require('../models/submission');
 
 /**
  * POST /api/code/run
  * Quick "Run Code" against custom user-provided input (not hidden test cases).
- * Used for the "Run" button in the editor (not scored).
  */
 exports.runCode = async (req, res) => {
   try {
-    const { sourceCode, language, stdin = '' } = req.body;
+    const { sourceCode, language, stdin = '', testId, questionId } = req.body;
 
     if (!sourceCode || !language) {
       return res.status(400).json({ message: 'sourceCode and language are required.' });
     }
 
-    const result = await executeCode({ sourceCode, language, stdin });
-    res.json(result);
+    try {
+      // Try to enqueue asynchronous job
+      const jobId = await enqueueRunCode({
+        sourceCode, language, stdin, testId, questionId, userEmail: req.user?.email
+      });
+      return res.status(202).json({ message: 'Execution queued', jobId, async: true });
+    } catch (queueErr) {
+      // Fallback to synchronous if Redis/Queue is unavailable
+      const result = await executeCode({ sourceCode, language, stdin });
+      res.json(result);
+    }
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -24,7 +34,6 @@ exports.runCode = async (req, res) => {
 /**
  * POST /api/code/submit/:testId/:questionId
  * Official submission — runs against ALL hidden test cases and calculates score.
- * Saves result so admin can see it later.
  */
 exports.submitCode = async (req, res) => {
   try {
@@ -42,43 +51,32 @@ exports.submitCode = async (req, res) => {
     const question = test.codingQuestions.id(questionId);
     if (!question) return res.status(404).json({ message: 'Coding question not found.' });
 
-    const Submission = require('../models/submission');
     const submission = await Submission.findById(submissionId);
     if (!submission) return res.status(404).json({ message: 'Submission not found.' });
 
-    const { results, passed, total } = await runAgainstTestCases({
-      sourceCode,
-      language,
-      testCases: question.testCases,
-    });
+    try {
+      // Try to enqueue asynchronous job
+      const jobId = await enqueueSubmitCode({
+        testId, questionId, sourceCode, language, submissionId, userEmail: req.user?.email
+      });
+      return res.status(202).json({ message: 'Submission queued', jobId, async: true });
+    } catch (queueErr) {
+      // Fallback to synchronous if Redis/Queue is unavailable
+      const { results, passed, total } = await runAgainstTestCases({
+        sourceCode, language, testCases: question.testCases,
+      });
 
-    const score = total > 0 ? Math.round((passed / total) * question.points) : 0;
-    const verdict = passed === total ? 'Accepted' : `${passed}/${total} Test Cases Passed`;
+      const score = total > 0 ? Math.round((passed / total) * question.points) : 0;
+      const verdict = passed === total ? 'Accepted' : `${passed}/${total} Test Cases Passed`;
 
-    // Save to submission
-    submission.codingAnswers.set(questionId, {
-      sourceCode,
-      language,
-      score,
-      verdict,
-      passed,
-      total,
-      testCaseResults: results.map(r => ({
-        passed: r.passed,
-        actualOutput: r.actualOutput,
-        error: r.error
-      }))
-    });
-    await submission.save();
+      submission.codingAnswers.set(questionId, {
+        sourceCode, language, score, verdict, passed, total,
+        testCaseResults: results.map(r => ({ passed: r.passed, actualOutput: r.actualOutput, error: r.error }))
+      });
+      await submission.save();
 
-    res.json({
-      passed,
-      total,
-      score,
-      maxScore: question.points,
-      results,
-      verdict,
-    });
+      res.json({ passed, total, score, maxScore: question.points, results, verdict });
+    }
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

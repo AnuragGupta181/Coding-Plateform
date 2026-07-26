@@ -376,3 +376,14 @@ exports.forceSubmitCandidate = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+exports.clearQueues = async (req, res) => {
+  try {
+    const { clearAllQueues } = require('../services/codeExecutionQueue');
+    await clearAllQueues();
+    res.json({ message: 'All BullMQ queues cleared successfully.' });
+  } catch (error) {
+    console.error('Clear Queues Error:', error);
+    res.status(500).json({ message: 'Failed to clear queues', error: error.message });
+  }
+};

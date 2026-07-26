@@ -24,6 +24,11 @@ if (!['query', 'command', 'both'].includes(SERVICE_MODE)) {
 const { completeExpiredTests } = require('./services/testLifecycleService');
 const { broadcastEvent } = require('./controllers/eventController');
 
+// Initialize BullMQ Queues and Workers
+if (SERVICE_MODE === 'both' || SERVICE_MODE === 'command') {
+  require('./services/codeExecutionQueue');
+}
+
 const app = express();
 
 // ── Security Headers (helmet) ─────────────────────────────────────────────────
@@ -62,17 +67,17 @@ app.use(express.json({ limit: '1mb' }));
 // ── Request Timeout ───────────────────────────────────────────────────────────
 // If any DB query or async operation hangs for >15s, fail fast instead of
 // holding a connection slot indefinitely.
-app.use((req, res, next) => {
-  // Don't apply timeout to SSE connections — they are intentionally long-lived
-  if (req.path.startsWith('/api/query/events')) return next();
-
-  res.setTimeout(15000, () => {
-    if (!res.headersSent) {
-      res.status(503).json({ message: 'Request timed out. Please try again.' });
-    }
-  });
-  next();
-});
+// app.use((req, res, next) => {
+//   // Don't apply timeout to SSE connections — they are intentionally long-lived
+//   if (req.path.startsWith('/api/query/events')) return next();
+// 
+//   res.setTimeout(15000, () => {
+//     if (!res.headersSent) {
+//       res.status(503).json({ message: 'Request timed out. Please try again.' });
+//     }
+//   });
+//   next();
+// });
 
 // ── Rate Limiting ─────────────────────────────────────────────────────────────
 const getRateLimitKey = (req) => req.user?._id?.toString() || (req.headers['x-forwarded-for'] || req.ip);
@@ -82,6 +87,7 @@ const queryLimiter = rateLimit({
   max: 300, // 300 requests/min per user
   standardHeaders: true,
   legacyHeaders: false,
+  validate: false,
   keyGenerator: getRateLimitKey,
   handler: (req, res) => {
     const key = getRateLimitKey(req);
@@ -95,6 +101,7 @@ const commandLimiter = rateLimit({
   max: 120, // 120 requests/min per candidate
   standardHeaders: true,
   legacyHeaders: false,
+  validate: false,
   keyGenerator: getRateLimitKey,
   handler: (req, res) => {
     const key = getRateLimitKey(req);
@@ -108,6 +115,7 @@ const sseLimiter = rateLimit({
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: false,
   keyGenerator: getRateLimitKey,
   handler: (req, res) => {
     const key = getRateLimitKey(req);
@@ -127,6 +135,7 @@ const authLimiter = rateLimit({
   max: 15, // 15 attempts per email+IP per 15 minutes
   standardHeaders: true,
   legacyHeaders: false,
+  validate: false,
   keyGenerator: getAuthRateLimitKey,
   handler: (req, res) => {
     const key = getAuthRateLimitKey(req);
@@ -135,21 +144,100 @@ const authLimiter = rateLimit({
   }
 });
 
-app.use('/api/auth', authLimiter);
-app.use('/api/query/events', sseLimiter);
-app.use('/api/query', queryLimiter);
-app.use('/api/command', commandLimiter);
+// app.use('/api/auth', authLimiter);
+// app.use('/api/query/events', sseLimiter);
+// app.use('/api/query', queryLimiter);
+// app.use('/api/command', commandLimiter);
+
+// ── Bull Board UI ─────────────────────────────────────────────────────────────
+try {
+  const { createBullBoard } = require('@bull-board/api');
+  const { BullMQAdapter } = require('@bull-board/api/bullMQAdapter');
+  const { ExpressAdapter } = require('@bull-board/express');
+  const { codeRunQueue, codeSubmitQueue } = require('./services/codeExecutionQueue');
+
+  if (codeRunQueue && codeSubmitQueue) {
+    const serverAdapter = new ExpressAdapter();
+    serverAdapter.setBasePath('/admin/queues');
+    createBullBoard({
+      queues: [new BullMQAdapter(codeRunQueue), new BullMQAdapter(codeSubmitQueue)],
+      serverAdapter: serverAdapter,
+    });
+    app.use('/admin/queues', serverAdapter.getRouter());
+    console.log('✅ Bull Board UI mounted at /admin/queues');
+  }
+} catch (err) {
+  console.warn('⚠️  Could not mount Bull Board UI:', err.message);
+}
 
 // ── Health Check ──────────────────────────────────────────────────────────────
-app.get('/health', (_req, res) => {
+let prevCpuTimes = null;
+
+function getCpuUsagePercent(cpus) {
+  let user = 0, sys = 0, idle = 0;
+  for (const cpu of cpus) {
+    user += cpu.times.user;
+    sys += cpu.times.sys;
+    idle += cpu.times.idle;
+  }
+  const total = user + sys + idle;
+
+  if (!prevCpuTimes) {
+    prevCpuTimes = { user, sys, idle, total };
+    const active = user + sys;
+    return total === 0 ? 0 : Math.round((active / total) * 100);
+  }
+
+  const userDiff = user - prevCpuTimes.user;
+  const sysDiff = sys - prevCpuTimes.sys;
+  const totalDiff = total - prevCpuTimes.total;
+
+  prevCpuTimes = { user, sys, idle, total };
+
+  if (totalDiff <= 0) return 0;
+  const activeDiff = userDiff + sysDiff;
+  return Math.min(100, Math.max(0, Math.round((activeDiff / totalDiff) * 100)));
+}
+
+app.get('/health', async (_req, res) => {
+  const os = require('os');
+  const mongoose = require('mongoose');
+  const { getRedisMetrics } = require('./services/redisClient');
+  const redisStats = await getRedisMetrics();
+
+  const cpus = os.cpus();
+  const load = os.loadavg()[0];
+  const cpuPercent = getCpuUsagePercent(cpus);
+
+  const mongoState = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+  const mongoDbName = mongoose.connection.name || 'N/A';
+  const mongoHost = mongoose.connection.host || 'N/A';
+
   res.json({
     status: 'ok',
     environment: config.env,
+    serviceMode: process.env.SERVICE_MODE || 'both',
     uptime: Math.round(process.uptime()),
-    memory: {
-      heapUsed: `${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}mB`,
-      rss: `${Math.round(process.memoryUsage().rss / 1024 / 1024)}mB`
-    }
+    cpu: {
+      cores: cpus.length,
+      model: cpus[0]?.model || 'System CPU',
+      usagePercent: cpuPercent,
+      loadAverage: load.toFixed(2)
+    },
+    serverRamUsage: {
+      heapUsedMb: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+      heapTotalMb: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
+      rssMb: Math.round(process.memoryUsage().rss / 1024 / 1024),
+      totalSystemRamGb: (os.totalmem() / 1024 / 1024 / 1024).toFixed(1),
+      freeSystemRamGb: (os.freemem() / 1024 / 1024 / 1024).toFixed(1)
+    },
+    mongodb: {
+      status: mongoState,
+      databaseName: mongoDbName,
+      host: mongoHost,
+      maxPoolSize: 50
+    },
+    redisRamUsage: redisStats
   });
 });
 

@@ -55,6 +55,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         {[
           { id: 'overview', label: 'Active Sessions' },
           { id: 'monitoring', label: 'Realtime Monitoring' },
+          { id: 'system', label: 'System Metrics 🖥️' },
+          { id: 'queues', label: 'BullMQ Queues ⚡' },
           { id: 'history', label: 'Test Repository' },
           { id: 'create', label: 'Design Session' },
           { id: 'aichat', label: 'Ask AI Assistant ✨' },
