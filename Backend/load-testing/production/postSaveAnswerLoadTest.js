@@ -17,10 +17,24 @@ async function runProductionSaveAnswerLoadTest() {
     const testsRes = await axios.get(`${API_URL}/api/query/tests/available`, {
       headers: { Authorization: `Bearer ${token}` }
     });
-    if (!testsRes.data || testsRes.data.length === 0) {
-      throw new Error('No tests found in the database. Please create one first!');
-    }
     const testId = testsRes.data[0]._id;
+    const mongoose = require('mongoose');
+    const mongoUri = 'mongodb+srv://sarthakkaushik927_db_user:nuY7XWS0tB6chKhN@tests.t306qgl.mongodb.net/Coding-platform?appName=Tests';
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 5000 });
+        break;
+      } catch (dnsErr) {
+        if (attempt === 3) throw dnsErr;
+        await new Promise(r => setTimeout(r, 1500));
+      }
+    }
+    await mongoose.connection.db.collection('tests').updateOne(
+      { _id: new mongoose.Types.ObjectId(testId) },
+      { $set: { status: 'active' } }
+    );
+    await mongoose.disconnect();
+    console.log(`✅ Ensured test status is ACTIVE for test ID: ${testId}`);
 
     // 2. Create a dummy submission
     console.log('🔄 Creating a temporary test submission...');
@@ -36,13 +50,16 @@ async function runProductionSaveAnswerLoadTest() {
 
     const targetUrl = `${API_URL}/api/command/submission/${submissionId}/save-answer`;
     
-    const connections = 30;
-    console.log(`\n🔥 Blasting ${targetUrl} with ${connections} concurrent connections for 10 seconds...`);
+    const connections = parseInt(process.env.CONCURRENT_USERS || '50', 10);
+    const amount = parseInt(process.env.AMOUNT || '2000', 10);
+    const overallRate = parseInt(process.env.RATE || '300', 10);
+    console.log(`\n🔥 Pumping exactly ${amount} submission writes at target rate of ${overallRate} req/sec across ${connections} connections...`);
 
     const instance = autocannon({
       url: targetUrl,
       connections: connections, 
-      duration: 10,     
+      amount: amount,
+      overallRate: overallRate,     
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

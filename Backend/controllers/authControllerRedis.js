@@ -86,10 +86,11 @@ exports.signup = async (req, res) => {
       return res.status(500).json({ message: 'Redis is not connected. Cannot process OTP.' });
     }
 
-    // const rateCheck = await checkOtpRateLimits(client, req, email);
-    // if (rateCheck.blocked) {
-    //   return res.status(429).json({ message: rateCheck.message });
-    // }
+    // Apply Dual-Layer Rate Limiter (IP + Email)
+    const rateCheck = await checkOtpRateLimits(client, req, email);
+    if (rateCheck.blocked) {
+      return res.status(429).json({ message: rateCheck.message });
+    }
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
@@ -195,10 +196,11 @@ exports.resendOTP = async (req, res) => {
       return res.status(500).json({ message: 'Redis is not connected. Cannot process OTP.' });
     }
 
-    // const rateCheck = await checkOtpRateLimits(client, req, email);
-    // if (rateCheck.blocked) {
-    //   return res.status(429).json({ message: rateCheck.message });
-    // }
+    // Apply Dual-Layer Rate Limiter (IP + Email)
+    const rateCheck = await checkOtpRateLimits(client, req, email);
+    if (rateCheck.blocked) {
+      return res.status(429).json({ message: rateCheck.message });
+    }
 
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const hashedOtp = await bcrypt.hash(otpCode, 10);
@@ -287,10 +289,11 @@ exports.forgotPassword = async (req, res) => {
       return res.status(500).json({ message: 'Redis is not connected.' });
     }
 
-    // const rateCheck = await checkOtpRateLimits(client, req, email);
-    // if (rateCheck.blocked) {
-    //   return res.status(429).json({ message: rateCheck.message });
-    // }
+    // Apply Dual-Layer Rate Limiter (IP + Email)
+    const rateCheck = await checkOtpRateLimits(client, req, email);
+    if (rateCheck.blocked) {
+      return res.status(429).json({ message: rateCheck.message });
+    }
 
     const user = await User.findOne({ email });
     if (!user || !user.isVerified) {

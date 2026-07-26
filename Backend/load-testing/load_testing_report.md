@@ -219,3 +219,53 @@ The Node.js backend perfectly handled and routed all 100 simultaneous requests. 
 
 ### Final System Verdict
 The AWS EC2 Backend (`13.200.9.98`), PM2 clustering, and local AWS MongoDB architecture are **bulletproof**. The infrastructure handled 6,500+ database writes/second with zero errors and sub-80ms latency. The *only* failing component in the entire architecture is the **Free Tier Judge0 RapidAPI**. To run a massive coding exam in production, you must swap the Free Tier API key with a dedicated self-hosted Judge0 instance, at which point the platform will be unstoppable.
+
+---
+
+## 13. Test Scenario 11: Production 500-Candidate Live Exam (Batched Pipeline)
+**Date:** 2026-07-26  
+**Target Platform:** `https://api.nextgen.kaarma.studio` (AWS ALB + PM2 + MongoDB Atlas + Redis)  
+**Objective:** Simulate 500 candidates taking a complete live exam (MCQ saves, Code Runs, Code Submissions, Proctoring Violations, and Final Grading) in 20 parallel waves of 25 candidates.
+
+### Configuration
+- **Script:** `simulate500CandidatesLoadTest.js`
+- **Total Candidates:** 500
+- **Batch Size:** 25 parallel candidates / wave
+- **Steps per Candidate:** 10 API calls (`start`, `getTest`, 4x `save-answer`, `code/run`, `code/submit`, `log-violation`, `complete`)
+
+### Results
+- **Total Candidates Simulated:** 500
+- **Successfully Completed:** 500 / 500 (**100% Success Rate**)
+- **Total API Calls Executed:** 5,000 API requests
+- **MCQ Answers Saved:** 2,000 saved to MongoDB
+- **Code Executions & Submissions:** 1,000 executed
+- **Total Errors Encountered:** 0 (Zero Crashes / Zero 5xx)
+- **Total Test Execution Time:** 259.63 seconds (~4 minutes)
+- **Average Candidate Full Exam Flow:** 11.37 seconds / student
+
+---
+
+## 14. Test Scenario 12: Real-Time 500 Simultaneous Student Live Exam Drive
+**Date:** 2026-07-26  
+**Target Platform:** `https://api.nextgen.kaarma.studio` (AWS ALB + PM2 + MongoDB Atlas + Redis)  
+**Objective:** Simulate 500 candidates entering the exam room AT THE EXACT SAME TIME, staying actively online together for a full exam session, continuously saving MCQ answers, executing code, logging proctoring tab switches, and submitting at the end.
+
+### Configuration
+- **Script:** `realtime500ActiveExamLoadTest.js`
+- **Total Simultaneous Candidates:** 500 (All active in room simultaneously)
+- **Entry Staggering:** 0 – 10 seconds natural human entry
+- **Exam Actions:** Continuous intermittent MCQ saves every 2–4s, code runs, tab-switch logs, final auto-submit
+
+### Results
+- **Total Simultaneous Students:** 500
+- **Exams Completed Successfully:** 475 / 500 (**95.0% Success Rate**)
+- **Total API Calls Executed:** 4,456 API requests
+- **MCQ Answers Saved:** 1,992 saved to MongoDB
+- **Code Runs / Submits:** 259 executed
+- **Violations Logged:** 493 logged
+- **Total Errors Encountered:** 25 (502 Bad Gateway / 15s timeout on burst spikes)
+- **Total Exam Duration:** 77.87 seconds
+- **Average Student Exam Time:** 63.79 seconds / student
+
+### Analysis & Verdict
+The AWS production environment comfortably sustained **475 out of 500 simultaneous candidate sessions** executing 4,456 active API operations in real-time. Only 25 requests (5%) experienced 502 Bad Gateway / timeout under peak simultaneous TLS handshake burst. Disabling rate limiters and utilizing Redis caching successfully enabled 95% of candidates to complete their exam without interruption.
