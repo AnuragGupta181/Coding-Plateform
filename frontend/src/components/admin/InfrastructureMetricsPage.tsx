@@ -137,6 +137,11 @@ export const InfrastructureMetricsPage: React.FC = () => {
     return `${s}s`;
   };
 
+  const totalRedisKeys = metrics?.redisRamUsage.totalKeys || 1;
+  const bullMqKeys = metrics?.redisRamUsage.breakdown?.bullMqQueues || 0;
+  const otpKeys = metrics?.redisRamUsage.breakdown?.otpAndAuthRateLimits || 0;
+  const cacheKeys = metrics?.redisRamUsage.breakdown?.testQuestionCache || 0;
+
   return (
     <div className="space-y-8 p-6 lg:p-8 max-w-7xl mx-auto">
       {/* Header Bar */}
@@ -210,14 +215,14 @@ export const InfrastructureMetricsPage: React.FC = () => {
           <button
             onClick={handleClearCache}
             disabled={actionLoading}
-            className="flex-1 md:flex-none px-4 py-2 text-xs font-bold uppercase tracking-widest border border-amber-500/40 text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 rounded-sm transition-all disabled:opacity-50"
+            className="flex-1 md:flex-none px-4 py-2 text-xs font-bold uppercase tracking-widest border border-amber-500/40 text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 rounded-sm transition-all disabled:opacity-50 cursor-pointer"
           >
             🧹 Clear Test Cache
           </button>
           <button
             onClick={handlePurgeQueues}
             disabled={actionLoading}
-            className="flex-1 md:flex-none px-4 py-2 text-xs font-bold uppercase tracking-widest border border-rose-500/40 text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 rounded-sm transition-all disabled:opacity-50"
+            className="flex-1 md:flex-none px-4 py-2 text-xs font-bold uppercase tracking-widest border border-rose-500/40 text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 rounded-sm transition-all disabled:opacity-50 cursor-pointer"
           >
             ⚡ Purge BullMQ History
           </button>
@@ -225,7 +230,7 @@ export const InfrastructureMetricsPage: React.FC = () => {
       </div>
 
       {/* Primary Hardware Metrics Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
         {/* CPU Workload */}
         <div className="bg-background border border-border p-5 rounded-sm flex flex-col justify-between">
           <div>
@@ -252,6 +257,34 @@ export const InfrastructureMetricsPage: React.FC = () => {
                 className="bg-emerald-500 h-full transition-all duration-500"
                 style={{ width: `${Math.min(100, (metrics?.cpu.usagePercent || 0))}%` }}
               />
+            </div>
+          </div>
+        </div>
+
+        {/* Server Memory (Node.js RAM) */}
+        <div className="bg-background border border-border p-5 rounded-sm flex flex-col justify-between">
+          <div>
+            <div className="flex justify-between items-start mb-4">
+              <span className="text-xs font-mono font-bold uppercase text-muted-foreground tracking-widest">SERVER MEMORY</span>
+              <span className="text-[10px] font-mono bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-xs">
+                Heap Active
+              </span>
+            </div>
+            <div className="text-3xl font-mono font-bold text-foreground-bold mb-1">
+              {metrics?.serverRamUsage.heapUsedMb || 0} MB
+            </div>
+            <div className="text-xs text-muted-foreground mb-4">
+              Allocated Heap: {metrics?.serverRamUsage.heapTotalMb || 0} MB
+            </div>
+          </div>
+          <div className="space-y-1.5 text-xs font-mono border-t border-border pt-3">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">RSS Memory</span>
+              <span className="text-foreground font-bold">{metrics?.serverRamUsage.rssMb || 0} MB</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Free System RAM</span>
+              <span className="text-emerald-400 font-bold">{metrics?.serverRamUsage.freeSystemRamGb || 0} / {metrics?.serverRamUsage.totalSystemRamGb || 0} GB</span>
             </div>
           </div>
         </div>
@@ -322,9 +355,9 @@ export const InfrastructureMetricsPage: React.FC = () => {
         <div className="bg-background border border-border p-5 rounded-sm flex flex-col justify-between">
           <div>
             <div className="flex justify-between items-start mb-4">
-              <span className="text-xs font-mono font-bold uppercase text-muted-foreground tracking-widest">SSE REALTIME TOPOLOGY</span>
+              <span className="text-xs font-mono font-bold uppercase text-muted-foreground tracking-widest">SSE TOPOLOGY</span>
               <span className="text-[10px] font-mono bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-xs">
-                {metrics?.sseTopology?.useRedis ? 'Redis Pub/Sub' : 'In-Memory'}
+                {metrics?.sseTopology?.useRedis ? 'Redis PubSub' : 'In-Memory'}
               </span>
             </div>
             <div className="text-3xl font-mono font-bold text-indigo-400 mb-1">
@@ -398,6 +431,52 @@ export const InfrastructureMetricsPage: React.FC = () => {
               <div className="text-muted-foreground">BullMQ Queue Keys</div>
               <div className="text-indigo-400 font-bold">{metrics?.redisRamUsage.breakdown?.bullMqQueues || 0}</div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Redis Key Allocation & Feature Storage Detailed Breakdown */}
+      <div className="bg-background border border-border p-5 rounded-sm space-y-5">
+        <div className="flex justify-between items-center border-b border-border pb-3">
+          <div>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">Redis Key Allocation & Feature Storage</h3>
+            <p className="text-xs text-muted-foreground">Exact distribution of cached data across application modules.</p>
+          </div>
+          <span className="text-xs font-mono font-bold text-emerald-400">{metrics?.redisRamUsage.totalKeys || 0} Total Redis Keys</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="border border-border/70 p-4 rounded-sm bg-muted/20 space-y-2">
+            <div className="flex justify-between text-xs font-mono">
+              <span className="font-bold text-foreground">BullMQ Background Queues</span>
+              <span className="text-indigo-400 font-bold">{bullMqKeys} Keys</span>
+            </div>
+            <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden">
+              <div className="bg-indigo-500 h-full transition-all" style={{ width: `${Math.round((bullMqKeys / totalRedisKeys) * 100)}%` }} />
+            </div>
+            <div className="text-[10px] font-mono text-muted-foreground text-right">{Math.round((bullMqKeys / totalRedisKeys) * 100)}% of Redis storage</div>
+          </div>
+
+          <div className="border border-border/70 p-4 rounded-sm bg-muted/20 space-y-2">
+            <div className="flex justify-between text-xs font-mono">
+              <span className="font-bold text-foreground">OTP & Auth Rate Limits</span>
+              <span className="text-amber-400 font-bold">{otpKeys} Keys</span>
+            </div>
+            <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden">
+              <div className="bg-amber-500 h-full transition-all" style={{ width: `${Math.round((otpKeys / totalRedisKeys) * 100)}%` }} />
+            </div>
+            <div className="text-[10px] font-mono text-muted-foreground text-right">{Math.round((otpKeys / totalRedisKeys) * 100)}% of Redis storage</div>
+          </div>
+
+          <div className="border border-border/70 p-4 rounded-sm bg-muted/20 space-y-2">
+            <div className="flex justify-between text-xs font-mono">
+              <span className="font-bold text-foreground">Test & Question Cache</span>
+              <span className="text-emerald-400 font-bold">{cacheKeys} Keys</span>
+            </div>
+            <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden">
+              <div className="bg-emerald-500 h-full transition-all" style={{ width: `${Math.round((cacheKeys / totalRedisKeys) * 100)}%` }} />
+            </div>
+            <div className="text-[10px] font-mono text-muted-foreground text-right">{Math.round((cacheKeys / totalRedisKeys) * 100)}% of Redis storage</div>
           </div>
         </div>
       </div>
