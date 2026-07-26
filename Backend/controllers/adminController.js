@@ -387,3 +387,22 @@ exports.clearQueues = async (req, res) => {
     res.status(500).json({ message: 'Failed to clear queues', error: error.message });
   }
 };
+
+exports.clearTestCache = async (req, res) => {
+  try {
+    const redisService = require('../services/redisClient');
+    const client = redisService.getClient();
+    if (client && redisService.isConnected()) {
+      const keys = await client.keys('test:*');
+      if (keys.length > 0) {
+        await client.del(...keys);
+      }
+      res.json({ message: `Cleared ${keys.length} test cache entries.` });
+    } else {
+      res.json({ message: 'Redis not connected, no cache cleared.' });
+    }
+  } catch (error) {
+    console.error('Clear Cache Error:', error);
+    res.status(500).json({ message: 'Failed to clear cache', error: error.message });
+  }
+};

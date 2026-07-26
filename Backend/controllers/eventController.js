@@ -118,8 +118,17 @@ function getWaitingQueueSnapshot() {
   return Array.from(grouped.entries()).map(([testId, waitingUsers]) => ({ testId, waitingUsers }));
 }
 
+function getSseTopology() {
+  return {
+    activeConnections: clientMap.size,
+    activeChannels: channelRefCount.size,
+    useRedis
+  };
+}
+
 exports.getWaitingUsersByTest = getWaitingUsersByTest;
 exports.getWaitingQueueSnapshot = getWaitingQueueSnapshot;
+exports.getSseTopology = getSseTopology;
 
 // ── SSE Connection Handler ────────────────────────────────────────────────────
 exports.getEvents = async (req, res) => {

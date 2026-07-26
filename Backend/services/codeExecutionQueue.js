@@ -88,6 +88,7 @@ if (connection) {
 
         const score = total > 0 ? Math.round((passed / total) * question.points) : 0;
         const verdict = passed === total ? 'Accepted' : `${passed}/${total} Test Cases Passed`;
+        recordExecutionOutcome(verdict);
 
         const finalResult = {
           passed,
@@ -195,10 +196,50 @@ async function clearAllQueues() {
   }
 }
 
+// Outcome Tracking Telemetry
+const executionTelemetry = {
+  total: 0,
+  accepted: 0,
+  wrongAnswer: 0,
+  timeLimit: 0,
+  runtimeError: 0
+};
+
+function recordExecutionOutcome(verdict) {
+  executionTelemetry.total += 1;
+  const v = String(verdict || '').toLowerCase();
+  if (v.includes('accepted') || v.includes('passed')) {
+    executionTelemetry.accepted += 1;
+  } else if (v.includes('time limit') || v.includes('tle')) {
+    executionTelemetry.timeLimit += 1;
+  } else if (v.includes('runtime') || v.includes('compilation') || v.includes('error')) {
+    executionTelemetry.runtimeError += 1;
+  } else {
+    executionTelemetry.wrongAnswer += 1;
+  }
+}
+
+function getCodeExecutionStats() {
+  const total = Math.max(1, executionTelemetry.total);
+  return {
+    total: executionTelemetry.total,
+    accepted: executionTelemetry.accepted,
+    wrongAnswer: executionTelemetry.wrongAnswer,
+    timeLimit: executionTelemetry.timeLimit,
+    runtimeError: executionTelemetry.runtimeError,
+    acceptedPct: Math.round((executionTelemetry.accepted / total) * 100),
+    wrongAnswerPct: Math.round((executionTelemetry.wrongAnswer / total) * 100),
+    timeLimitPct: Math.round((executionTelemetry.timeLimit / total) * 100),
+    runtimeErrorPct: Math.round((executionTelemetry.runtimeError / total) * 100)
+  };
+}
+
 module.exports = {
   enqueueRunCode,
   enqueueSubmitCode,
   clearAllQueues,
+  getCodeExecutionStats,
+  recordExecutionOutcome,
   codeRunQueue,
   codeSubmitQueue
 };

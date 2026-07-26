@@ -26,7 +26,8 @@ router.post('/test/:id/message', adminController.sendProctorMessage);
 // Force-submit a single candidate's submission
 router.post('/submission/:id/force-submit', adminController.forceSubmitCandidate);
 
-// Clear BullMQ queues
+// Clear BullMQ queues and Redis test cache
 router.post('/queues/clear', adminController.clearQueues);
+router.post('/cache/clear', adminController.clearTestCache);
 
 module.exports = router;

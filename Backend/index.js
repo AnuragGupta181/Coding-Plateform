@@ -64,6 +64,10 @@ app.use(cors(corsOptions));
 app.use(morgan(config.isProduction ? 'combined' : 'dev'));
 app.use(express.json({ limit: '1mb' }));
 
+// ── HTTP Performance Telemetry ────────────────────────────────────────────────
+const { telemetryMiddleware, getHttpTelemetry } = require('./middleware/telemetryMiddleware');
+app.use(telemetryMiddleware);
+
 // ── Request Timeout ───────────────────────────────────────────────────────────
 // If any DB query or async operation hangs for >15s, fail fast instead of
 // holding a connection slot indefinitely.
@@ -213,11 +217,20 @@ app.get('/health', async (_req, res) => {
   const mongoDbName = mongoose.connection.name || 'N/A';
   const mongoHost = mongoose.connection.host || 'N/A';
 
+  const eventController = require('./controllers/eventController');
+  const { getCodeExecutionStats } = require('./services/codeExecutionQueue');
+
+  const sseTopology = eventController.getSseTopology ? eventController.getSseTopology() : { activeConnections: 0, activeChannels: 0 };
+  const judge0Stats = getCodeExecutionStats ? getCodeExecutionStats() : { total: 0, acceptedPct: 0, wrongAnswerPct: 0, timeLimitPct: 0, runtimeErrorPct: 0 };
+
   res.json({
     status: 'ok',
     environment: config.env,
     serviceMode: process.env.SERVICE_MODE || 'both',
     uptime: Math.round(process.uptime()),
+    httpPerformance: getHttpTelemetry(),
+    judge0Outcomes: judge0Stats,
+    sseTopology,
     cpu: {
       cores: cpus.length,
       model: cpus[0]?.model || 'System CPU',
