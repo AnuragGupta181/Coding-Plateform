@@ -52,7 +52,18 @@ const ForgotPassword: React.FC = () => {
   return (
     <AuthLayout
       title="Reset Password"
-      subtitle={step === 'request' ? 'Request a reset code for your account' : 'Enter the reset code and choose a new password'}
+      subtitle={
+        step === 'request' ? (
+          'Request a reset code for your account'
+        ) : (
+          <div>
+            <p>Enter the reset code sent to <span className="font-bold text-foreground">{email}</span></p>
+            <p className="mt-2 text-xs text-amber-600 dark:text-amber-400 font-medium">
+              💡 If you don't see the email in your inbox, please check your <strong>Spam / Junk</strong> folder.
+            </p>
+          </div>
+        )
+      }
     >
       <AlertMessage message={error} className="mb-6" />
       <AlertMessage message={message} tone="success" className="mb-6" />

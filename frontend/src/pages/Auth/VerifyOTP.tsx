@@ -71,7 +71,14 @@ const VerifyOTP: React.FC = () => {
   return (
     <AuthLayout
       title="Verify Identity"
-      subtitle={<>Verification code dispatched to <span className="font-bold text-foreground">{email}</span></>}
+      subtitle={
+        <div>
+          <p>Verification code dispatched to <span className="font-bold text-foreground">{email}</span></p>
+          <p className="mt-2 text-xs text-amber-600 dark:text-amber-400 font-medium">
+            💡 If you don't see the email in your inbox, please check your <strong>Spam / Junk</strong> folder.
+          </p>
+        </div>
+      }
       footer="Security Protocol 4.0 &bull; NextGen"
       logoLinksHome={false}
     >
