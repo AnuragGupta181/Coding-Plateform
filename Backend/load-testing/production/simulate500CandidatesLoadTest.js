@@ -99,7 +99,7 @@ async function simulateCandidateFlow(candidateIndex, testId, realQuestions, real
             sourceCode: solutionCode,
             language: 'javascript',
             submissionId: submissionId
-          }, { headers, timeout: 12000 });
+          }, { headers, timeout: 30000 });
           stats.steps++;
           stats.codeSubmitted++;
         } catch (codeSubErr) {

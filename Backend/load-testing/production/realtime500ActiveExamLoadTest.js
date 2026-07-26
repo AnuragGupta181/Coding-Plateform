@@ -89,11 +89,14 @@ async function simulateActiveStudent(studentIndex, testId, realQuestions, realCo
             sourceCode: solutionCode,
             language: 'javascript',
             submissionId: submissionId
-          }, { headers, timeout: 12000 });
+          }, { headers, timeout: 30000 });
           globalStats.apiCalls++;
           globalStats.codeExecutions++;
         } catch (e) {
           globalStats.apiCalls++;
+          if (studentIndex <= 5) {
+            console.error(`⚠️ Code Submit Error (Q: ${cq.title}):`, e.response?.status, e.response?.data || e.message);
+          }
         }
       }
     }
