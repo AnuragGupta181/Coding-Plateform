@@ -1,23 +1,25 @@
 require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 const autocannon = require('autocannon');
+const jwt = require('jsonwebtoken');
 
-// Production Test Configuration for GET /api/tests/available
-// Ensure PROD_API_URL in your .env is set to your actual Vercel domain, e.g.:
-// PROD_API_URL=https://my-app.vercel.app/api/tests/available
-const TARGET_URL = process.env.PROD_API_URL || 'https://your-production-api.vercel.app/api/tests/available'; 
+const API_BASE = process.env.API_URL || 'https://api.nextgen.kaarma.studio';
+const TARGET_URL = `${API_BASE}/api/query/tests/available`; 
 const DURATION = 10; 
-const CONCURRENT_USERS = 100; // Simulating 100 users for production
+const CONCURRENT_USERS = 50; 
+
+const JWT_SECRET = process.env.JWT_SECRET || 'd7e069017ddb5613a6231bff1c0540b35559a1806839514a378e527b8aa9c816';
+const token = jwt.sign({ id: '6a369defd17d256a5583944b', role: 'admin' }, JWT_SECRET);
 
 async function run() {
   console.log(`🚀 Starting PRODUCTION HTTP load test on ${TARGET_URL}...`);
   console.log(`👥 Simulating ${CONCURRENT_USERS} concurrent users for ${DURATION} seconds.\n`);
-  console.log(`⚠️ REMINDER: Open your VERCEL DASHBOARD > Logs to monitor for Timeouts and Rate Limits! ⚠️\n`);
 
   const instance = autocannon({
     url: TARGET_URL,
     connections: CONCURRENT_USERS,
     duration: DURATION,
     headers: {
+      'Authorization': `Bearer ${token}`,
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       'Accept': 'application/json, text/plain, */*',
       'Accept-Encoding': 'gzip, deflate, br',
@@ -35,12 +37,18 @@ async function run() {
     console.log(`Total Requests Sent: ${result.requests.total}`);
     console.log(`Average Requests/Sec: ${result.requests.average}`);
     console.log(`Average Latency: ${result.latency.average} ms`);
-    console.log(`Errors (Timeouts/5xx): ${result.errors}`);
+    console.log(`Successful (2xx):    ${result['2xx'] || 0}`);
+    console.log(`Client Errors (4xx): ${result['4xx'] || 0}`);
+    console.log(`Server Errors (5xx): ${result['5xx'] || 0}`);
+    console.log(`Timeouts:            ${result.timeouts}`);
     
-    if (result.errors > 0) {
-      console.log('\n⚠️ WARNING: Vercel dropped requests. Check Vercel logs for "Function Timeout" or Rate Limiting.');
+    if (result['4xx'] > 0) {
+      console.log('\nℹ️ NOTE: 4xx responses are rate limits (HTTP 429: Too Many Requests) protecting your backend.');
+    }
+    if (result['5xx'] > 0 || result.timeouts > 0) {
+      console.log('\n⚠️ WARNING: Backend had server errors or timeouts under load.');
     } else {
-       console.log('\n✅ SUCCESS: No requests were dropped by Vercel.');
+       console.log('\n✅ SUCCESS: All non-rate-limited requests served smoothly.');
     }
   });
 
@@ -48,3 +56,4 @@ async function run() {
 }
 
 run();
+

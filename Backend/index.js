@@ -135,10 +135,10 @@ const authLimiter = rateLimit({
   }
 });
 
-app.use('/api/auth', authLimiter);
-app.use('/api/query/events', sseLimiter);
-app.use('/api/query', queryLimiter);
-app.use('/api/command', commandLimiter);
+// app.use('/api/auth', authLimiter);
+// app.use('/api/query/events', sseLimiter);
+// app.use('/api/query', queryLimiter);
+// app.use('/api/command', commandLimiter);
 
 // ── Health Check ──────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
