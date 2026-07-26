@@ -9,7 +9,35 @@ const token = jwt.sign({ id: '6a369defd17d256a5583944b', role: 'admin' }, JWT_SE
 const TOTAL_CANDIDATES = parseInt(process.env.TOTAL_CANDIDATES || '500', 10);
 const CONCURRENCY = parseInt(process.env.CONCURRENCY || '25', 10);
 
-async function simulateCandidateFlow(candidateIndex, testId, codingQuestionId, realQuestions) {
+function getSolutionForQuestion(cq) {
+  const title = (cq.title || '').toLowerCase();
+  if (title.includes('two sum')) {
+    return `const fs = require('fs');
+const input = fs.readFileSync(0, 'utf-8').trim().split('\\n');
+if (input.length >= 2) {
+  const nums = input[0].trim().split(/\\s+/).map(Number);
+  const target = parseInt(input[1].trim(), 10);
+  const map = new Map();
+  for (let i = 0; i < nums.length; i++) {
+    const diff = target - nums[i];
+    if (map.has(diff)) {
+      console.log(map.get(diff) + ' ' + i);
+      break;
+    }
+    map.set(nums[i], i);
+  }
+}`;
+  }
+  if (title.includes('reverse string')) {
+    return `const fs = require('fs');
+const s = fs.readFileSync(0, 'utf-8').replace(/\\r?\\n$/, '');
+console.log(s.split('').reverse().join(''));`;
+  }
+  const expected = cq.testCases?.[0]?.expectedOutput || '0';
+  return `console.log(${JSON.stringify(expected)});`;
+}
+
+async function simulateCandidateFlow(candidateIndex, testId, realQuestions, realCodingQuestions) {
   const email = `candidate500_${Date.now()}_${candidateIndex}_${Math.random()}@example.com`;
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
   
@@ -62,18 +90,21 @@ async function simulateCandidateFlow(candidateIndex, testId, codingQuestionId, r
       stats.steps++;
     }
 
-    // 5. Submit Official Coding Solution against Test Cases (if coding question exists)
-    if (codingQuestionId) {
-      try {
-        await axios.post(`${API_URL}/api/command/code/submit/${testId}/${codingQuestionId}`, {
-          sourceCode: `function solution(n) { return (n * (n - 1)) / 2; }`,
-          language: 'javascript',
-          submissionId: submissionId
-        }, { headers, timeout: 8000 });
-        stats.steps++;
-        stats.codeSubmitted++;
-      } catch (codeSubErr) {
-        stats.steps++;
+    // 5. Submit Official Coding Solutions against Test Cases for ALL Coding Questions
+    if (realCodingQuestions && realCodingQuestions.length > 0) {
+      for (const cq of realCodingQuestions) {
+        const solutionCode = getSolutionForQuestion(cq);
+        try {
+          await axios.post(`${API_URL}/api/command/code/submit/${testId}/${cq._id.toString()}`, {
+            sourceCode: solutionCode,
+            language: 'javascript',
+            submissionId: submissionId
+          }, { headers, timeout: 12000 });
+          stats.steps++;
+          stats.codeSubmitted++;
+        } catch (codeSubErr) {
+          stats.steps++;
+        }
       }
     }
 
@@ -129,7 +160,7 @@ async function run500CandidatesLoadTest() {
     // Check if test has questions & coding questions
     const testDoc = await mongoose.connection.db.collection('tests').findOne({ _id: new mongoose.Types.ObjectId(testId) });
     const realQuestions = testDoc?.questions || [];
-    const codingQuestionId = testDoc?.codingQuestions?.[0]?._id?.toString() || null;
+    const realCodingQuestions = testDoc?.codingQuestions || [];
 
     await mongoose.connection.db.collection('tests').updateOne(
       { _id: new mongoose.Types.ObjectId(testId) },
@@ -137,7 +168,7 @@ async function run500CandidatesLoadTest() {
     );
     await mongoose.disconnect();
 
-    console.log(`✅ Target Test ID: ${testId} (${realQuestions.length} MCQs) | Coding Question ID: ${codingQuestionId || 'None (MCQ + Code Run Mode)'}`);
+    console.log(`✅ Target Test ID: ${testId} (${realQuestions.length} MCQs, ${realCodingQuestions.length} Coding Qs) | All 500 candidates starting...`);
 
     const globalStart = Date.now();
     let completedCount = 0;
@@ -153,7 +184,7 @@ async function run500CandidatesLoadTest() {
       const batchPromises = [];
       
       for (let j = 0; j < batchSize; j++) {
-        batchPromises.push(simulateCandidateFlow(i + j + 1, testId, codingQuestionId, realQuestions));
+        batchPromises.push(simulateCandidateFlow(i + j + 1, testId, realQuestions, realCodingQuestions));
       }
 
       const results = await Promise.all(batchPromises);

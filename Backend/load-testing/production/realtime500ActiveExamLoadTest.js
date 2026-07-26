@@ -8,7 +8,35 @@ const token = jwt.sign({ id: '6a369defd17d256a5583944b', role: 'admin' }, JWT_SE
 
 const TOTAL_STUDENTS = parseInt(process.env.TOTAL_STUDENTS || '500', 10);
 
-async function simulateActiveStudent(studentIndex, testId, codingQuestionId, realQuestions, globalStats) {
+function getSolutionForQuestion(cq) {
+  const title = (cq.title || '').toLowerCase();
+  if (title.includes('two sum')) {
+    return `const fs = require('fs');
+const input = fs.readFileSync(0, 'utf-8').trim().split('\\n');
+if (input.length >= 2) {
+  const nums = input[0].trim().split(/\\s+/).map(Number);
+  const target = parseInt(input[1].trim(), 10);
+  const map = new Map();
+  for (let i = 0; i < nums.length; i++) {
+    const diff = target - nums[i];
+    if (map.has(diff)) {
+      console.log(map.get(diff) + ' ' + i);
+      break;
+    }
+    map.set(nums[i], i);
+  }
+}`;
+  }
+  if (title.includes('reverse string')) {
+    return `const fs = require('fs');
+const s = fs.readFileSync(0, 'utf-8').replace(/\\r?\\n$/, '');
+console.log(s.split('').reverse().join(''));`;
+  }
+  const expected = cq.testCases?.[0]?.expectedOutput || '0';
+  return `console.log(${JSON.stringify(expected)});`;
+}
+
+async function simulateActiveStudent(studentIndex, testId, realQuestions, realCodingQuestions, globalStats) {
   const email = `realtime_student_${Date.now()}_${studentIndex}_${Math.floor(Math.random()*10000)}@example.com`;
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
   
@@ -51,18 +79,23 @@ async function simulateActiveStudent(studentIndex, testId, codingQuestionId, rea
       globalStats.mcqAnswersSaved++;
     }
 
-    // 4. Mid-Exam Code Run / Submission
-    await new Promise(r => setTimeout(r, 3000));
-    try {
-      await axios.post(`${API_URL}/api/command/code/run`, {
-        sourceCode: `console.log("Hello from student ${studentIndex}");`,
-        language: 'javascript',
-        stdin: ''
-      }, { headers, timeout: 6000 });
-      globalStats.apiCalls++;
-      globalStats.codeExecutions++;
-    } catch (e) {
-      globalStats.apiCalls++;
+    // 4. Mid-Exam Official Coding Submissions for ALL Coding Questions
+    if (realCodingQuestions && realCodingQuestions.length > 0) {
+      for (const cq of realCodingQuestions) {
+        await new Promise(r => setTimeout(r, 1000 + Math.random() * 2000));
+        const solutionCode = getSolutionForQuestion(cq);
+        try {
+          await axios.post(`${API_URL}/api/command/code/submit/${testId}/${cq._id.toString()}`, {
+            sourceCode: solutionCode,
+            language: 'javascript',
+            submissionId: submissionId
+          }, { headers, timeout: 12000 });
+          globalStats.apiCalls++;
+          globalStats.codeExecutions++;
+        } catch (e) {
+          globalStats.apiCalls++;
+        }
+      }
     }
 
     // 5. Proctoring Tab Switch Log
@@ -127,7 +160,7 @@ async function runRealtime500ExamTest() {
     }
     
     const realQuestions = testDoc?.questions || [];
-    const codingQuestionId = testDoc?.codingQuestions?.[0]?._id?.toString() || null;
+    const realCodingQuestions = testDoc?.codingQuestions || [];
 
     await mongoose.connection.db.collection('tests').updateOne(
       { _id: new mongoose.Types.ObjectId(testId) },
@@ -135,14 +168,14 @@ async function runRealtime500ExamTest() {
     );
     await mongoose.disconnect();
 
-    console.log(`✅ Exam Active: Test ID ${testId} (${realQuestions.length} MCQs) | All 500 students entering exam room NOW...`);
+    console.log(`✅ Exam Active: Test ID ${testId} (${realQuestions.length} MCQs, ${realCodingQuestions.length} Coding Qs) | All 500 students entering exam room NOW...`);
 
     const globalStart = Date.now();
 
     // Launch ALL 500 students AT THE EXACT SAME TIME in parallel!
     const studentPromises = [];
     for (let s = 1; s <= TOTAL_STUDENTS; s++) {
-      studentPromises.push(simulateActiveStudent(s, testId, codingQuestionId, realQuestions, globalStats));
+      studentPromises.push(simulateActiveStudent(s, testId, realQuestions, realCodingQuestions, globalStats));
     }
 
     // Monitor progress live every 5 seconds while all 500 are in the exam
