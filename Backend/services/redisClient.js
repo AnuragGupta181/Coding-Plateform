@@ -21,7 +21,6 @@ if (process.env.REDIS_URL) {
   //   1. rediss:// protocol (explicit TLS)
   //   2. .upstash.io hostname (Upstash always needs TLS, even with redis://)
   const useTls = redisUrl.startsWith('rediss://') || redisUrl.includes('.upstash.io');
-  console.log(`🔍 Redis init: useTls=${useTls}, host=${redisUrl.replace(/\/\/.*@/, '//***@')}`);
 
   client = new Redis(redisUrl, {
     lazyConnect: true,
@@ -42,19 +41,18 @@ if (process.env.REDIS_URL) {
   // Store the connection promise so requests can await it
   connectPromise = client.connect()
     .then(() => {
-      console.log('✅ Redis cache client connected, status:', client.status);
+      console.log('✅ Redis cache client connected');
       return true;
     })
     .catch((err) => {
-      console.warn('⚠️  Redis cache client failed to connect:', err.message, '| Code:', err.code);
+      console.warn('⚠️  Redis cache client failed to connect:', err.message);
       try { client.disconnect(); } catch {}
       client = null; // Fall back to no-cache mode
       return false;
     });
 
   client.on('error', (err) => {
-    // Suppress noisy connection errors after initial failure
-    if (client) console.error('Redis cache error:', err.message, '| Code:', err.code);
+    if (client) console.error('Redis cache error:', err.message);
   });
 
   client.on('close', () => {
@@ -74,13 +72,8 @@ if (process.env.REDIS_URL) {
  * Safe to call multiple times — the promise is cached.
  */
 async function ensureConnected() {
-  if (!connectPromise) {
-    console.warn('🔍 ensureConnected: no connectPromise (REDIS_URL not set?)');
-    return false;
-  }
-  const result = await connectPromise;
-  const status = client ? client.status : 'client=null';
-  console.log(`🔍 ensureConnected: result=${result}, clientStatus=${status}`);
+  if (!connectPromise) return false;
+  await connectPromise;
   return client !== null && client.status === 'ready';
 }
 
