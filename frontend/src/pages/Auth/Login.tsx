@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { setLoading, setAuth, setError } from '../../store/authSlice';
@@ -8,12 +8,13 @@ import AlertMessage from '../../components/common/AlertMessage';
 import FormField from '../../components/common/FormField';
 import AuthFooterLink from '../../components/auth/AuthFooterLink';
 import AuthLayout from '../../components/auth/AuthLayout';
-import { Turnstile } from '@marsidev/react-turnstile';
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [turnstileToken, setTurnstileToken] = useState('');
+  const turnstileRef = useRef<TurnstileInstance>(null);
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { isLoading, error } = useSelector((state: RootState) => state.auth);
@@ -36,6 +37,8 @@ const Login: React.FC = () => {
       }
     } catch (error: unknown) {
       dispatch(setError(getApiErrorMessage(error, 'Login failed. Please check your credentials.')));
+      setTurnstileToken('');
+      turnstileRef.current?.reset();
     }
   };
 
@@ -67,8 +70,10 @@ const Login: React.FC = () => {
         <div className="flex justify-center my-3 w-full overflow-hidden">
           <div className="w-full max-w-[300px]">
             <Turnstile 
+              ref={turnstileRef}
               siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || "1x00000000000000000000AA"} 
               onSuccess={(token) => setTurnstileToken(token)}
+              onExpire={() => setTurnstileToken('')}
               options={{ theme: 'dark' }}
             />
           </div>
