@@ -12,9 +12,12 @@ let connection = null;
 if (REDIS_URL) {
   try {
     const IORedis = require('ioredis');
+    // Vercel Lambda: ioredis needs explicit tls config for rediss:// URLs
+    const useTls = REDIS_URL.startsWith('rediss://');
     connection = new IORedis(REDIS_URL, {
       maxRetriesPerRequest: null,
-      enableReadyCheck: false
+      enableReadyCheck: false,
+      ...(useTls && { tls: { rejectUnauthorized: false } }),
     });
   } catch (err) {
     console.error('Failed to initialize BullMQ Redis connection:', err);

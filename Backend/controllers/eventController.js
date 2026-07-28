@@ -21,8 +21,12 @@ const REDIS_URL = process.env.REDIS_URL;
 
 if (REDIS_URL) {
   try {
-    redisPublisher = new Redis(REDIS_URL, { lazyConnect: true, enableOfflineQueue: false });
-    redisSubscriber = new Redis(REDIS_URL, { lazyConnect: true, enableOfflineQueue: false });
+    // Vercel Lambda: ioredis needs explicit tls config for rediss:// URLs
+    const useTls = REDIS_URL.startsWith('rediss://');
+    const tlsOpts = useTls ? { tls: { rejectUnauthorized: false } } : {};
+
+    redisPublisher = new Redis(REDIS_URL, { lazyConnect: true, enableOfflineQueue: false, ...tlsOpts });
+    redisSubscriber = new Redis(REDIS_URL, { lazyConnect: true, enableOfflineQueue: false, ...tlsOpts });
 
     Promise.all([redisPublisher.connect(), redisSubscriber.connect()])
       .then(() => {

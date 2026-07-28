@@ -16,11 +16,17 @@ let client = null;
 let connectPromise = null; // cached promise — awaited by ensureConnected()
 
 if (process.env.REDIS_URL) {
-  client = new Redis(process.env.REDIS_URL, {
+  const redisUrl = process.env.REDIS_URL;
+  // Vercel Lambda: ioredis doesn't always handle rediss:// TLS properly.
+  // Explicitly pass tls config when the URL uses the rediss:// protocol.
+  const useTls = redisUrl.startsWith('rediss://');
+
+  client = new Redis(redisUrl, {
     lazyConnect: true,
     enableOfflineQueue: false,
     maxRetriesPerRequest: 3,
     connectTimeout: 10000, // 10s timeout for Upstash TLS handshake
+    ...(useTls && { tls: { rejectUnauthorized: false } }),
     retryStrategy: (times) => {
       if (times > 3) {
         console.warn('⚠️  Redis retry attempts exhausted, giving up');
