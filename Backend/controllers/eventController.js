@@ -21,8 +21,8 @@ const REDIS_URL = process.env.REDIS_URL;
 
 if (REDIS_URL) {
   try {
-    // Vercel Lambda: ioredis needs explicit tls config for rediss:// URLs
-    const useTls = REDIS_URL.startsWith('rediss://');
+    // Upstash always requires TLS — detect from protocol or hostname
+    const useTls = REDIS_URL.startsWith('rediss://') || REDIS_URL.includes('.upstash.io');
     const tlsOpts = useTls ? { tls: { rejectUnauthorized: false } } : {};
 
     redisPublisher = new Redis(REDIS_URL, { lazyConnect: true, enableOfflineQueue: false, ...tlsOpts });

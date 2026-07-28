@@ -12,8 +12,8 @@ let connection = null;
 if (REDIS_URL) {
   try {
     const IORedis = require('ioredis');
-    // Vercel Lambda: ioredis needs explicit tls config for rediss:// URLs
-    const useTls = REDIS_URL.startsWith('rediss://');
+    // Upstash always requires TLS — detect from protocol or hostname
+    const useTls = REDIS_URL.startsWith('rediss://') || REDIS_URL.includes('.upstash.io');
     connection = new IORedis(REDIS_URL, {
       maxRetriesPerRequest: null,
       enableReadyCheck: false,

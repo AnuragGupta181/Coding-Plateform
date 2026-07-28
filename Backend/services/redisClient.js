@@ -17,9 +17,10 @@ let connectPromise = null; // cached promise — awaited by ensureConnected()
 
 if (process.env.REDIS_URL) {
   const redisUrl = process.env.REDIS_URL;
-  // Vercel Lambda: ioredis doesn't always handle rediss:// TLS properly.
-  // Explicitly pass tls config when the URL uses the rediss:// protocol.
-  const useTls = redisUrl.startsWith('rediss://');
+  // Upstash ALWAYS requires TLS. Detect it from either:
+  //   1. rediss:// protocol (explicit TLS)
+  //   2. .upstash.io hostname (Upstash always needs TLS, even with redis://)
+  const useTls = redisUrl.startsWith('rediss://') || redisUrl.includes('.upstash.io');
   console.log(`🔍 Redis init: useTls=${useTls}, host=${redisUrl.replace(/\/\/.*@/, '//***@')}`);
 
   client = new Redis(redisUrl, {
