@@ -21,8 +21,6 @@ if (process.env.REDIS_URL) {
   //   1. rediss:// protocol (explicit TLS)
   //   2. .upstash.io hostname (Upstash always needs TLS, even with redis://)
   const useTls = redisUrl.startsWith('rediss://') || redisUrl.includes('.upstash.io');
-  // TEMP: diagnose Vercel env var (shows only prefix, no credentials)
-  console.log(`Redis URL check: starts="${redisUrl.substring(0, 10)}" len=${redisUrl.length} tls=${useTls}`);
 
   client = new Redis(redisUrl, {
     lazyConnect: true,
