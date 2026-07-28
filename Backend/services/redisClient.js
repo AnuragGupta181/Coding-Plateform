@@ -20,6 +20,7 @@ if (process.env.REDIS_URL) {
   // Vercel Lambda: ioredis doesn't always handle rediss:// TLS properly.
   // Explicitly pass tls config when the URL uses the rediss:// protocol.
   const useTls = redisUrl.startsWith('rediss://');
+  console.log(`🔍 Redis init: useTls=${useTls}, host=${redisUrl.replace(/\/\/.*@/, '//***@')}`);
 
   client = new Redis(redisUrl, {
     lazyConnect: true,
@@ -40,11 +41,11 @@ if (process.env.REDIS_URL) {
   // Store the connection promise so requests can await it
   connectPromise = client.connect()
     .then(() => {
-      console.log('✅ Redis cache client connected');
+      console.log('✅ Redis cache client connected, status:', client.status);
       return true;
     })
     .catch((err) => {
-      console.warn('⚠️  Redis cache client failed to connect:', err.message);
+      console.warn('⚠️  Redis cache client failed to connect:', err.message, '| Code:', err.code);
       try { client.disconnect(); } catch {}
       client = null; // Fall back to no-cache mode
       return false;
@@ -52,7 +53,7 @@ if (process.env.REDIS_URL) {
 
   client.on('error', (err) => {
     // Suppress noisy connection errors after initial failure
-    if (client) console.error('Redis cache error:', err.message);
+    if (client) console.error('Redis cache error:', err.message, '| Code:', err.code);
   });
 
   client.on('close', () => {
@@ -72,8 +73,13 @@ if (process.env.REDIS_URL) {
  * Safe to call multiple times — the promise is cached.
  */
 async function ensureConnected() {
-  if (!connectPromise) return false;
-  await connectPromise;
+  if (!connectPromise) {
+    console.warn('🔍 ensureConnected: no connectPromise (REDIS_URL not set?)');
+    return false;
+  }
+  const result = await connectPromise;
+  const status = client ? client.status : 'client=null';
+  console.log(`🔍 ensureConnected: result=${result}, clientStatus=${status}`);
   return client !== null && client.status === 'ready';
 }
 
