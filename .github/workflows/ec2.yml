@@ -23,9 +23,30 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
           script: |
+            # Load NVM
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
+            # Ensure Node.js binaries are in PATH
+            export PATH="$HOME/.nvm/versions/node/v24.18.0/bin:$PATH"
+
+            echo "===== Environment ====="
+            whoami
+            node -v
+            npm -v
+            pm2 -v
+
+            echo "===== Deploying ====="
             cd /home/ubuntu/Coding-Plateform/Backend
-            git pull origin main
-            npm install
+
+            git fetch origin
+            git reset --hard origin/main
+
+            npm ci
+
             pm2 reload backend --update-env
             pm2 save
+
+            echo "===== Deployment Successful ====="
