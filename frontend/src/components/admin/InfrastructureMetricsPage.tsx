@@ -73,7 +73,7 @@ export const InfrastructureMetricsPage: React.FC = () => {
       try {
         res = await axios.get('/health');
       } catch {
-        res = await axios.get('http://localhost:5000/health');
+        res = await axios.get('https://api.kaarma.studio/health');
       }
       setMetrics(res.data);
       setLastUpdated(new Date().toLocaleTimeString());
@@ -243,7 +243,7 @@ export const InfrastructureMetricsPage: React.FC = () => {
             <div className="text-3xl font-mono font-bold text-foreground-bold mb-1">
               {metrics?.cpu.usagePercent}%
             </div>
-            <div className="text-xs text-muted-foreground truncate mb-4">
+            <div className="text-xs text-muted-foreground mb-4 ">
               {metrics?.cpu.model}
             </div>
           </div>

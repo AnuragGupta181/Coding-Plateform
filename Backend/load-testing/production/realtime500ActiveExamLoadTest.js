@@ -2,7 +2,7 @@ const axios = require('axios');
 const jwt = require('jsonwebtoken');
 require('dotenv').config({ path: '../../.env' });
 
-const API_URL = process.env.API_URL || 'http://localhost:5000';
+const API_URL = process.env.API_URL || 'https://api.kaarma.studio';
 const JWT_SECRET = process.env.JWT_SECRET || 'd7e069017ddb5613a6231bff1c0540b35559a1806839514a378e527b8aa9c816';
 const token = jwt.sign({ id: '6a369defd17d256a5583944b', role: 'admin' }, JWT_SECRET);
 
@@ -142,7 +142,7 @@ async function runRealtime500ExamTest() {
   try {
     // 1. Connect MongoDB Atlas & Ensure active test
     const mongoose = require('mongoose');
-    const mongoUri = 'mongodb+srv://sarthakkaushik927_db_user:nuY7XWS0tB6chKhN@tests.t306qgl.mongodb.net/Coding-platform?appName=Tests';
+    const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://sarthakkaushik927_db_user:nuY7XWS0tB6chKhN@tests.t306qgl.mongodb.net/Coding-platform?appName=Tests';
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
         await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 5000 });

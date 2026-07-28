@@ -40,7 +40,7 @@ export const SystemHealthWidget: React.FC = () => {
       setData(res.data);
     } catch {
       try {
-        const fallbackRes = await axios.get('http://localhost:5000/health');
+        const fallbackRes = await axios.get('https://api.kaarma.studio/health');
         setData(fallbackRes.data);
       } catch (err) {
         console.error('Failed to fetch health metrics:', err);
