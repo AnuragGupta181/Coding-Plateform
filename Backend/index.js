@@ -355,7 +355,21 @@ const connectDB = async () => {
 // health probe per 15s; on a failed probe we drop the cache and reconnect once.
 async function ensureDb() {
   await connectDB();
-  if (!isConnected()) throw new Error('MongoDB not connected');
+
+  // On cold starts, readyState may still be transitioning after connect() resolves.
+  // Wait briefly (up to 5s) for it to reach "connected" (1).
+  if (!isConnected()) {
+    await new Promise((resolve) => {
+      const timeout = setTimeout(resolve, 5000);
+      const check = () => {
+        if (isConnected()) { clearTimeout(timeout); resolve(); }
+      };
+      mongoose.connection.once('connected', () => { clearTimeout(timeout); resolve(); });
+      // Also poll in case the event already fired
+      check();
+    });
+    if (!isConnected()) throw new Error('MongoDB not connected');
+  }
 
   if (Date.now() - mongoCache.lastOk > 15000) {
     try {
@@ -363,9 +377,6 @@ async function ensureDb() {
       mongoCache.lastOk = Date.now();
     } catch (pingErr) {
       console.warn('⚠️ DB ping failed (stale socket), reconnecting:', pingErr.message);
-      // Close the stale socket first so connect() opens a genuinely fresh one
-      // (mongoose.connect() on an already-"connected" singleton can otherwise
-      // return the same dead socket).
       try { await mongoose.connection.close(); } catch { /* already closed */ }
       mongoCache.conn = null;
       mongoCache.promise = null;
