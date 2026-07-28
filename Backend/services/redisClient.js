@@ -15,7 +15,15 @@ if (process.env.REDIS_URL) {
   client = new Redis(process.env.REDIS_URL, {
     lazyConnect: true,
     enableOfflineQueue: false,
-    maxRetriesPerRequest: 1,
+    maxRetriesPerRequest: 3,
+    retryStrategy: (times) => {
+      if (times > 3) {
+        console.warn('⚠️  Redis retry attempts exhausted, giving up');
+        return null;
+      }
+      const delay = Math.min(times * 100, 3000);
+      return delay;
+    },
   });
 
   client.connect()
@@ -29,6 +37,14 @@ if (process.env.REDIS_URL) {
   client.on('error', (err) => {
     // Suppress noisy connection errors after initial failure
     if (client) console.error('Redis cache error:', err.message);
+  });
+
+  client.on('close', () => {
+    console.warn('⚠️  Redis connection closed');
+  });
+
+  client.on('reconnecting', () => {
+    console.log('🔄 Redis reconnecting...');
   });
 } else {
   console.log('ℹ️  REDIS_URL not set — caching disabled (in-memory only)');

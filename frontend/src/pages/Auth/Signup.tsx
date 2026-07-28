@@ -47,12 +47,14 @@ const Signup: React.FC = () => {
         <FormField label="Mobile Number" id="mobile" type="tel" required value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} placeholder="+91 9876543210" />
         <FormField label="Password" id="password" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Minimum 8 characters" />
 
-        <div className="flex justify-center my-3">
-          <Turnstile 
-            siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || "1x00000000000000000000AA"} 
-            onSuccess={(token) => setTurnstileToken(token)}
-            options={{ theme: 'dark' }}
-          />
+        <div className="flex justify-center my-3 w-full overflow-hidden">
+          <div className="w-full max-w-[300px]">
+            <Turnstile 
+              siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || "1x00000000000000000000AA"} 
+              onSuccess={(token) => setTurnstileToken(token)}
+              options={{ theme: 'dark' }}
+            />
+          </div>
         </div>
 
         <button type="submit" disabled={isLoading || !turnstileToken} className="w-full flex justify-center py-3 px-4 border border-border hover:border-primary rounded-sm text-xs font-bold uppercase tracking-widest text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none transition-all disabled:opacity-50 shadow-md cursor-pointer">

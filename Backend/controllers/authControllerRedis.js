@@ -64,8 +64,18 @@ async function checkOtpRateLimits(client, req, email) {
 }
 
 async function verifyTurnstileToken(token, ip) {
-  if (!token) return false;
+  if (!token) {
+    console.warn('⚠️ Turnstile: No token provided');
+    return false;
+  }
+  
   const secret = process.env.TURNSTILE_SECRET_KEY || '1x0000000000000000000000000000000AA';
+  
+  // Skip Turnstile verification in development if secret is default
+  if (secret === '1x0000000000000000000000000000000AA' && process.env.NODE_ENV !== 'production') {
+    console.warn('⚠️  Turnstile verification skipped in development with default secret');
+    return true;
+  }
   
   try {
     const formData = new URLSearchParams();
@@ -77,19 +87,38 @@ async function verifyTurnstileToken(token, ip) {
       formData.append('remoteip', ip);
     }
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+    console.log('🔍 Turnstile: Verifying token...', { ip, tokenLength: token?.length });
     const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
       method: 'POST',
       body: formData,
+      signal: controller.signal,
     });
     
+    clearTimeout(timeoutId);
+    
     const data = await res.json();
+    console.log('🔍 Turnstile: Response', { 
+      success: data.success, 
+      errorCodes: data['error-codes'], 
+      challengeTs: data.challenge_ts,
+      hostname: data.hostname 
+    });
+    
     if (!data.success) {
       console.warn('⚠️ Cloudflare Turnstile Verification Failed:', data['error-codes']);
     }
     return data.success;
   } catch (err) {
-    console.error('Turnstile verification error:', err);
-    return false;
+    if (err.name === 'AbortError') {
+      console.error('Turnstile verification timeout after 10s');
+    } else {
+      console.error('Turnstile verification error:', err);
+    }
+    // In production, fail on verification errors. In dev, allow for testing.
+    return process.env.NODE_ENV === 'production' ? false : true;
   }
 }
 
@@ -121,7 +150,17 @@ exports.signup = async (req, res) => {
 
     const client = redisService.getClient();
     if (!client || !redisService.isConnected()) {
-      return res.status(500).json({ message: 'Redis is not connected. Cannot process OTP.' });
+      console.error('Redis not connected during signup, falling back to MongoDB OTP storage');
+      // Fallback to MongoDB-based OTP storage if Redis is unavailable
+      const OTP = require('../models/otp');
+      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+      await OTP.findOneAndUpdate(
+        { email, purpose: OTP_PURPOSE.SIGNUP },
+        { otp: otpCode, purpose: OTP_PURPOSE.SIGNUP, createdAt: Date.now() },
+        { upsert: true, returnDocument: 'after' }
+      );
+      await emailService.sendOTP(email, otpCode);
+      return res.json({ message: 'OTP sent to your email.', fallback: 'mongodb' });
     }
 
     // Apply Dual-Layer Rate Limiter (IP + Email)
@@ -171,8 +210,28 @@ exports.verifyOTP = async (req, res) => {
     const { email, otp } = req.body;
 
     const client = redisService.getClient();
-    if (!client || !redisService.isConnected()) {
-      return res.status(500).json({ message: 'Redis is not connected. Cannot process OTP.' });
+    const useRedisFallback = !client || !redisService.isConnected();
+
+    if (useRedisFallback) {
+      console.error('Redis not connected during verifyOTP, falling back to MongoDB OTP storage');
+      const OTP = require('../models/otp');
+      const otpRecord = await OTP.findOne({ email, otp, purpose: OTP_PURPOSE.SIGNUP });
+      if (!otpRecord) {
+        return res.status(400).json({ message: 'Invalid or expired OTP.' });
+      }
+
+      let user = await User.findOne({ email });
+      if (!user) {
+        return res.status(404).json({ message: 'User registration not found. Please signup again.' });
+      }
+
+      user.isVerified = true;
+      await user.save();
+
+      await OTP.deleteOne({ email, purpose: OTP_PURPOSE.SIGNUP });
+
+      const token = signToken(user);
+      return res.json({ message: 'Verification successful', token, user: sanitizeUser(user), fallback: 'mongodb' });
     }
 
     const otpKey = `otp:${OTP_PURPOSE.SIGNUP}:${email}`;
@@ -231,7 +290,16 @@ exports.resendOTP = async (req, res) => {
 
     const client = redisService.getClient();
     if (!client || !redisService.isConnected()) {
-      return res.status(500).json({ message: 'Redis is not connected. Cannot process OTP.' });
+      console.error('Redis not connected during resendOTP, falling back to MongoDB OTP storage');
+      const OTP = require('../models/otp');
+      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+      await OTP.findOneAndUpdate(
+        { email, purpose: OTP_PURPOSE.SIGNUP },
+        { otp: otpCode, purpose: OTP_PURPOSE.SIGNUP, createdAt: Date.now() },
+        { upsert: true, returnDocument: 'after' }
+      );
+      await emailService.sendOTP(email, otpCode);
+      return res.json({ message: 'OTP resent to your email.', fallback: 'mongodb' });
     }
 
     // Apply Dual-Layer Rate Limiter (IP + Email)

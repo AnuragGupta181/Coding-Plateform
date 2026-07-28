@@ -19,7 +19,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ title, subtitle, children, foot
             <BrandMark to={logoLinksHome ? '/' : undefined} size="md" />
           </div>
           <h2 className="text-2xl sm:text-3xl font-sans font-bold text-foreground-bold tracking-tight">{title}</h2>
-          <p className="mt-1 text-xs sm:text-sm text-muted-foreground font-light italic">{subtitle}</p>
+          <div className="mt-1 text-xs sm:text-sm text-muted-foreground font-light italic">{subtitle}</div>
         </div>
 
         <div className="mt-4 sm:mt-6 mx-auto w-full max-w-md">
