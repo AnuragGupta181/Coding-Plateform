@@ -5,17 +5,22 @@
  * Both eventController (Pub/Sub) and cache consumers import from here.
  * Safe to use even when REDIS_URL is not configured — all methods
  * become no-ops so the app works normally without Redis in dev.
+ *
+ * Uses a cached connection promise so that Vercel serverless cold-starts
+ * can `await ensureConnected()` before using the client.
  */
 
 const Redis = require('ioredis');
 
 let client = null;
+let connectPromise = null; // cached promise — awaited by ensureConnected()
 
 if (process.env.REDIS_URL) {
   client = new Redis(process.env.REDIS_URL, {
     lazyConnect: true,
     enableOfflineQueue: false,
     maxRetriesPerRequest: 3,
+    connectTimeout: 10000, // 10s timeout for Upstash TLS handshake
     retryStrategy: (times) => {
       if (times > 3) {
         console.warn('⚠️  Redis retry attempts exhausted, giving up');
@@ -26,12 +31,17 @@ if (process.env.REDIS_URL) {
     },
   });
 
-  client.connect()
-    .then(() => console.log('✅ Redis cache client connected'))
+  // Store the connection promise so requests can await it
+  connectPromise = client.connect()
+    .then(() => {
+      console.log('✅ Redis cache client connected');
+      return true;
+    })
     .catch((err) => {
       console.warn('⚠️  Redis cache client failed to connect:', err.message);
       try { client.disconnect(); } catch {}
       client = null; // Fall back to no-cache mode
+      return false;
     });
 
   client.on('error', (err) => {
@@ -48,6 +58,17 @@ if (process.env.REDIS_URL) {
   });
 } else {
   console.log('ℹ️  REDIS_URL not set — caching disabled (in-memory only)');
+}
+
+/**
+ * Wait for the initial Redis connection to settle.
+ * Returns true if connected, false otherwise.
+ * Safe to call multiple times — the promise is cached.
+ */
+async function ensureConnected() {
+  if (!connectPromise) return false;
+  await connectPromise;
+  return client !== null && client.status === 'ready';
 }
 
 /**
@@ -143,4 +164,4 @@ async function getRedisMetrics() {
   }
 }
 
-module.exports = { get, set, del, isConnected, getRedisMetrics, getClient: () => client };
+module.exports = { get, set, del, isConnected, ensureConnected, getRedisMetrics, getClient: () => client };

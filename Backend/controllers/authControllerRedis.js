@@ -148,8 +148,10 @@ exports.signup = async (req, res) => {
       return res.status(400).json({ message: 'User already exists and is verified. Please login.' });
     }
 
+    // Await Redis connection (prevents cold-start race condition on Vercel)
+    const redisReady = await redisService.ensureConnected();
     const client = redisService.getClient();
-    if (!client || !redisService.isConnected()) {
+    if (!redisReady || !client) {
       console.error('Redis not connected during signup, falling back to MongoDB OTP storage');
       // Fallback to MongoDB-based OTP storage if Redis is unavailable
       const OTP = require('../models/otp');
@@ -209,8 +211,9 @@ exports.verifyOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
 
+    const redisReady = await redisService.ensureConnected();
     const client = redisService.getClient();
-    const useRedisFallback = !client || !redisService.isConnected();
+    const useRedisFallback = !redisReady || !client;
 
     if (useRedisFallback) {
       console.error('Redis not connected during verifyOTP, falling back to MongoDB OTP storage');
@@ -288,8 +291,9 @@ exports.resendOTP = async (req, res) => {
       return res.status(400).json({ message: 'Email is required.' });
     }
 
+    const redisReady = await redisService.ensureConnected();
     const client = redisService.getClient();
-    if (!client || !redisService.isConnected()) {
+    if (!redisReady || !client) {
       console.error('Redis not connected during resendOTP, falling back to MongoDB OTP storage');
       const OTP = require('../models/otp');
       const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -335,6 +339,7 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: 'Email and password are required.' });
     }
 
+    await redisService.ensureConnected();
     const client = redisService.getClient();
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
 
@@ -396,8 +401,9 @@ exports.forgotPassword = async (req, res) => {
       return res.status(400).json({ message: 'Email is required.' });
     }
 
+    const redisReady = await redisService.ensureConnected();
     const client = redisService.getClient();
-    if (!client || !redisService.isConnected()) {
+    if (!redisReady || !client) {
       return res.status(500).json({ message: 'Redis is not connected.' });
     }
 
@@ -442,8 +448,9 @@ exports.resetPassword = async (req, res) => {
       return res.status(400).json({ message: `Password must be at least ${PASSWORD_MIN_LENGTH} characters.` });
     }
 
+    const redisReady = await redisService.ensureConnected();
     const client = redisService.getClient();
-    if (!client || !redisService.isConnected()) {
+    if (!redisReady || !client) {
       return res.status(500).json({ message: 'Redis is not connected.' });
     }
 
