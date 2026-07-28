@@ -8,17 +8,17 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'https://api.kaarma.studio',
         changeOrigin: true,
         secure: false,
       },
       '/admin/queues': {
-        target: 'http://localhost:5000',
+        target: 'https://api.kaarma.studio',
         changeOrigin: true,
         secure: false,
       },
       '/health': {
-        target: 'http://localhost:5000',
+        target: 'https://api.kaarma.studio',
         changeOrigin: true,
         secure: false,
       },
