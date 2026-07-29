@@ -28,6 +28,7 @@ if (process.env.REDIS_URL) {
     maxRetriesPerRequest: 3,
     connectTimeout: 10000, // 10s timeout for Upstash TLS handshake
     ...(useTls && { tls: { rejectUnauthorized: false } }),
+    ...(process.env.REDIS_PASSWORD && { password: process.env.REDIS_PASSWORD }),
     retryStrategy: (times) => {
       if (times > 3) {
         console.warn('⚠️  Redis retry attempts exhausted, giving up');

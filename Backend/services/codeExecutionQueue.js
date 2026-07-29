@@ -18,6 +18,7 @@ if (REDIS_URL) {
       maxRetriesPerRequest: null,
       enableReadyCheck: false,
       ...(useTls && { tls: { rejectUnauthorized: false } }),
+      ...(process.env.REDIS_PASSWORD && { password: process.env.REDIS_PASSWORD }),
     });
   } catch (err) {
     console.error('Failed to initialize BullMQ Redis connection:', err);
