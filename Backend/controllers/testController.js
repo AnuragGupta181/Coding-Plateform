@@ -108,8 +108,25 @@ exports.startSubmission = async (req, res) => {
     }
     res.status(500).json({ message: 'Internal server error' });
   }
-      if (!exists) return res.status(404).json({ message: 'Submission not found' });
-      return res.status(403).json({ message: 'Test already completed' });
+};
+
+// ── POST /api/submission/:submissionId/clear-answer ─────────────────────────
+exports.clearAnswer = async (req, res) => {
+  try {
+    const { submissionId } = req.params;
+    const { questionId } = req.body;
+
+    if (!questionId) {
+      return res.status(400).json({ message: 'questionId is required' });
+    }
+
+    const submission = await Submission.findById(submissionId);
+    if (!submission) return res.status(404).json({ message: 'Submission not found' });
+    if (submission.status === 'completed') return res.status(403).json({ message: 'Test already completed' });
+
+    if (submission.answers && submission.answers.has(questionId)) {
+      submission.answers.delete(questionId);
+      await submission.save();
     }
 
     res.json({ message: 'Answer cleared successfully' });
