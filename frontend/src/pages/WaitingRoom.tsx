@@ -9,7 +9,7 @@ import { MinimalFooter } from '../components/common/MinimalFooter';
 const WaitingRoom: React.FC = () => {
   const { id: testId } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useSelector((state: RootState) => state.auth);
+  const { user, token } = useSelector((state: RootState) => state.auth);
   const [statusMessage, setStatusMessage] = useState('Awaiting administrator signal to commence...');
   const [scheduledFor, setScheduledFor] = useState<string | null>(null);
   const [timerText, setTimerText] = useState<string>('00:00');
@@ -67,7 +67,7 @@ const WaitingRoom: React.FC = () => {
     const name = user?.name || 'Candidate';
 
     // 1. Open EventSource connection to register candidate in live Admin Queue & listen for real-time events
-    const sseUrl = `/events/test/${testId}?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}`;
+    const sseUrl = `/events/test/${testId}?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&token=${token}`;
     const eventSource = new EventSource(createEventSourceUrl(sseUrl), { withCredentials: true });
 
     eventSource.onmessage = (event) => {

@@ -5,6 +5,7 @@ import AlertMessage from '../../components/common/AlertMessage';
 import FormField from '../../components/common/FormField';
 import AuthFooterLink from '../../components/auth/AuthFooterLink';
 import AuthLayout from '../../components/auth/AuthLayout';
+import { validateEmail, validatePassword, validateOtp, sanitizeInput } from '../../utils/validators';
 
 const ForgotPassword: React.FC = () => {
   const navigate = useNavigate();
@@ -16,14 +17,26 @@ const ForgotPassword: React.FC = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
+  // Only allow digit characters in OTP input
+  const handleOtpChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const digitsOnly = event.target.value.replace(/\D/g, '');
+    setOtp(digitsOnly);
+  };
+
   const handleRequestReset = async (event: React.FormEvent) => {
     event.preventDefault();
-    setIsLoading(true);
     setError('');
     setMessage('');
 
+    // Validate email
+    const emailError = validateEmail(email);
+    if (emailError) { setError(emailError); return; }
+
+    setIsLoading(true);
+
     try {
-      const response = await testService.forgotPassword(email);
+      const sanitizedEmail = sanitizeInput(email).toLowerCase();
+      const response = await testService.forgotPassword(sanitizedEmail);
       setMessage(response.data.message);
       setStep('reset');
     } catch (requestError: unknown) {
@@ -35,11 +48,21 @@ const ForgotPassword: React.FC = () => {
 
   const handleResetPassword = async (event: React.FormEvent) => {
     event.preventDefault();
-    setIsLoading(true);
     setError('');
 
+    // Validate OTP
+    const otpError = validateOtp(otp);
+    if (otpError) { setError(otpError); return; }
+
+    // Validate password
+    const passwordError = validatePassword(password);
+    if (passwordError) { setError(passwordError); return; }
+
+    setIsLoading(true);
+
     try {
-      const response = await testService.resetPassword(email, otp, password);
+      const sanitizedEmail = sanitizeInput(email).toLowerCase();
+      const response = await testService.resetPassword(sanitizedEmail, otp, password);
       setMessage(response.data.message);
       setTimeout(() => navigate('/login'), 1200);
     } catch (resetError: unknown) {
@@ -70,15 +93,15 @@ const ForgotPassword: React.FC = () => {
 
       {step === 'request' ? (
         <form className="space-y-6" onSubmit={handleRequestReset}>
-          <FormField label="Professional Email" id="email" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="name@company.com" />
+          <FormField label="Professional Email" id="email" type="email" required maxLength={254} value={email} onChange={(event) => setEmail(event.target.value)} placeholder="name@company.com" />
           <button type="submit" disabled={isLoading} className="w-full flex justify-center py-3 px-4 border border-transparent rounded-sm text-xs font-bold uppercase tracking-widest text-primary-foreground bg-primary hover:bg-primary focus:outline-none transition-all disabled:opacity-50 shadow-lg shadow-cream-200">
             {isLoading ? 'Sending...' : 'Send Reset Code'}
           </button>
         </form>
       ) : (
         <form className="space-y-6" onSubmit={handleResetPassword}>
-          <FormField label="Reset Code" id="otp" type="text" required maxLength={6} value={otp} onChange={(event) => setOtp(event.target.value)} placeholder="000000" />
-          <FormField label="New Password" id="password" type="password" required minLength={8} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Minimum 8 characters" />
+          <FormField label="Reset Code" id="otp" type="text" inputMode="numeric" required maxLength={6} value={otp} onChange={handleOtpChange} placeholder="000000" />
+          <FormField label="New Password" id="password" type="password" required minLength={8} maxLength={128} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Minimum 8 characters" />
           <button type="submit" disabled={isLoading || otp.length !== 6} className="w-full flex justify-center py-3 px-4 border border-transparent rounded-sm text-xs font-bold uppercase tracking-widest text-primary-foreground bg-primary hover:bg-primary focus:outline-none transition-all disabled:opacity-50 shadow-lg shadow-cream-200">
             {isLoading ? 'Resetting...' : 'Reset Password'}
           </button>
@@ -91,3 +114,4 @@ const ForgotPassword: React.FC = () => {
 };
 
 export default ForgotPassword;
+

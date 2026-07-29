@@ -9,8 +9,8 @@ const { requireAuth } = require('../middleware/authMiddleware');
 // All read-only routes. Safe to run on a read-replica or separate service.
 
 // SSE events (GET only — long-lived streams)
-// Must be mounted BEFORE requireAuth because EventSource cannot send Authorization headers
-router.use('/events', eventRoutes);
+// Uses requireAuth (which now supports ?token=... query param for EventSource)
+router.use('/events', requireAuth, eventRoutes);
 
 // Public + auth-gated test reads
 // Note: router.use(middleware, subRouter) applies middleware to EVERYTHING defined after it if path is omitted,

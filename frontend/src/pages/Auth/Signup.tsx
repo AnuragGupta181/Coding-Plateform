@@ -10,6 +10,7 @@ import AuthFooterLink from '../../components/auth/AuthFooterLink';
 import AuthLayout from '../../components/auth/AuthLayout';
 
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
+import { validateEmail, validatePassword, validateName, validateMobile, sanitizeInput } from '../../utils/validators';
 
 const Signup: React.FC = () => {
   const [name, setName] = useState('');
@@ -24,15 +25,33 @@ const Signup: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Input validation
+    const nameError = validateName(name);
+    if (nameError) { dispatch(setError(nameError)); return; }
+
+    const emailError = validateEmail(email);
+    if (emailError) { dispatch(setError(emailError)); return; }
+
+    const mobileError = validateMobile(mobileNumber);
+    if (mobileError) { dispatch(setError(mobileError)); return; }
+
+    const passwordError = validatePassword(password);
+    if (passwordError) { dispatch(setError(passwordError)); return; }
+
     if (!turnstileToken) {
       dispatch(setError('Please complete the bot verification.'));
       return;
     }
+
     dispatch(setLoading(true));
     try {
-      await testService.signup(name, email, password, mobileNumber, turnstileToken);
+      const sanitizedName = sanitizeInput(name);
+      const sanitizedEmail = sanitizeInput(email).toLowerCase();
+      const sanitizedMobile = sanitizeInput(mobileNumber);
+      await testService.signup(sanitizedName, sanitizedEmail, password, sanitizedMobile, turnstileToken);
       dispatch(setLoading(false));
-      navigate('/verify', { state: { name, email } });
+      navigate('/verify', { state: { name: sanitizedName, email: sanitizedEmail } });
     } catch (error: unknown) {
       dispatch(setError(getApiErrorMessage(error, 'Signup failed.')));
       // Reset Turnstile — tokens are single-use, need a fresh one for retry
@@ -46,10 +65,10 @@ const Signup: React.FC = () => {
       <form className="space-y-3" onSubmit={handleSubmit}>
         <AlertMessage message={error} />
 
-        <FormField label="Full Legal Name" id="name" type="text" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Johnathan Doe" />
-        <FormField label="Professional Email" id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@company.com" />
-        <FormField label="Mobile Number" id="mobile" type="tel" required value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} placeholder="+91 9876543210" />
-        <FormField label="Password" id="password" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Minimum 8 characters" />
+        <FormField label="Full Legal Name" id="name" type="text" required maxLength={100} value={name} onChange={(e) => setName(e.target.value)} placeholder="Johnathan Doe" />
+        <FormField label="Professional Email" id="email" type="email" required maxLength={254} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@company.com" />
+        <FormField label="Mobile Number" id="mobile" type="tel" required maxLength={15} value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} placeholder="+91 9876543210" />
+        <FormField label="Password" id="password" type="password" required minLength={8} maxLength={128} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Minimum 8 characters" />
 
         <div className="flex justify-center my-3 w-full overflow-hidden">
           <div className="w-full max-w-[300px]">
@@ -74,3 +93,4 @@ const Signup: React.FC = () => {
 };
 
 export default Signup;
+

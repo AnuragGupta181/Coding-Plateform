@@ -202,7 +202,7 @@ exports.signup = async (req, res) => {
     res.json({ message: 'OTP sent to your email.' });
   } catch (error) {
     console.error('Signup Error:', error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -278,7 +278,7 @@ exports.verifyOTP = async (req, res) => {
     res.json({ message: 'Verification successful', token, user: sanitizeUser(user) });
   } catch (error) {
     console.error('Verify OTP Error:', error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -326,7 +326,7 @@ exports.resendOTP = async (req, res) => {
     res.json({ message: 'OTP resent to your email.' });
   } catch (error) {
     console.error('Resend OTP Error:', error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -389,7 +389,7 @@ exports.login = async (req, res) => {
 
     res.json({ token, user: sanitizeUser(user) });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -432,7 +432,7 @@ exports.forgotPassword = async (req, res) => {
     res.json({ message: 'If that account exists, a reset OTP has been sent.' });
   } catch (error) {
     console.error('Forgot Password Error:', error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -491,6 +491,6 @@ exports.resetPassword = async (req, res) => {
     res.json({ message: 'Password reset successful. Please login with your new password.' });
   } catch (error) {
     console.error('Reset Password Error:', error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };

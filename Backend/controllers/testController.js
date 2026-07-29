@@ -28,7 +28,7 @@ exports.getAvailableTests = async (req, res) => {
 
     res.json(tests);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -55,7 +55,7 @@ exports.getTest = async (req, res) => {
 
     res.json(test);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -106,57 +106,15 @@ exports.startSubmission = async (req, res) => {
       }
       return res.status(200).json(existing);
     }
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Internal server error' });
   }
-};
-
-// ── PATCH /api/submission/:submissionId/answer ────────────────────────────────
-exports.saveAnswer = async (req, res) => {
-  try {
-    const { submissionId } = req.params;
-    const { questionId, answerIndex } = req.body;
-
-    // Atomic $set — no full document read needed. One targeted DB write.
-    const result = await Submission.findOneAndUpdate(
-      { _id: submissionId, status: 'active' },
-      { $set: { [`answers.${questionId}`]: answerIndex } },
-      { new: false } // We don't need the updated doc back, saves bandwidth
-    );
-
-    if (!result) {
-      const exists = await Submission.exists({ _id: submissionId });
-      if (!exists) return res.status(404).json({ message: 'Submission not found' });
-      return res.status(403).json({ message: 'Test already completed' });
-    }
-
-    res.json({ message: 'Answer saved successfully' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// ── DELETE /api/submission/:submissionId/answer ───────────────────────────────
-exports.clearAnswer = async (req, res) => {
-  try {
-    const { submissionId } = req.params;
-    const { questionId } = req.body;
-
-    // Atomic $unset — removes the single answer key without reading the full document.
-    const result = await Submission.findOneAndUpdate(
-      { _id: submissionId, status: 'active' },
-      { $unset: { [`answers.${questionId}`]: '' } },
-      { new: false }
-    );
-
-    if (!result) {
-      const exists = await Submission.exists({ _id: submissionId });
       if (!exists) return res.status(404).json({ message: 'Submission not found' });
       return res.status(403).json({ message: 'Test already completed' });
     }
 
     res.json({ message: 'Answer cleared successfully' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -176,7 +134,7 @@ exports.completeSubmission = async (req, res) => {
     res.json({ message: 'Test submitted and graded successfully', score: submission.score, submission });
   } catch (error) {
     console.error('Complete Submission Error:', error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -201,7 +159,7 @@ exports.logViolation = async (req, res) => {
 
     res.json({ message: 'Violation logged' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -219,6 +177,6 @@ exports.getStudentSubmissions = async (req, res) => {
     
     res.json(submissions);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };

@@ -4,7 +4,13 @@ const config = require('../config');
 
 exports.requireAuth = async (req, res, next) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
+    let token = req.headers.authorization?.split(' ')[1];
+    
+    // Fallback to query parameter for EventSource (SSE) which cannot send headers
+    if (!token && req.query.token) {
+      token = req.query.token;
+    }
+    
     if (!token) return res.status(401).json({ message: 'Authentication required' });
 
     const decoded = jwt.verify(token, config.jwtSecret);

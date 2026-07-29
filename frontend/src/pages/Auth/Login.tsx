@@ -9,6 +9,7 @@ import FormField from '../../components/common/FormField';
 import AuthFooterLink from '../../components/auth/AuthFooterLink';
 import AuthLayout from '../../components/auth/AuthLayout';
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
+import { validateEmail, validatePassword, sanitizeInput } from '../../utils/validators';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -21,13 +22,23 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Input validation
+    const emailError = validateEmail(email);
+    if (emailError) { dispatch(setError(emailError)); return; }
+
+    const passwordError = validatePassword(password);
+    if (passwordError) { dispatch(setError(passwordError)); return; }
+
     if (!turnstileToken) {
       dispatch(setError('Please complete the bot verification.'));
       return;
     }
+
     dispatch(setLoading(true));
     try {
-      const res = await testService.login(email, password, turnstileToken);
+      const sanitizedEmail = sanitizeInput(email).toLowerCase();
+      const res = await testService.login(sanitizedEmail, password, turnstileToken);
       dispatch(setAuth({ user: res.data.user, token: res.data.token }));
       
       if (res.data.user.role === 'admin') {
@@ -52,6 +63,7 @@ const Login: React.FC = () => {
           id="email"
           type="email"
           required
+          maxLength={254}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="name@company.com"
@@ -62,6 +74,7 @@ const Login: React.FC = () => {
           id="password"
           type="password"
           required
+          maxLength={128}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
@@ -96,3 +109,4 @@ const Login: React.FC = () => {
 };
 
 export default Login;
+

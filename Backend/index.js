@@ -1,46 +1,49 @@
+// ── Dependencies ──────────────────────────────────────────────────────────────
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const morgan = require('morgan');
 const compression = require('compression');
 const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
 const config = require('./config');
 
+// ── Middleware ─────────────────────────────────────────────────────────────────
+const { sanitizeInput } = require('./middleware/inputSanitizer');
+const { telemetryMiddleware } = require('./middleware/telemetryMiddleware');
+
+// ── Routes ────────────────────────────────────────────────────────────────────
 const authRoutes = require('./routes/authRoutes');
 const queryRoutes = require('./routes/queryRoutes');
 const commandRoutes = require('./routes/commandRoutes');
 
+// ── Services ──────────────────────────────────────────────────────────────────
+const { connectDB, ensureDb } = require('./services/database');
+const { completeExpiredTests } = require('./services/testLifecycleService');
+const { startScheduleWatcher } = require('./services/scheduleWatcher');
+const { broadcastEvent } = require('./controllers/eventController');
+const { mountBullBoard } = require('./services/bullBoard');
+const { mountHealthCheck } = require('./routes/healthRoutes');
+
 // ── CQRS Service Mode ─────────────────────────────────────────────────────────
-// SERVICE_MODE controls which route groups are registered:
-//   "query"   → only GET routes under /api/query/...
-//   "command" → only POST/PUT/PATCH/DELETE routes under /api/command/...
-//   "both"    → all routes on both prefixes (default for monolith / local dev)
 const SERVICE_MODE = (process.env.SERVICE_MODE || 'both').toLowerCase();
 if (!['query', 'command', 'both'].includes(SERVICE_MODE)) {
   console.error(`❌ Invalid SERVICE_MODE "${SERVICE_MODE}". Must be "query", "command", or "both". Exiting.`);
   process.exit(1);
 }
-const { completeExpiredTests } = require('./services/testLifecycleService');
-const { broadcastEvent } = require('./controllers/eventController');
 
-// Initialize BullMQ Queues and Workers
+// Initialize BullMQ Queues and Workers (command service only)
 if (SERVICE_MODE === 'both' || SERVICE_MODE === 'command') {
   require('./services/codeExecutionQueue');
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// EXPRESS APP SETUP
+// ══════════════════════════════════════════════════════════════════════════════
+
 const app = express();
 
-// ── Security Headers (helmet) ─────────────────────────────────────────────────
-// Adds ~14 security-related HTTP headers in one line.
-// Protects against XSS, clickjacking, MIME-type sniffing, and more.
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: 'cross-origin' } // Allow CDN/font loading
-}));
-
-// ── Gzip Compression ──────────────────────────────────────────────────────────
-// Compresses all API responses by 60-70%. Critical for large test documents.
-// Skip compression for SSE streams (they must stay uncompressed).
+// ── Security & Compression ────────────────────────────────────────────────────
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(compression({
   filter: (req, res) => {
     if (req.headers['accept'] === 'text/event-stream') return false;
@@ -49,32 +52,21 @@ app.use(compression({
 }));
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
-const corsOptions = config.isProduction
-  ? {
-    origin: config.corsOrigins.length > 0 ? config.corsOrigins : false,
-    credentials: true
-  }
-  : {
-    origin: config.corsOrigins.length > 0 ? config.corsOrigins : true,
-    credentials: true
-  };
-
 app.set('trust proxy', 1);
-app.use(cors(corsOptions));
+app.use(cors(config.isProduction
+  ? { origin: config.corsOrigins.length > 0 ? config.corsOrigins : false, credentials: true }
+  : { origin: config.corsOrigins.length > 0 ? config.corsOrigins : true, credentials: true }
+));
+
+// ── Parsing, Sanitization & Telemetry ─────────────────────────────────────────
 app.use(morgan(config.isProduction ? 'combined' : 'dev'));
 app.use(express.json({ limit: '1mb' }));
-
-// ── HTTP Performance Telemetry ────────────────────────────────────────────────
-const { telemetryMiddleware, getHttpTelemetry } = require('./middleware/telemetryMiddleware');
+app.use(sanitizeInput);
 app.use(telemetryMiddleware);
 
 // ── Request Timeout ───────────────────────────────────────────────────────────
-// If any DB query or async operation hangs for >15s, fail fast instead of
-// holding a connection slot indefinitely.
 app.use((req, res, next) => {
-  // Don't apply timeout to SSE connections — they are intentionally long-lived
   if (req.path.startsWith('/api/query/events')) return next();
-
   res.setTimeout(20000, () => {
     if (!res.headersSent) {
       res.status(503).json({ message: 'Request timed out. Please try again.' });
@@ -84,179 +76,21 @@ app.use((req, res, next) => {
 });
 
 // ── Rate Limiting ─────────────────────────────────────────────────────────────
-const getRateLimitKey = (req) => req.user?._id?.toString() || (req.headers['x-forwarded-for'] || req.ip);
-
-const queryLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 300, // 300 requests/min per user
-  standardHeaders: true,
-  legacyHeaders: false,
-  validate: false,
-  keyGenerator: getRateLimitKey,
-  handler: (req, res) => {
-    const key = getRateLimitKey(req);
-    console.warn(`⚠️ [RATE_LIMIT_EXCEEDED] Query API | Key: "${key}" | Path: ${req.method} ${req.originalUrl} | Time: ${new Date().toISOString()}`);
-    res.status(429).json({ message: 'Too many query requests, please slow down.' });
-  }
-});
-
-const commandLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 120, // 120 requests/min per candidate
-  standardHeaders: true,
-  legacyHeaders: false,
-  validate: false,
-  keyGenerator: getRateLimitKey,
-  handler: (req, res) => {
-    const key = getRateLimitKey(req);
-    console.warn(`⚠️ [RATE_LIMIT_EXCEEDED] Command API | Key: "${key}" | Path: ${req.method} ${req.originalUrl} | Time: ${new Date().toISOString()}`);
-    res.status(429).json({ message: 'Too many submission requests, please slow down.' });
-  }
-});
-
-const sseLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 20,
-  standardHeaders: true,
-  legacyHeaders: false,
-  validate: false,
-  keyGenerator: getRateLimitKey,
-  handler: (req, res) => {
-    const key = getRateLimitKey(req);
-    console.warn(`⚠️ [RATE_LIMIT_EXCEEDED] SSE Stream | Key: "${key}" | Path: ${req.method} ${req.originalUrl} | Time: ${new Date().toISOString()}`);
-    res.status(429).json({ message: 'Too many event stream connections.' });
-  }
-});
-
-const getAuthRateLimitKey = (req) => {
-  const ip = req.headers['x-forwarded-for'] || req.ip;
-  const email = (req.body && req.body.email) ? String(req.body.email).toLowerCase().trim() : 'anonymous';
-  return `${ip}_${email}`;
-};
-
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 15, // 15 attempts per email+IP per 15 minutes
-  standardHeaders: true,
-  legacyHeaders: false,
-  validate: false,
-  keyGenerator: getAuthRateLimitKey,
-  handler: (req, res) => {
-    const key = getAuthRateLimitKey(req);
-    console.warn(`⚠️ [RATE_LIMIT_EXCEEDED] Auth API | Key: "${key}" | Path: ${req.method} ${req.originalUrl} | Time: ${new Date().toISOString()}`);
-    res.status(429).json({ message: 'Too many auth attempts for this email address. Please wait a few minutes.' });
-  }
-});
-
+// Uncomment these lines to enable rate limiting in production:
+// const { authLimiter, queryLimiter, commandLimiter, sseLimiter } = require('./middleware/rateLimiters');
 // app.use('/api/auth', authLimiter);
 // app.use('/api/query/events', sseLimiter);
 // app.use('/api/query', queryLimiter);
 // app.use('/api/command', commandLimiter);
 
-// ── Bull Board UI ─────────────────────────────────────────────────────────────
-try {
-  const { createBullBoard } = require('@bull-board/api');
-  const { BullMQAdapter } = require('@bull-board/api/bullMQAdapter');
-  const { ExpressAdapter } = require('@bull-board/express');
-  const { codeRunQueue, codeSubmitQueue } = require('./services/codeExecutionQueue');
+// ══════════════════════════════════════════════════════════════════════════════
+// MOUNT FEATURES
+// ══════════════════════════════════════════════════════════════════════════════
 
-  if (codeRunQueue && codeSubmitQueue) {
-    const serverAdapter = new ExpressAdapter();
-    serverAdapter.setBasePath('/admin/queues');
-    createBullBoard({
-      queues: [new BullMQAdapter(codeRunQueue), new BullMQAdapter(codeSubmitQueue)],
-      serverAdapter: serverAdapter,
-    });
-    app.use('/admin/queues', serverAdapter.getRouter());
-    console.log('✅ Bull Board UI mounted at /admin/queues');
-  }
-} catch (err) {
-  console.warn('⚠️  Could not mount Bull Board UI:', err.message);
-}
+mountBullBoard(app);
+mountHealthCheck(app);
 
-// ── Health Check ──────────────────────────────────────────────────────────────
-let prevCpuTimes = null;
-
-function getCpuUsagePercent(cpus) {
-  let user = 0, sys = 0, idle = 0;
-  for (const cpu of cpus) {
-    user += cpu.times.user;
-    sys += cpu.times.sys;
-    idle += cpu.times.idle;
-  }
-  const total = user + sys + idle;
-
-  if (!prevCpuTimes) {
-    prevCpuTimes = { user, sys, idle, total };
-    const active = user + sys;
-    return total === 0 ? 0 : Math.round((active / total) * 100);
-  }
-
-  const userDiff = user - prevCpuTimes.user;
-  const sysDiff = sys - prevCpuTimes.sys;
-  const totalDiff = total - prevCpuTimes.total;
-
-  prevCpuTimes = { user, sys, idle, total };
-
-  if (totalDiff <= 0) return 0;
-  const activeDiff = userDiff + sysDiff;
-  return Math.min(100, Math.max(0, Math.round((activeDiff / totalDiff) * 100)));
-}
-
-app.get('/health', async (_req, res) => {
-  const os = require('os');
-  const mongoose = require('mongoose');
-  const { getRedisMetrics } = require('./services/redisClient');
-  const redisStats = await getRedisMetrics();
-
-  const cpus = os.cpus();
-  const load = os.loadavg()[0];
-  const cpuPercent = getCpuUsagePercent(cpus);
-
-  const mongoState = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
-  const mongoDbName = mongoose.connection.name || 'N/A';
-  const mongoHost = mongoose.connection.host || 'N/A';
-
-  const eventController = require('./controllers/eventController');
-  const { getCodeExecutionStats } = require('./services/codeExecutionQueue');
-
-  const sseTopology = eventController.getSseTopology ? eventController.getSseTopology() : { activeConnections: 0, activeChannels: 0 };
-  const judge0Stats = getCodeExecutionStats ? getCodeExecutionStats() : { total: 0, acceptedPct: 0, wrongAnswerPct: 0, timeLimitPct: 0, runtimeErrorPct: 0 };
-
-  res.json({
-    status: 'ok',
-    environment: config.env,
-    serviceMode: process.env.SERVICE_MODE || 'both',
-    uptime: Math.round(process.uptime()),
-    httpPerformance: getHttpTelemetry(),
-    judge0Outcomes: judge0Stats,
-    sseTopology,
-    cpu: {
-      cores: cpus.length,
-      model: cpus[0]?.model || 'System CPU',
-      usagePercent: cpuPercent,
-      loadAverage: load.toFixed(2)
-    },
-    serverRamUsage: {
-      heapUsedMb: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
-      heapTotalMb: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
-      rssMb: Math.round(process.memoryUsage().rss / 1024 / 1024),
-      totalSystemRamGb: (os.totalmem() / 1024 / 1024 / 1024).toFixed(1),
-      freeSystemRamGb: (os.freemem() / 1024 / 1024 / 1024).toFixed(1)
-    },
-    mongodb: {
-      status: mongoState,
-      databaseName: mongoDbName,
-      host: mongoHost,
-      maxPoolSize: 50
-    },
-    redisRamUsage: redisStats
-  });
-});
-
-// ── Ensure DB connection before handling requests ────────────────────────────
-// Heals dead/frozen connections so a request never runs on a killed socket
-// (the root cause of the old "findOne took longer to connect" / 401 logout bug).
+// ── DB Connection Guard ───────────────────────────────────────────────────────
 app.use(async (req, res, next) => {
   try {
     await ensureDb();
@@ -269,8 +103,10 @@ app.use(async (req, res, next) => {
   }
 });
 
-// ── Routes ────────────────────────────────────────────────────────────────────
-// Auth is always available regardless of SERVICE_MODE (login/signup needed by both services)
+// ══════════════════════════════════════════════════════════════════════════════
+// ROUTES
+// ══════════════════════════════════════════════════════════════════════════════
+
 app.use('/api/auth', authRoutes);
 
 if (SERVICE_MODE === 'query' || SERVICE_MODE === 'both') {
@@ -283,181 +119,70 @@ if (SERVICE_MODE === 'command' || SERVICE_MODE === 'both') {
   console.log('✏️  Command routes registered at /api/command/...');
 }
 
-// ── MongoDB Connection (Optimized for Vercel serverless) ──────────────────────
-// PERMANENT cold-start / frozen-container safety:
-//  1. Cache the connection promise on globalThis so warm containers reuse it.
-//  2. On 'error'/'disconnected', invalidate the cache so the next request
-//     reconnects instead of reusing a dead (frozen) socket.
-//  3. ensureDb() probes the connection before each request and reconnects ONCE
-//     if it is stale, so a request never runs a query on a dead connection —
-//     even if every instance died between requests.
-const MONGODB_URI = config.mongoUri;
-
-const mongoCache =
-  global._mongoCache ||
-  (global._mongoCache = { conn: null, promise: null, lastOk: 0 });
-
-const isConnected = () => mongoose.connection.readyState === 1;
-
-mongoose.connection.on('error', (err) => {
-  console.error('❌ MongoDB connection error:', err.message);
-  mongoCache.conn = null;
-  mongoCache.promise = null;
-});
-
-mongoose.connection.on('disconnected', () => {
-  console.warn('⚠️ MongoDB disconnected — clearing cache for next reconnect');
-  mongoCache.conn = null;
-  mongoCache.promise = null;
-});
-
-const connectDB = async () => {
-  if (mongoCache.conn && isConnected()) return mongoCache.conn;
-
-  if (!mongoCache.promise) {
-    const poolSize = config.mongoPoolSize;
-    mongoCache.promise = mongoose
-      .connect(MONGODB_URI, {
-        maxPoolSize: poolSize,
-        minPoolSize: 1,
-        // Raised from 5000 -> 15000. On Vercel the function freezes after
-        // inactivity; when it warms, the kept-alive socket may be stale and a
-        // fresh server selection is needed. The old 5s budget was too tight for
-        // a frozen -> warm Mongo reconnect.
-        serverSelectionTimeoutMS: 15000,
-        socketTimeoutMS: 45000,
-        connectTimeoutMS: 10000,
-        maxIdleTimeMS: 60000, // Closes connections before Atlas silently drops them
-        heartbeatFrequencyMS: 10000, // Detect dead sockets faster while warm
-        family: 4, // Force IPv4 to prevent Vercel DNS resolution hangs
-      })
-      .then((m) => {
-        console.log(`✅ Connected to MongoDB (pool: ${poolSize})`);
-        return m;
-      })
-      .catch((err) => {
-        console.error('❌ Could not connect to MongoDB', err.message);
-        mongoCache.promise = null; // allow retry on next invocation
-        throw err;
-      });
-  }
-
-  try {
-    mongoCache.conn = await mongoCache.promise;
-  } catch (err) {
-    mongoCache.promise = null;
-    throw err;
-  }
-  return mongoCache.conn;
-};
-
-// Heal a frozen/stale connection BEFORE any query runs. Throttled to one
-// health probe per 15s; on a failed probe we drop the cache and reconnect once.
-async function ensureDb() {
-  await connectDB();
-
-  // On cold starts, readyState may still be transitioning after connect() resolves.
-  // Wait briefly (up to 5s) for it to reach "connected" (1).
-  if (!isConnected()) {
-    await new Promise((resolve) => {
-      const timeout = setTimeout(resolve, 5000);
-      const check = () => {
-        if (isConnected()) { clearTimeout(timeout); resolve(); }
-      };
-      mongoose.connection.once('connected', () => { clearTimeout(timeout); resolve(); });
-      // Also poll in case the event already fired
-      check();
-    });
-    if (!isConnected()) throw new Error('MongoDB not connected');
-  }
-
-  if (Date.now() - mongoCache.lastOk > 15000) {
-    try {
-      await mongoose.connection.db.command({ ping: 1 });
-      mongoCache.lastOk = Date.now();
-    } catch (pingErr) {
-      console.warn('⚠️ DB ping failed (stale socket), reconnecting:', pingErr.message);
-      try { await mongoose.connection.close(); } catch { /* already closed */ }
-      mongoCache.conn = null;
-      mongoCache.promise = null;
-      await connectDB(); // reconnect on a fresh socket
-      mongoCache.lastOk = Date.now();
-    }
-  }
-}
-
-connectDB().catch(() => { });
-
-// ── Vercel Cron Endpoint ──────────────────────────────────────────────────────
-// Vercel will automatically hit this endpoint every minute based on vercel.json
+// ── Vercel Cron ───────────────────────────────────────────────────────────────
 app.get('/api/cron/complete-expired-tests', async (req, res) => {
   try {
-    // Optional: Add basic security header check so only Vercel can trigger this
-    if (process.env.VERCEL && req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
+    const cronSecret = process.env.CRON_SECRET;
+    if (!cronSecret) {
+      console.warn('⚠️ CRON_SECRET is not configured! Blocking cron request.');
+      return res.status(500).json({ message: 'Server configuration error' });
+    }
+    if (req.headers.authorization !== `Bearer ${cronSecret}`) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
-
     await completeExpiredTests();
     res.status(200).json({ message: 'Expired tests processed successfully' });
   } catch (error) {
     console.error('Failed to complete expired tests via cron:', error.message);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
-const { startScheduleWatcher } = require('./services/scheduleWatcher');
+// ── Global Error Handler ──────────────────────────────────────────────────────
+app.use((err, req, res, _next) => {
+  console.error('Unhandled error:', err.message, err.stack);
+  if (res.headersSent) return;
+  const statusCode = err.statusCode || err.status || 500;
+  const message = config.isProduction
+    ? 'An unexpected error occurred. Please try again.'
+    : err.message;
+  res.status(statusCode).json({ message });
+});
 
-// ── Expired Test Cleanup & Schedule Watcher ───────────────────────────────────
-// Set DISABLE_CRON=true on all-but-one instance when horizontally scaling.
-// Standard Node.js background timers (Ideal for EC2/VPS deployments)
+// ══════════════════════════════════════════════════════════════════════════════
+// START SERVER
+// ══════════════════════════════════════════════════════════════════════════════
+
+connectDB().catch(() => { });
+
+// Background tasks
 if (process.env.DISABLE_CRON !== 'true') {
   startScheduleWatcher();
   setInterval(async () => {
-    try {
-      await completeExpiredTests();
-    } catch (error) {
-      console.error('Failed to complete expired tests:', error.message);
-    }
+    try { await completeExpiredTests(); }
+    catch (error) { console.error('Failed to complete expired tests:', error.message); }
   }, 15000);
 }
 
-// ── Start Server ──────────────────────────────────────────────────────────────
 const server = app.listen(config.port, () => {
   console.log(`🚀 Server running on port ${config.port} [SERVICE_MODE=${SERVICE_MODE}]`);
 });
 
 // ── Graceful Shutdown ─────────────────────────────────────────────────────────
-// When the server is restarted or crashes, warn all connected students via SSE
-// so they know to refresh — instead of silently dropping their connections.
 async function gracefulShutdown(signal) {
   console.log(`\n⚠️  ${signal} received. Shutting down gracefully...`);
-
-  // 1. Broadcast warning to all connected SSE clients (waiting room students)
   try {
-    broadcastEvent('*', {
-      type: 'SERVER_RESTART',
-      message: 'Server is restarting. Please refresh the page in a few seconds.'
-    });
+    broadcastEvent('*', { type: 'SERVER_RESTART', message: 'Server is restarting. Please refresh the page in a few seconds.' });
   } catch { /* non-critical */ }
 
-  // 2. Stop accepting new connections
   server.close(async () => {
     console.log('🔌 HTTP server closed.');
-
-    // 3. Close DB connection cleanly
-    try {
-      await mongoose.connection.close();
-      console.log('🗄️  MongoDB connection closed.');
-    } catch { /* non-critical */ }
-
+    try { await mongoose.connection.close(); console.log('🗄️  MongoDB connection closed.'); }
+    catch { /* non-critical */ }
     process.exit(0);
   });
 
-  // Force-exit after 10 seconds if graceful shutdown hangs
-  setTimeout(() => {
-    console.error('⏰ Forced exit after 10s timeout.');
-    process.exit(1);
-  }, 10000);
+  setTimeout(() => { console.error('⏰ Forced exit after 10s timeout.'); process.exit(1); }, 10000);
 }
 
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));

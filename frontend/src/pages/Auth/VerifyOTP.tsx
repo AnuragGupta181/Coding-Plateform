@@ -6,6 +6,7 @@ import testService, { getApiErrorMessage } from '../../utils/apiService';
 import type { RootState } from '../../store';
 import AlertMessage from '../../components/common/AlertMessage';
 import AuthLayout from '../../components/auth/AuthLayout';
+import { validateOtp, sanitizeInput } from '../../utils/validators';
 
 const VerifyOTP: React.FC = () => {
   const [otp, setOtp] = useState('');
@@ -38,11 +39,23 @@ const VerifyOTP: React.FC = () => {
     return () => clearInterval(interval);
   }, [timer]);
 
+  // Only allow digit characters in OTP input
+  const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const digitsOnly = e.target.value.replace(/\D/g, '');
+    setOtp(digitsOnly);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate OTP format
+    const otpError = validateOtp(otp);
+    if (otpError) { dispatch(setError(otpError)); return; }
+
     dispatch(setLoading(true));
     try {
-      const res = await testService.verifyOTP(email, otp);
+      const sanitizedEmail = sanitizeInput(email).toLowerCase();
+      const res = await testService.verifyOTP(sanitizedEmail, otp);
       dispatch(setAuth({ user: res.data.user, token: res.data.token }));
 
       if (res.data.user.role === 'admin') {
@@ -59,7 +72,8 @@ const VerifyOTP: React.FC = () => {
     if (!canResend) return;
     dispatch(setLoading(true));
     try {
-      await testService.resendOTP(email);
+      const sanitizedEmail = sanitizeInput(email).toLowerCase();
+      await testService.resendOTP(sanitizedEmail);
       setTimer(60);
       setCanResend(false);
       dispatch(setLoading(false));
@@ -92,12 +106,15 @@ const VerifyOTP: React.FC = () => {
           <input
             id="otp"
             type="text"
+            inputMode="numeric"
+            pattern="\d{6}"
             required
             maxLength={6}
             value={otp}
-            onChange={(e) => setOtp(e.target.value)}
+            onChange={handleOtpChange}
             placeholder="0 0 0 0 0 0"
             className="block w-full border border-border rounded-sm px-4 py-4 text-center text-3xl font-sans tracking-[0.5em] focus:ring-0 focus:border-cream-900 transition-colors placeholder:text-cream-100"
+            autoComplete="one-time-code"
           />
         </div>
 
@@ -122,3 +139,4 @@ const VerifyOTP: React.FC = () => {
 };
 
 export default VerifyOTP;
+

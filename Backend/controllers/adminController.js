@@ -36,7 +36,7 @@ exports.parseQuestionsFromExcel = async (req, res) => {
       totalRows: totalValid + errors.length,
     });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ message: 'Failed to parse uploaded file. Please check the format.' });
   }
 };
 
@@ -66,7 +66,7 @@ exports.createTest = async (req, res) => {
 
     res.status(201).json({ message: 'Test created successfully', test: newTest });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -112,7 +112,7 @@ exports.createCodingQuestion = async (req, res) => {
       question: test.codingQuestions[test.codingQuestions.length - 1]
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -136,7 +136,7 @@ exports.startTest = async (req, res) => {
 
     res.json({ message: 'Test started successfully', test });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -158,7 +158,7 @@ exports.openWaitingRoom = async (req, res) => {
 
     res.json({ message: 'Waiting room opened', test });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -180,7 +180,7 @@ exports.completeTest = async (req, res) => {
       test: result.test
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -203,7 +203,7 @@ exports.autoSubmitTest = async (req, res) => {
       test: result.test
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -213,7 +213,7 @@ exports.getTestHistory = async (req, res) => {
     const tests = await Test.find().sort({ createdAt: -1 }).lean();
     res.json(tests);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -252,7 +252,7 @@ exports.getWaitingQueues = async (req, res) => {
 
     res.json(response);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -278,7 +278,7 @@ exports.getTestResults = async (req, res) => {
 
     res.json(submissions);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -291,7 +291,7 @@ exports.getSubmissionDetails = async (req, res) => {
 
     res.json(submission);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -322,7 +322,7 @@ exports.getActiveTestUsers = async (req, res) => {
 
     res.json(users);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -343,7 +343,7 @@ exports.sendProctorMessage = async (req, res) => {
 
     res.json({ message: 'Proctor message sent successfully' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -373,7 +373,7 @@ exports.forceSubmitCandidate = async (req, res) => {
 
     res.json({ message: 'Candidate force-submitted and graded. They cannot rejoin.' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -384,7 +384,7 @@ exports.clearQueues = async (req, res) => {
     res.json({ message: 'All BullMQ queues cleared successfully.' });
   } catch (error) {
     console.error('Clear Queues Error:', error);
-    res.status(500).json({ message: 'Failed to clear queues', error: error.message });
+    res.status(500).json({ message: 'Failed to clear queues' });
   }
 };
 
@@ -403,6 +403,6 @@ exports.clearTestCache = async (req, res) => {
     }
   } catch (error) {
     console.error('Clear Cache Error:', error);
-    res.status(500).json({ message: 'Failed to clear cache', error: error.message });
+    res.status(500).json({ message: 'Failed to clear cache' });
   }
 };
