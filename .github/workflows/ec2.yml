@@ -39,11 +39,12 @@ jobs:
             pm2 -v
 
             echo "===== Deploying ====="
-            cd /home/ubuntu/Coding-Plateform/Backend
+            cd /home/ubuntu/Coding-Plateform
 
             git fetch origin
             git reset --hard origin/main
 
+            cd /home/ubuntu/Coding-Plateform/Backend
             npm ci
 
             pm2 reload backend --update-env
