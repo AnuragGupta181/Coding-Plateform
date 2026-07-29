@@ -110,6 +110,32 @@ exports.startSubmission = async (req, res) => {
   }
 };
 
+// ── POST /api/submission/:submissionId/save-answer ──────────────────────────
+exports.saveAnswer = async (req, res) => {
+  try {
+    const { submissionId } = req.params;
+    const { questionId, answer } = req.body;
+
+    if (!questionId || answer === undefined) {
+      return res.status(400).json({ message: 'questionId and answer are required' });
+    }
+
+    const submission = await Submission.findById(submissionId);
+    if (!submission) return res.status(404).json({ message: 'Submission not found' });
+    if (submission.status === 'completed') return res.status(403).json({ message: 'Test already completed' });
+
+    if (!submission.answers) {
+      submission.answers = new Map();
+    }
+    submission.answers.set(questionId, answer);
+    await submission.save();
+
+    res.json({ message: 'Answer saved successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 // ── POST /api/submission/:submissionId/clear-answer ─────────────────────────
 exports.clearAnswer = async (req, res) => {
   try {
