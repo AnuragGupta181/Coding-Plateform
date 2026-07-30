@@ -124,10 +124,10 @@ export const testService = {
     commandApi.post('/admin/cache/clear'),
 
   // Code execution
-  runCode: (sourceCode: string, language: string, stdin?: string) =>
-    commandApi.post('/code/run', { sourceCode, language, stdin }),
-  submitCode: (testId: string, questionId: string, sourceCode: string, language: string, submissionId: string) =>
-    commandApi.post(`/code/submit/${testId}/${questionId}`, { sourceCode, language, submissionId }),
+  runCode: (sourceCode: string, language: string, stdin?: string, testId?: string, questionId?: string, userEmail?: string) =>
+    commandApi.post('/code/run', { sourceCode, language, stdin, testId, questionId, userEmail }),
+  submitCode: (testId: string, questionId: string, sourceCode: string, language: string, submissionId: string, userEmail?: string) =>
+    commandApi.post(`/code/submit/${testId}/${questionId}`, { sourceCode, language, submissionId, userEmail }),
   analyzeCode: (sourceCode: string, language: string, title: string, submissionId?: string, questionId?: string, description?: string, testCases?: any[]) =>
     commandApi.post('/code/analyze', { sourceCode, language, title, submissionId, questionId, description, testCases }),
   chatWithCode: (sourceCode: string, language: string, title: string, messages: { role: string; content: string }[]) =>

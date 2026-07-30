@@ -208,7 +208,7 @@ const CodingTestRoom: React.FC = () => {
     setIsRunning(prev => ({ ...prev, [qId]: true }));
     setActiveTab('output');
     try {
-      await testService.runCode(currentCode, language, customInput);
+      await testService.runCode(currentCode, language, customInput, testId, qId, user?.email);
       toast.success('Run Code job queued...');
     } catch {
       setRunResult(prev => ({ ...prev, [qId]: { stdout: '', stderr: 'Failed to connect to execution service.', status: 'Error' } }));
@@ -222,7 +222,7 @@ const CodingTestRoom: React.FC = () => {
     setIsCodeSubmitting(prev => ({ ...prev, [qId]: true }));
     setActiveTab('submit');
     try {
-      await testService.submitCode(testId, qId, currentCode, language, submissionId);
+      await testService.submitCode(testId, qId, currentCode, language, submissionId, user?.email);
       toast.success('Code submission queued...');
     } catch {
       setSubmitResult(prev => ({ ...prev, [qId]: { passed: 0, total: 0, score: 0, maxScore: 0, verdict: 'Submission failed', results: [] } }));
@@ -254,7 +254,7 @@ const CodingTestRoom: React.FC = () => {
         await Promise.all(unsubmitted.map(q => {
           const qCodeKey = `${q._id}_${language}`;
           const current = code[qCodeKey];
-          return testService.submitCode(testId, q._id, current || '', language, submissionId).catch(() => {});
+          return testService.submitCode(testId, q._id, current || '', language, submissionId, user?.email).catch(() => {});
         }));
       }
 

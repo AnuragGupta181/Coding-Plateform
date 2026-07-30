@@ -9,7 +9,7 @@ const Submission = require('../models/submission');
  */
 exports.runCode = async (req, res) => {
   try {
-    const { sourceCode, language, stdin = '', testId, questionId } = req.body;
+    const { sourceCode, language, stdin = '', testId, questionId, userEmail } = req.body;
 
     if (!sourceCode || !language) {
       return res.status(400).json({ message: 'sourceCode and language are required.' });
@@ -18,7 +18,7 @@ exports.runCode = async (req, res) => {
     try {
       // Try to enqueue asynchronous job
       const jobId = await enqueueRunCode({
-        sourceCode, language, stdin, testId, questionId, userEmail: req.user?.email
+        sourceCode, language, stdin, testId, questionId, userEmail
       });
       return res.status(202).json({ message: 'Execution queued', jobId, async: true });
     } catch (queueErr) {
@@ -38,7 +38,7 @@ exports.runCode = async (req, res) => {
 exports.submitCode = async (req, res) => {
   try {
     const { testId, questionId } = req.params;
-    const { sourceCode, language, submissionId } = req.body;
+    const { sourceCode, language, submissionId, userEmail } = req.body;
 
     if (!sourceCode || !language || !submissionId) {
       return res.status(400).json({ message: 'sourceCode, language, and submissionId are required.' });
@@ -57,7 +57,7 @@ exports.submitCode = async (req, res) => {
     try {
       // Try to enqueue asynchronous job
       const jobId = await enqueueSubmitCode({
-        testId, questionId, sourceCode, language, submissionId, userEmail: req.user?.email
+        testId, questionId, sourceCode, language, submissionId, userEmail: userEmail || submission.candidateEmail
       });
       return res.status(202).json({ message: 'Submission queued', jobId, async: true });
     } catch (queueErr) {
