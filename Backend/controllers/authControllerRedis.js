@@ -36,7 +36,6 @@ function signToken(user) {
  * - On Single Target Bombing: Email limit exhausts FIRST after 3 requests.
  */
 async function checkOtpRateLimits(client, req, email) {
-  return { blocked: false }; // LOAD TESTING OVERRIDE
   const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
 
   // Layer 1: Check IP-based limit (allows up to 1,000 OTP requests / 1 hr per IP to support 500+ student campus drives)
