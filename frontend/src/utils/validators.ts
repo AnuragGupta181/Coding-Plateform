@@ -9,6 +9,7 @@
 // ── Regex Patterns ────────────────────────────────────────────────────────────
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+const AKGEC_EMAIL_REGEX = /^[a-zA-Z]{3,}25\d{5,7}@akgec\.ac\.in$/;
 const OTP_REGEX = /^\d{6}$/;
 const NAME_REGEX = /^[a-zA-Z\s.'-]{2,100}$/;
 const MOBILE_REGEX = /^\+?\d{10,15}$/;
@@ -21,7 +22,7 @@ export function validateEmail(email: string): string | null {
   if (!email.trim()) return 'Email is required.';
   if (email.length > 254) return 'Email is too long.';
   if (NOSQL_OPERATOR_REGEX.test(email)) return 'Email contains invalid characters.';
-  if (!EMAIL_REGEX.test(email.trim())) return 'Please enter a valid email address.';
+  if (!AKGEC_EMAIL_REGEX.test(email.trim())) return 'Please use your valid college email ID.';
   return null;
 }
 

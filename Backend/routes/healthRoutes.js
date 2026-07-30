@@ -42,13 +42,7 @@ function getCpuUsagePercent(cpus) {
 }
 
 function mountHealthCheck(app) {
-  // In production, require admin auth to prevent infrastructure reconnaissance.
-  // In development, allow unauthenticated access for local debugging convenience.
-  const middleware = config.isProduction
-    ? [requireAuth, requireAdmin]
-    : [];
-
-  app.get('/health', ...middleware, async (_req, res) => {
+  app.get('/health', async (_req, res) => {
     const redisStats = await getRedisMetrics();
     const cpus = os.cpus();
     const load = os.loadavg()[0];

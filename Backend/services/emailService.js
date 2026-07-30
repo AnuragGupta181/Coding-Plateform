@@ -59,7 +59,7 @@ exports.sendOTP = async (email, otp) => {
   return sendMail({
     from: config.email.from,
     to: email,
-    subject: 'Verification OTP for Testing Platform',
+    subject: 'Verification OTP for Coding Platform',
     text: `Your OTP for verification is: ${otp}. It will expire in 10 minutes.`,
   });
 };
@@ -68,7 +68,7 @@ exports.sendPasswordResetOTP = async (email, otp) => {
   return sendMail({
     from: config.email.from,
     to: email,
-    subject: 'Password Reset OTP for Testing Platform',
+    subject: 'Password Reset OTP for Coding Platform',
     text: `Your password reset OTP is: ${otp}. It will expire in 10 minutes.`,
   });
 };

@@ -65,9 +65,41 @@ const Signup: React.FC = () => {
       <form className="space-y-3" onSubmit={handleSubmit}>
         <AlertMessage message={error} />
 
-        <FormField label="Full Legal Name" id="name" type="text" required maxLength={100} value={name} onChange={(e) => setName(e.target.value)} placeholder="Johnathan Doe" />
-        <FormField label="Professional Email" id="email" type="email" required maxLength={254} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@company.com" />
-        <FormField label="Mobile Number" id="mobile" type="tel" required maxLength={15} value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} placeholder="+91 9876543210" />
+        <FormField 
+          label="Full Legal Name" 
+          id="name" 
+          type="text" 
+          required 
+          maxLength={100} 
+          value={name} 
+          onChange={(e) => setName(e.target.value)} 
+          placeholder="Johnathan Doe" 
+        />
+        <FormField 
+          label="Professional Email" 
+          id="email" 
+          type="email" 
+          required 
+          maxLength={254} 
+          value={email} 
+          onChange={(e) => setEmail(e.target.value)} 
+          onBlur={() => {
+            const emailError = validateEmail(email);
+            if (emailError) dispatch(setError(emailError));
+            else if (error && error.includes('college email')) dispatch(setError(null));
+          }}
+          placeholder="name2512345@akgec.ac.in" 
+        />
+        <FormField 
+          label="Mobile Number" 
+          id="mobile" 
+          type="tel" 
+          required 
+          maxLength={15} 
+          value={mobileNumber} 
+          onChange={(e) => setMobileNumber(e.target.value)} 
+          placeholder="9876543210" 
+        />
         <FormField label="Password" id="password" type="password" required minLength={8} maxLength={128} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Minimum 8 characters" />
 
         <div className="flex justify-center my-3 w-full overflow-hidden">

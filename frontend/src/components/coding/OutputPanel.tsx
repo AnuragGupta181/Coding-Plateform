@@ -158,7 +158,7 @@ const OutputPanel: React.FC<OutputPanelProps> = ({
   customInput, onCustomInputChange, isRunning, runResult,
   isSubmitting, submitResult,
 }) => (
-  <div className="h-56 shrink-0 border-t border-border flex flex-col bg-background">
+  <div className="h-full shrink-0 border-t border-border flex flex-col bg-background">
     <div className="flex border-b border-border shrink-0">
       {(['output', 'submit'] as const).map(tab => (
         <button

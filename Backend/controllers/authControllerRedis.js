@@ -135,6 +135,11 @@ exports.signup = async (req, res) => {
       return res.status(400).json({ message: `Password must be at least ${PASSWORD_MIN_LENGTH} characters long.` });
     }
 
+    const emailRegex = /^[a-zA-Z]{3,}25\d{5,7}@akgec\.ac\.in$/;
+    if (!emailRegex.test(email.trim())) {
+      return res.status(400).json({ message: 'Please use your valid college email ID.' });
+    }
+
     // Verify Turnstile
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
     const isValidBotCheck = await verifyTurnstileToken(turnstileToken, ip);
