@@ -56,7 +56,6 @@ const CodingTestRoom: React.FC = () => {
 
   const [activeTab, setActiveTab]         = useState<'output' | 'submit'>('output');
   const [leftPanelWidth, setLeftPanelWidth] = useState(420);
-  const [topPanelHeight, setTopPanelHeight] = useState(250);
   const [outputHeight, setOutputHeight] = useState(() => window.innerWidth < 1024 ? Math.floor(window.innerHeight * 0.4) : 280);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   

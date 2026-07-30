@@ -8,7 +8,7 @@
 
 // ── Regex Patterns ────────────────────────────────────────────────────────────
 
-const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+export const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const AKGEC_EMAIL_REGEX = /^[a-zA-Z]{3,}25\d{5,7}@akgec\.ac\.in$/;
 const OTP_REGEX = /^\d{6}$/;
 const NAME_REGEX = /^[a-zA-Z\s.'-]{2,100}$/;
