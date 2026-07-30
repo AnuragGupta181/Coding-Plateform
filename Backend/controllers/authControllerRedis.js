@@ -1,4 +1,5 @@
 const User = require('../models/user');
+const RegistrationUser = require('../models/registrationUser');
 const emailService = require('../services/emailService');
 const jwt = require('jsonwebtoken');
 const config = require('../config');
@@ -360,24 +361,84 @@ exports.login = async (req, res) => {
     //   }
     // }
 
-    const user = await User.findOne({ email }).select('+password');
+    const cleanEmail = email.trim().toLowerCase();
+    const escapedEmail = cleanEmail.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
     
+    console.log(`[AUTH DEBUG] Attempting login for email: "${email}" -> cleaned: "${cleanEmail}"`);
+
+    let user = await User.findOne({
+      $or: [
+        { email: cleanEmail },
+        { email: { $regex: `^${escapedEmail}$`, $options: 'i' } }
+      ]
+    }).select('+password');
+    
+    console.log(`[AUTH DEBUG] Primary DB User lookup result:`, user ? `Found (Verified: ${user.isVerified})` : 'Not Found');
+
     if (!user || !user.isVerified) {
-      return res.status(404).json({ message: 'User not found or not verified.' });
-    }
+      console.log(`[AUTH DEBUG] Starting fallback to Registration DB for: "${cleanEmail}"`);
+      
+      const regQuery = { email: { $regex: escapedEmail, $options: 'i' } };
+      console.log(`[AUTH DEBUG] Registration DB Query:`, JSON.stringify(regQuery));
+      
+      const regUser = await RegistrationUser.findOne(regQuery);
+      
+      console.log(`[AUTH DEBUG] Registration DB Result:`, regUser ? `Found User (Name: ${regUser.name}, Phone: ${regUser.phone}, isVerified: ${regUser.isVerified})` : 'NULL / Not Found');
 
-    if (!user.password) {
-      return res.status(401).json({ message: 'Password login is not configured for this user.' });
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      // Increment failed login attempt counter for this (Email + IP)
-      if (client && redisService.isConnected()) {
-        const attempts = await client.incr(loginKey);
-        if (attempts === 1) await client.expire(loginKey, 900); // 15 minutes TTL
+      if (!regUser) {
+        console.log(`[AUTH DEBUG] Returning 404 because regUser is null.`);
+        return res.status(404).json({ message: 'User not found in either database.' });
       }
-      return res.status(401).json({ message: 'Invalid email or password.' });
+
+      const dbPhone = String(regUser.phone || '').trim().replace(/\s/g, '');
+      const inputPhone = String(password).trim().replace(/\s/g, '');
+      
+      console.log(`[AUTH DEBUG] Password validation. Input password (cleaned): "${inputPhone}", DB Phone (cleaned): "${dbPhone}"`);
+
+      if (inputPhone !== dbPhone) {
+        console.log(`[AUTH DEBUG] Password mismatch. Returning 401.`);
+        // Increment failed login attempt counter
+        if (client && redisService.isConnected()) {
+          const attempts = await client.incr(loginKey);
+          if (attempts === 1) await client.expire(loginKey, 900);
+        }
+        return res.status(401).json({ message: 'Invalid email or password.' });
+      }
+
+      console.log(`[AUTH DEBUG] Password matched! Proceeding to import user to Primary DB...`);
+
+      const hashedPassword = await bcrypt.hash(password, 12);
+      
+      if (!user) {
+         user = new User({
+            name: regUser.name,
+            email: regUser.email,
+            password: hashedPassword,
+            mobileNumber: regUser.phone,
+            isVerified: true
+         });
+      } else {
+         user.name = regUser.name;
+         user.password = hashedPassword;
+         user.mobileNumber = regUser.phone;
+         user.isVerified = true;
+      }
+      
+      await user.save();
+    } else {
+      if (!user.password) {
+        return res.status(401).json({ message: 'Password login is not configured for this user.' });
+      }
+
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        // Increment failed login attempt counter for this (Email + IP)
+        if (client && redisService.isConnected()) {
+          const attempts = await client.incr(loginKey);
+          if (attempts === 1) await client.expire(loginKey, 900); // 15 minutes TTL
+        }
+        return res.status(401).json({ message: 'Invalid email or password.' });
+      }
     }
 
     // Success - Clear login failed attempt counter
