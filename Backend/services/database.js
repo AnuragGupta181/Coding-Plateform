@@ -14,6 +14,7 @@
 
 const mongoose = require('mongoose');
 const config = require('../config');
+const registrationDbConnection = require('./registrationDb');
 
 const MONGODB_URI = config.mongoUri;
 
@@ -55,8 +56,18 @@ async function connectDB() {
         heartbeatFrequencyMS: 10000,
         family: 4,
       })
-      .then((m) => {
-        console.log(`✅ Connected to MongoDB (pool: ${poolSize})`);
+      .then(async (m) => {
+        console.log(`✅ Connected to Primary MongoDB (pool: ${poolSize})`);
+        if (config.registrationMongoUri) {
+          try {
+            await registrationDbConnection.asPromise();
+            console.log(`✅ Connected to Registration MongoDB (Secondary DB, pool: 80)`);
+          } catch (err) {
+            console.error('❌ Failed to connect to Registration MongoDB:', err.message);
+          }
+        } else {
+          console.warn('⚠️ REGISTRATION_MONGODB_URI is not set. Registration fallback disabled.');
+        }
         return m;
       })
       .catch((err) => {
