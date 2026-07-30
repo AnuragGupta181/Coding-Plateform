@@ -52,8 +52,8 @@ if (connection) {
         }
         return result;
       } catch (error) {
-        // Broadcast error to SSE
-        if (testId && userEmail) {
+        // Broadcast error to SSE only if it's the final attempt
+        if (testId && userEmail && (!job.opts.attempts || job.attemptsMade >= job.opts.attempts - 1)) {
           eventController.broadcastEvent(testId, {
             type: 'CODE_RUN_RESULT',
             targetEmail: userEmail,
@@ -133,7 +133,7 @@ if (connection) {
       } catch (error) {
         console.error(`Code submit worker error for submission ${submissionId}:`, error.message);
         
-        if (testId && userEmail) {
+        if (testId && userEmail && (!job.opts.attempts || job.attemptsMade >= job.opts.attempts - 1)) {
           eventController.broadcastEvent(testId, {
             type: 'CODE_SUBMIT_RESULT',
             targetEmail: userEmail,
@@ -170,6 +170,8 @@ if (connection) {
 async function enqueueRunCode(data) {
   if (!codeRunQueue) throw new Error('Queue not initialized (Requires Redis)');
   const job = await codeRunQueue.add('run-code', data, {
+    attempts: 3,
+    backoff: { type: 'exponential', delay: 2000 }, // Wait 2s, 4s before retrying
     removeOnComplete: { count: 500 }, // Keep last 500 completed jobs for Bull Board monitoring
     removeOnFail: { count: 1000 }      // Keep last 1000 failed jobs for debugging
   });
@@ -182,6 +184,8 @@ async function enqueueRunCode(data) {
 async function enqueueSubmitCode(data) {
   if (!codeSubmitQueue) throw new Error('Queue not initialized (Requires Redis)');
   const job = await codeSubmitQueue.add('submit-code', data, {
+    attempts: 3,
+    backoff: { type: 'exponential', delay: 2000 }, // Wait 2s, 4s before retrying
     removeOnComplete: { count: 500 }, // Keep last 500 completed jobs for Bull Board monitoring
     removeOnFail: { count: 1000 }      // Keep last 1000 failed jobs for debugging
   });

@@ -1,5 +1,25 @@
 const axios = require('axios');
 
+let requestCounter = 0;
+let isSelfHostedActive = false;
+
+// Background health check loop for self-hosted instance
+if (process.env.JUDGE0_BASE_URL) {
+  const checkHealth = async () => {
+    try {
+      await axios.get(`${process.env.JUDGE0_BASE_URL}/system/info`, { timeout: 3000 });
+      isSelfHostedActive = true;
+    } catch (error) {
+      isSelfHostedActive = false;
+    }
+  };
+  
+  // Initial check
+  checkHealth();
+  // Check every 30 seconds
+  setInterval(checkHealth, 30000);
+}
+
 /**
  * Judge0 CE — free public instance, no API key required.
  * Docs: https://ce.judge0.com
@@ -87,6 +107,11 @@ async function submitToJudge0Endpoint(base, headers, languageId, sourceCode, std
       continue;
     }
 
+    // Check for explicit worker failures (Internal Error or Exec Format Error)
+    if (statusId === STATUS.INTERNAL_ERROR || statusId === STATUS.EXEC_FORMAT_ERROR) {
+      throw new Error(`Judge0 Worker Failure (Status ID: ${statusId})`);
+    }
+
     // Finished! Return the results
     return {
       token,
@@ -135,40 +160,41 @@ async function executeCode({ sourceCode, language, stdin = '', expectedOutput = 
 
   let lastErrorMessage = '';
 
-  // 1st Attempt: Try the Self-Hosted Instance (if configured in .env)
-  if (process.env.JUDGE0_BASE_URL) {
-    try {
-      const baseUrl = process.env.JUDGE0_BASE_URL;
-      const headers = getHeaders('self-hosted');
-      
-      return await submitToJudge0Endpoint(baseUrl, headers, languageId, finalSourceCode, stdin, expectedOutput);
-    } catch (error) {
-      console.warn(`⚠️ [Judge0] Self-Hosted API failed (${error.message}). Switching to Public Free API...`);
-      lastErrorMessage = error.message;
-    }
+  // Prepare available endpoints
+  const availableEndpoints = [
+    { url: 'https://ce.judge0.com', type: 'public' }
+  ];
+
+  if (process.env.JUDGE0_BASE_URL && isSelfHostedActive) {
+    availableEndpoints.push({ url: process.env.JUDGE0_BASE_URL, type: 'self-hosted' });
   }
 
-  // 2nd Attempt: Fallback to the Free Public Instance
-  try {
-    const baseUrl = 'https://ce.judge0.com';
-    const headers = getHeaders('public');
-    
-    return await submitToJudge0Endpoint(baseUrl, headers, languageId, finalSourceCode, stdin, expectedOutput);
-  } catch (error) {
-    console.warn(`⚠️ [Judge0] Public Free API failed (${error.message}). Switching to RapidAPI...`);
-    lastErrorMessage = error.message;
-  }
-
-  // 3rd Attempt: Try the RapidAPI Instance (if configured in .env) as last resort
   if (process.env.JUDGE0_RAPIDAPI_KEY) {
+    availableEndpoints.push({ url: `https://${process.env.JUDGE0_RAPIDAPI_HOST || 'judge0-ce.p.rapidapi.com'}`, type: 'rapidapi' });
+  }
+
+  // Round-Robin Selection
+  const startIndex = requestCounter % availableEndpoints.length;
+  requestCounter++;
+
+  // Loop through endpoints starting from startIndex
+  for (let i = 0; i < availableEndpoints.length; i++) {
+    const currentIndex = (startIndex + i) % availableEndpoints.length;
+    const endpoint = availableEndpoints[currentIndex];
+
     try {
-      const baseUrl = `https://${process.env.JUDGE0_RAPIDAPI_HOST || 'judge0-ce.p.rapidapi.com'}`;
-      const headers = getHeaders('rapidapi');
-      
-      return await submitToJudge0Endpoint(baseUrl, headers, languageId, finalSourceCode, stdin, expectedOutput);
+      const headers = getHeaders(endpoint.type);
+      return await submitToJudge0Endpoint(endpoint.url, headers, languageId, finalSourceCode, stdin, expectedOutput);
     } catch (error) {
-      console.error(`❌ [Judge0] RapidAPI failed (${error.message}). All endpoints exhausted.`);
-      lastErrorMessage = error.message;
+      // Axios error handling to capture status code
+      let errorMessage = error.message;
+      if (error.response) {
+        errorMessage = `HTTP ${error.response.status} - ${error.response.statusText}`;
+      }
+      
+      console.warn(`⚠️ [Judge0] ${endpoint.type} API failed (${errorMessage}). Trying next API...`);
+      lastErrorMessage = errorMessage;
+      // Continue to next endpoint in the loop
     }
   }
 
