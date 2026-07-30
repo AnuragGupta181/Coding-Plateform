@@ -149,17 +149,20 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: 'Email and password are required.' });
     }
 
-    let user = await User.findOne({ email }).select('+password');
+    const cleanEmail = email.trim().toLowerCase();
+    let user = await User.findOne({ email: new RegExp(`^${cleanEmail}$`, 'i') }).select('+password');
     
     if (!user || !user.isVerified) {
-      // Check Registration DB
-      const regUser = await RegistrationUser.findOne({ email });
+      // Check Registration DB (case-insensitive email search)
+      const regUser = await RegistrationUser.findOne({
+        email: new RegExp(`^${cleanEmail}$`, 'i')
+      });
       if (!regUser || !regUser.isVerified) {
         return res.status(404).json({ message: 'User not found or not verified.' });
       }
 
       // Check if the provided password matches the phone number in registration DB
-      if (password !== regUser.phone) {
+      if (String(password).trim() !== String(regUser.phone).trim()) {
         return res.status(401).json({ message: 'Invalid email or password.' });
       }
 
