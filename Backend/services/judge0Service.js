@@ -1,31 +1,41 @@
 const axios = require('axios');
 
 let requestCounter = 0;
-let isSelfHostedActive = false;
+
+// Parse multiple URLs from .env
+const secondaryUrls = process.env.JUDGE0_BASE_URL 
+  ? process.env.JUDGE0_BASE_URL.split(',').map(u => u.trim()).filter(Boolean)
+  : [];
+
+// Track active status for each secondary URL
+const secondaryUrlStatus = {};
+secondaryUrls.forEach(url => secondaryUrlStatus[url] = false);
 
 console.log(`⚖️  Judge0 Config: Primary Public API (ce.judge0.com) is ACTIVE [Fallback & Core]`);
-if (process.env.JUDGE0_BASE_URL) {
-  console.log(`⚖️  Judge0 Config: Secondary API configured (${process.env.JUDGE0_BASE_URL}). Initializing health checks...`);
+if (secondaryUrls.length > 0) {
+  console.log(`⚖️  Judge0 Config: ${secondaryUrls.length} Secondary API(s) configured. Initializing health checks...`);
 } else {
   console.log(`⚖️  Judge0 Config: No Secondary API provided. 100% traffic will route to Public API.`);
 }
 
-// Background health check loop for self-hosted instance
-if (process.env.JUDGE0_BASE_URL) {
+// Background health check loop for self-hosted instances
+if (secondaryUrls.length > 0) {
   const checkHealth = async () => {
-    try {
-      await axios.get(`${process.env.JUDGE0_BASE_URL}/system/info`, { timeout: 3000 });
-      if (!isSelfHostedActive) {
-        console.log(`✅ [Judge0 Health] Secondary API is ONLINE. Traffic is now 50/50 load-balanced.`);
-        isSelfHostedActive = true;
-      }
-    } catch (error) {
-      if (isSelfHostedActive || isSelfHostedActive === false) { // Log on first failure and subsequent state changes
-        if (isSelfHostedActive !== false) {
-           console.log(`❌ [Judge0 Health] Secondary API is OFFLINE. Routing 100% traffic to Public API.`);
+    for (const url of secondaryUrls) {
+      try {
+        await axios.get(`${url}/system/info`, { timeout: 3000 });
+        if (!secondaryUrlStatus[url]) {
+          console.log(`✅ [Judge0 Health] Secondary API (${url}) is ONLINE. Added to load balancer.`);
+          secondaryUrlStatus[url] = true;
         }
+      } catch (error) {
+        if (secondaryUrlStatus[url] || secondaryUrlStatus[url] === undefined) {
+          if (secondaryUrlStatus[url] !== undefined) {
+             console.log(`❌ [Judge0 Health] Secondary API (${url}) is OFFLINE. Removed from load balancer.`);
+          }
+        }
+        secondaryUrlStatus[url] = false;
       }
-      isSelfHostedActive = false;
     }
   };
   
@@ -179,9 +189,12 @@ async function executeCode({ sourceCode, language, stdin = '', expectedOutput = 
     { url: 'https://ce.judge0.com', type: 'public' }
   ];
 
-  if (process.env.JUDGE0_BASE_URL && isSelfHostedActive) {
-    availableEndpoints.push({ url: process.env.JUDGE0_BASE_URL, type: 'self-hosted' });
-  }
+  // Add any healthy secondary endpoints
+  secondaryUrls.forEach(url => {
+    if (secondaryUrlStatus[url]) {
+      availableEndpoints.push({ url, type: 'self-hosted' });
+    }
+  });
 
   if (process.env.JUDGE0_RAPIDAPI_KEY) {
     availableEndpoints.push({ url: `https://${process.env.JUDGE0_RAPIDAPI_HOST || 'judge0-ce.p.rapidapi.com'}`, type: 'rapidapi' });
