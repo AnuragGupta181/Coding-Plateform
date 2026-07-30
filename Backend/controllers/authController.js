@@ -152,6 +152,8 @@ exports.login = async (req, res) => {
     const cleanEmail = email.trim().toLowerCase();
     const escapedEmail = cleanEmail.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
 
+    console.log(`[AUTH DEBUG] Attempting login for email: "${email}" -> cleaned: "${cleanEmail}"`);
+
     let user = await User.findOne({
       $or: [
         { email: cleanEmail },
@@ -159,13 +161,21 @@ exports.login = async (req, res) => {
       ]
     }).select('+password');
     
+    console.log(`[AUTH DEBUG] Primary DB User lookup result:`, user ? `Found (Verified: ${user.isVerified})` : 'Not Found');
+
     if (!user || !user.isVerified) {
+      console.log(`[AUTH DEBUG] Starting fallback to Registration DB for: "${cleanEmail}"`);
+      
       // Check Registration DB (extremely flexible email search, ignoring trailing spaces)
-      const regUser = await RegistrationUser.findOne({
-        email: { $regex: escapedEmail, $options: 'i' }
-      });
+      const regQuery = { email: { $regex: escapedEmail, $options: 'i' } };
+      console.log(`[AUTH DEBUG] Registration DB Query:`, JSON.stringify(regQuery));
+      
+      const regUser = await RegistrationUser.findOne(regQuery);
+      
+      console.log(`[AUTH DEBUG] Registration DB Result:`, regUser ? `Found User (Name: ${regUser.name}, Phone: ${regUser.phone}, isVerified: ${regUser.isVerified})` : 'NULL / Not Found');
 
       if (!regUser) {
+        console.log(`[AUTH DEBUG] Returning 404 because regUser is null.`);
         return res.status(404).json({ message: 'User not found in either database.' });
       }
 
@@ -173,9 +183,15 @@ exports.login = async (req, res) => {
       // We also trim and remove any spaces from both to ensure a clean match
       const dbPhone = String(regUser.phone || '').trim().replace(/\s/g, '');
       const inputPhone = String(password).trim().replace(/\s/g, '');
+      
+      console.log(`[AUTH DEBUG] Password validation. Input password (cleaned): "${inputPhone}", DB Phone (cleaned): "${dbPhone}"`);
+
       if (inputPhone !== dbPhone) {
+        console.log(`[AUTH DEBUG] Password mismatch. Returning 401.`);
         return res.status(401).json({ message: 'Invalid email or password.' });
       }
+
+      console.log(`[AUTH DEBUG] Password matched! Proceeding to import user to Primary DB...`);
 
       // Import user to primary DB
       const hashedPassword = await bcrypt.hash(password, 12);
