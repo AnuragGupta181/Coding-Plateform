@@ -3,13 +3,28 @@ const axios = require('axios');
 let requestCounter = 0;
 let isSelfHostedActive = false;
 
+console.log(`⚖️  Judge0 Config: Primary Public API (ce.judge0.com) is ACTIVE [Fallback & Core]`);
+if (process.env.JUDGE0_BASE_URL) {
+  console.log(`⚖️  Judge0 Config: Secondary API configured (${process.env.JUDGE0_BASE_URL}). Initializing health checks...`);
+} else {
+  console.log(`⚖️  Judge0 Config: No Secondary API provided. 100% traffic will route to Public API.`);
+}
+
 // Background health check loop for self-hosted instance
 if (process.env.JUDGE0_BASE_URL) {
   const checkHealth = async () => {
     try {
       await axios.get(`${process.env.JUDGE0_BASE_URL}/system/info`, { timeout: 3000 });
-      isSelfHostedActive = true;
+      if (!isSelfHostedActive) {
+        console.log(`✅ [Judge0 Health] Secondary API is ONLINE. Traffic is now 50/50 load-balanced.`);
+        isSelfHostedActive = true;
+      }
     } catch (error) {
+      if (isSelfHostedActive || isSelfHostedActive === false) { // Log on first failure and subsequent state changes
+        if (isSelfHostedActive !== false) {
+           console.log(`❌ [Judge0 Health] Secondary API is OFFLINE. Routing 100% traffic to Public API.`);
+        }
+      }
       isSelfHostedActive = false;
     }
   };
