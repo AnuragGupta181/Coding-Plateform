@@ -73,8 +73,8 @@ async function verifyTurnstileToken(token, ip) {
   const secret = process.env.TURNSTILE_SECRET_KEY || '1x0000000000000000000000000000000AA';
   
   // Skip Turnstile verification in development if secret is default
-  if (secret === '1x0000000000000000000000000000000AA' && process.env.NODE_ENV !== 'production') {
-    console.warn('⚠️  Turnstile verification skipped in development with default secret');
+  if (secret === '1x0000000000000000000000000000000AA' || process.env.NODE_ENV !== 'production') {
+    console.warn('⚠️  Turnstile verification skipped in development');
     return true;
   }
   

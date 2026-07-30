@@ -152,11 +152,29 @@ if (connection) {
   );
 
   codeRunWorker.on('failed', (job, err) => {
-    console.error(`Job ${job.id} failed in code-run-queue: ${err.message}`);
+    console.error(`❌ Job ${job.id} failed in code-run-queue: ${err.message}`);
+  });
+  codeRunWorker.on('completed', (job) => {
+    console.log(`✅ Job ${job.id} completed in code-run-queue`);
+  });
+  codeRunWorker.on('active', (job) => {
+    console.log(`⚡ Job ${job.id} started processing in code-run-queue`);
+  });
+  codeRunWorker.on('error', (err) => {
+    console.error(`❌ code-run-queue worker error:`, err.message);
   });
 
   codeSubmitWorker.on('failed', (job, err) => {
-    console.error(`Job ${job.id} failed in code-submit-queue: ${err.message}`);
+    console.error(`❌ Job ${job.id} failed in code-submit-queue: ${err.message}`);
+  });
+  codeSubmitWorker.on('completed', (job) => {
+    console.log(`✅ Job ${job.id} completed in code-submit-queue`);
+  });
+  codeSubmitWorker.on('active', (job) => {
+    console.log(`⚡ Job ${job.id} started processing in code-submit-queue`);
+  });
+  codeSubmitWorker.on('error', (err) => {
+    console.error(`❌ code-submit-queue worker error:`, err.message);
   });
   
   console.log('✅ BullMQ initialized: code-run-queue and code-submit-queue active');

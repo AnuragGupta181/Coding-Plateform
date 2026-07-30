@@ -115,6 +115,13 @@ const CodingTestRoom: React.FC = () => {
     return () => observer.disconnect();
   }, []);
 
+  const { status } = useSelector((state: RootState) => state.test);
+  useEffect(() => {
+    if (status === 'completed') {
+      setFinished(true);
+    }
+  }, [status]);
+
   useEffect(() => {
     if (!testId) return;
     const es = new EventSource(createEventSourceUrl(`/events/test/${testId}`));

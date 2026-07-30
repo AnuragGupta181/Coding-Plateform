@@ -136,7 +136,9 @@ export const testService = {
 
 export const createEventSourceUrl = (path: string) => {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  return `${QUERY_BASE_URL}/query${normalizedPath}`;
+  const token = localStorage.getItem('token');
+  const tokenParam = token ? `?token=${encodeURIComponent(token)}` : '';
+  return `${QUERY_BASE_URL}/query${normalizedPath}${tokenParam}`;
 };
 
 export const getApiErrorMessage = (error: unknown, fallback: string) => {

@@ -66,7 +66,7 @@ export const SubmitResult: React.FC<SubmitResultProps> = ({ isSubmitting, result
     <p className="text-cream-300 text-xs italic">Click Submit to run against all test cases</p>
   );
 
-  const allPassed = result.passed === result.total;
+  const allPassed = result.total > 0 && result.passed === result.total;
 
   return (
     <div className="space-y-3">
@@ -74,7 +74,7 @@ export const SubmitResult: React.FC<SubmitResultProps> = ({ isSubmitting, result
         allPassed ? 'border-emerald-200 bg-emerald-50' : 'border-red-200 bg-red-50'
       }`}>
         <span className={`text-sm font-sans font-bold ${allPassed ? 'text-emerald-800' : 'text-red-800'}`}>
-          {allPassed ? 'All tests passed' : 'Some tests failed'}
+          {allPassed ? 'All tests passed' : (result.total === 0 ? 'Submission Failed' : 'Some tests failed')}
         </span>
         <div className="ml-auto text-right">
           <p className={`text-sm font-bold ${allPassed ? 'text-emerald-800' : 'text-red-800'}`}>
