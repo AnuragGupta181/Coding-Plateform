@@ -1,4 +1,5 @@
 const User = require('../models/user');
+const RegistrationUser = require('../models/registrationUser');
 const OTP = require('../models/otp');
 const emailService = require('../services/emailService');
 const jwt = require('jsonwebtoken');
@@ -36,6 +37,11 @@ exports.signup = async (req, res) => {
 
     if (password.length < PASSWORD_MIN_LENGTH) {
       return res.status(400).json({ message: `Password must be at least ${PASSWORD_MIN_LENGTH} characters.` });
+    }
+
+    const emailRegex = /^[a-zA-Z]+25\d{4,7}@akgec\.ac\.in$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: 'Invalid email format. Example: namestudentno@akgec.ac.in (student no must start with 25)' });
     }
 
     // Check if user already exists
@@ -143,19 +149,49 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: 'Email and password are required.' });
     }
 
-    const user = await User.findOne({ email }).select('+password');
+    let user = await User.findOne({ email }).select('+password');
     
     if (!user || !user.isVerified) {
-      return res.status(404).json({ message: 'User not found or not verified.' });
-    }
+      // Check Registration DB
+      const regUser = await RegistrationUser.findOne({ email });
+      if (!regUser || !regUser.isVerified) {
+        return res.status(404).json({ message: 'User not found or not verified.' });
+      }
 
-    if (!user.password) {
-      return res.status(401).json({ message: 'Password login is not configured for this user.' });
-    }
+      // Check if the provided password matches the phone number in registration DB
+      if (password !== regUser.phone) {
+        return res.status(401).json({ message: 'Invalid email or password.' });
+      }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Invalid email or password.' });
+      // Import user to primary DB
+      const hashedPassword = await bcrypt.hash(password, 12);
+      
+      if (!user) {
+         user = new User({
+            name: regUser.name,
+            email: regUser.email,
+            password: hashedPassword,
+            mobileNumber: regUser.phone,
+            isVerified: true
+         });
+      } else {
+         // User exists but not verified in primary DB, so update and verify them
+         user.name = regUser.name;
+         user.password = hashedPassword;
+         user.mobileNumber = regUser.phone;
+         user.isVerified = true;
+      }
+      
+      await user.save();
+    } else {
+      if (!user.password) {
+        return res.status(401).json({ message: 'Password login is not configured for this user.' });
+      }
+
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        return res.status(401).json({ message: 'Invalid email or password.' });
+      }
     }
 
     const token = signToken(user);

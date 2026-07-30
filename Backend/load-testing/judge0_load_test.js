@@ -1,17 +1,11 @@
 const axios = require('axios');
+require('dotenv').config({ path: '../../.env' });
 
-const JUDGE0_URL = process.env.JUDGE0_URL || 'http://localhost:2358';
-const TOTAL_SUBMISSIONS = 1000;
-const TEST_CASES = [
-  { stdin: '1\n', expected_output: '1' },
-  { stdin: '2\n', expected_output: '2' },
-  { stdin: '5\n', expected_output: '120' },
-  { stdin: '7\n', expected_output: '5040' },
-  { stdin: '10\n', expected_output: '3628800' },
-  { stdin: '12\n', expected_output: '479001600' }
-];
+const LOCAL_JUDGE0_URL = process.env.JUDGE0_URL || 'http://localhost:2358';
+const PUBLIC_JUDGE0_URL = 'https://ce.judge0.com';
+const TOTAL_JOBS = 1000;
+const BATCH_SIZE = 20;
 
-// Decent code: Calculate factorial
 const sourceCode = `
 const fs = require('fs');
 const input = fs.readFileSync(0, 'utf-8').trim();
@@ -23,29 +17,43 @@ for (let i = 2; i <= n; i++) {
 console.log(result);
 `;
 
-const LANGUAGE_ID = 93; // JavaScript (Node.js 18.15.0) in standard Judge0 CE
+const LANGUAGE_ID = 63;
 
-async function runLoadTest() {
-  console.log(`\n🚀 Starting Judge0 Local Load Test against ${JUDGE0_URL}`);
-  console.log(`📦 Simulating ${TOTAL_SUBMISSIONS} code submissions`);
-  console.log(`🧪 Each submission runs ${TEST_CASES.length} test cases`);
-  
-  const submissions = [];
-  for (let i = 0; i < TOTAL_SUBMISSIONS; i++) {
-    for (const tc of TEST_CASES) {
-      submissions.push({
-        source_code: sourceCode,
-        language_id: LANGUAGE_ID,
-        stdin: tc.stdin,
-        expected_output: tc.expected_output,
+async function submitBatch(url, batch, retries = 6) {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      await axios.post(`${url}/submissions/batch?base64_encoded=false`, {
+        submissions: batch
       });
+      return { success: true };
+    } catch (error) {
+      const status = error.response?.status;
+      const data = error.response?.data;
+      if (status === 503 && data?.error === 'queue is full' && attempt < retries - 1) {
+        const delay = Math.min(Math.pow(2, attempt) * 500, 8000);
+        await new Promise(r => setTimeout(r, delay));
+        continue;
+      }
+      return { success: false, error };
     }
   }
+  return { success: false, error: new Error('Max retries exceeded') };
+}
 
-  console.log(`📊 Total individual Judge0 execution requests to queue: ${submissions.length}\n`);
+async function runTest(url, label) {
+  const submissions = [];
+  for (let i = 0; i < TOTAL_JOBS; i++) {
+    submissions.push({
+      source_code: sourceCode,
+      language_id: LANGUAGE_ID,
+      stdin: '10\n',
+      expected_output: '3628800',
+    });
+  }
 
-  // Send in batches to avoid network congestion and HTTP payload limits
-  const BATCH_SIZE = 100;
+  console.log(`\n🚀 ${label} — ${url}`);
+  console.log(`📦 Queueing ${TOTAL_JOBS} submissions in batches of ${BATCH_SIZE}\n`);
+
   let successful = 0;
   let failed = 0;
 
@@ -53,25 +61,33 @@ async function runLoadTest() {
 
   for (let i = 0; i < submissions.length; i += BATCH_SIZE) {
     const batch = submissions.slice(i, i + BATCH_SIZE);
-    try {
-      await axios.post(`${JUDGE0_URL}/submissions/batch?base64_encoded=false`, {
-        submissions: batch
-      });
+    const result = await submitBatch(url, batch);
+    if (result.success) {
       successful += batch.length;
-      process.stdout.write(`\rProgress: Queued ${successful}/${submissions.length} jobs to Judge0...`);
-    } catch (error) {
+      process.stdout.write(`\rProgress: Queued ${successful}/${TOTAL_JOBS} jobs...`);
+      await new Promise(r => setTimeout(r, 100));
+    } else {
       failed += batch.length;
-      console.error(`\n❌ Batch failed:`, error.message);
+      const status = result.error?.response?.status || 'N/A';
+      const data = result.error?.response?.data ? JSON.stringify(result.error.response.data).substring(0, 200) : result.error.message;
+      console.error(`\n❌ Batch [${Math.floor(i / BATCH_SIZE) + 1}]: HTTP ${status} — ${data}`);
     }
   }
 
   const durationMs = Date.now() - startTime;
-  console.log('\n\n--- 🏁 Load Test Complete ---');
-  console.log(`⏱️  Time taken to queue: ${durationMs}ms`);
+  const durationSec = (durationMs / 1000).toFixed(2);
+  const rate = (successful / durationSec).toFixed(1);
+
+  console.log('\n\n--- 🏁 Results ---');
+  console.log(`⏱️  Time taken: ${durationMs}ms (${durationSec}s)`);
   console.log(`✅ Successfully queued: ${successful}`);
   console.log(`❌ Failed to queue: ${failed}`);
-  console.log('\nNote: This script queues the jobs instantly using the /submissions/batch endpoint.');
-  console.log('You can monitor your local Judge0 docker workers to see how long it takes them to actually execute all 6000 jobs in the background.');
+  console.log(`⚡ Submission rate: ${rate} submissions/sec`);
 }
 
-runLoadTest();
+async function main() {
+  await runTest(LOCAL_JUDGE0_URL, 'Local Judge0 CE');
+  await runTest(PUBLIC_JUDGE0_URL, 'Public Judge0 CE (ce.judge0.com)');
+}
+
+main();

@@ -28,6 +28,7 @@ module.exports = {
   isProduction,
   port: process.env.PORT || 5000,
   mongoUri: process.env.MONGODB_URI || 'mongodb://localhost:27017/coding-platform',
+  registrationMongoUri: process.env.REGISTRATION_MONGODB_URI,
   mongoPoolSize: process.env.MONGO_POOL_SIZE ? parseInt(process.env.MONGO_POOL_SIZE, 10) : (isProduction ? 50 : 10),
   jwtSecret: process.env.JWT_SECRET || 'development-only-jwt-secret',
   corsOrigins,

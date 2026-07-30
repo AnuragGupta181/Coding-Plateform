@@ -288,4 +288,35 @@ To solve this, the code submission pipeline was completely refactored to an **as
 4. **Per-Question Async UX:** The frontend UI was updated so candidates can submit a question, instantly navigate to the next question, and continue coding without being blocked by a loading screen.
 
 ### Final Verdict
-With the asynchronous BullMQ architecture in place, the platform is theoretically immune to code execution timeouts, capable of handling limitless concurrent candidate submissions without dropping a single HTTP connection.
+---
+
+## 16. Judge0 CE Direct Batch Load Test (Local vs Hosted)
+**Date:** 2026-07-30
+**Objective:** Benchmark Judge0 CE batch submission throughput — local self-hosted vs public free instance — by queueing 1000 submissions and measuring submissions/sec.
+
+### Configuration
+- **Script:** `judge0_load_test.js`
+- **Total Submissions:** 1000 (batched at 20/batch)
+- **Language:** JavaScript (Node.js) — ID `63`
+- **Code:** Factorial calculator
+
+### Local Judge0 CE — 16 Workers
+- **Target:** `http://localhost:2358` (self-hosted Docker)
+- **Workers:** 16 concurrent Judge0 CE workers
+- **Results:**
+  - **Time taken:** 19,451ms (19.45s)
+  - **Successfully queued:** 1000 / 1000 (100% Success)
+  - **Failed:** 0
+  - **Submission rate:** **51.4 submissions/sec**
+
+### Public Judge0 CE — 20 Workers
+- **Target:** `https://ce.judge0.com` (public free instance)
+- **Workers:** 20 concurrent Judge0 CE workers
+- **Results:**
+  - **Time taken:** 33,840ms (33.84s)
+  - **Successfully queued:** 1000 / 1000 (100% Success)
+  - **Failed:** 0
+  - **Submission rate:** **29.6 submissions/sec**
+
+### Verdict
+Local self-hosted Judge0 CE is **significantly faster** (51.4/sec vs 29.6/sec — 1.7x faster) — despite having fewer workers (16 vs 20) and not being on a global CDN. The public free instance adds network latency from the load test machine to the remote Judge0 server. For production exams, a local self-hosted Judge0 CE instance delivers better queuing throughput than the public free tier.
