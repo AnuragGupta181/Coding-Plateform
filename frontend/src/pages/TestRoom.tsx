@@ -22,6 +22,7 @@ mergeTestSession,
 saveTestSessionDebounced,
 } from '../utils/testSessionStorage';
 import { flushPendingSync, saveAnswerWithRetry } from '../utils/saveAnswerWithRetry';
+import { deterministicShuffle } from '../utils/shuffle';
 import type { Test } from '../types';
 
 import QuestionCard from '../components/QuestionCard';
@@ -122,13 +123,17 @@ navigate('/dashboard');
 return;
 }
 
-setTestData(test);
-
 const email = user?.email || 'candidate@example.com';
 const name = user?.name || 'Candidate';
 const submissionRes = await testService.startSubmission(email, name, testId);
 const submission = submissionRes.data;
 setInitialViolations(submission.violations?.length || 0);
+
+if (test.questions?.length > 0) {
+  test.questions = deterministicShuffle(test.questions, submission._id);
+}
+
+setTestData(test);
 
 const serverAnswers = normalizeSubmissionAnswers(submission.answers);
 const localSnapshot = loadTestSession(testId, submission._id);

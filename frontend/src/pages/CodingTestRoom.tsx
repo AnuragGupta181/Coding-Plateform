@@ -10,6 +10,7 @@ import testService, { createEventSourceUrl } from '../utils/apiService';
 import ProblemStatement, { type CodingQuestion, type TestCaseResult } from '../components/coding/ProblemStatement';
 import OutputPanel from '../components/coding/OutputPanel';
 import TestRoomHeader from '../components/test/TestRoomHeader';
+import { deterministicShuffle } from '../utils/shuffle';
 
 import { LANG_META } from '../constants/langMeta';
 
@@ -68,8 +69,6 @@ const CodingTestRoom: React.FC = () => {
           return;
         }
         if (t.status !== 'active' || !t.codingQuestions?.length) { navigate('/dashboard'); return; }
-        setTestData(t);
-
         const email = user?.email || 'candidate@example.com';
         const name = user?.name || 'Candidate';
         const submissionRes = await testService.startSubmission(email, name, testId);
@@ -81,6 +80,12 @@ const CodingTestRoom: React.FC = () => {
           setLoading(false);
           return;
         }
+
+        if (t.codingQuestions?.length > 0) {
+          t.codingQuestions = deterministicShuffle(t.codingQuestions, fetchedSubmission._id);
+        }
+
+        setTestData(t);
 
         setInitialViolations(fetchedSubmission.violations?.length || 0);
         setSubmissionId(fetchedSubmission._id);
