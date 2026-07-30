@@ -23,7 +23,7 @@ if (secondaryUrls.length > 0) {
   const checkHealth = async () => {
     for (const url of secondaryUrls) {
       try {
-        await axios.get(`${url}/system/info`, { timeout: 3000 });
+        await axios.get(`${url}/about`, { timeout: 3000 });
         if (!secondaryUrlStatus[url]) {
           console.log(`✅ [Judge0 Health] Secondary API (${url}) is ONLINE. Added to load balancer.`);
           secondaryUrlStatus[url] = true;
