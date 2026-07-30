@@ -150,14 +150,27 @@ exports.login = async (req, res) => {
     }
 
     const cleanEmail = email.trim().toLowerCase();
-    let user = await User.findOne({ email: new RegExp(`^${cleanEmail}$`, 'i') }).select('+password');
+    const escapedEmail = cleanEmail.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+
+    let user = await User.findOne({
+      $or: [
+        { email: cleanEmail },
+        { email: { $regex: `^${escapedEmail}$`, $options: 'i' } }
+      ]
+    }).select('+password');
     
     if (!user || !user.isVerified) {
-      // Check Registration DB (case-insensitive email search)
+      // Check Registration DB (flexible email and isVerified check)
       const regUser = await RegistrationUser.findOne({
-        email: new RegExp(`^${cleanEmail}$`, 'i')
+        $or: [
+          { email: cleanEmail },
+          { email: { $regex: `^${escapedEmail}$`, $options: 'i' } }
+        ]
       });
-      if (!regUser || !regUser.isVerified) {
+
+      const isRegVerified = regUser && (regUser.isVerified === true || regUser.isVerified === 'true' || regUser.isVerified === undefined);
+
+      if (!regUser || !isRegVerified) {
         return res.status(404).json({ message: 'User not found or not verified.' });
       }
 
