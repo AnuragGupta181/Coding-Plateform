@@ -21,9 +21,9 @@ function mountBullBoard(app) {
         queues: [new BullMQAdapter(codeRunQueue), new BullMQAdapter(codeSubmitQueue)],
         serverAdapter: serverAdapter,
       });
-      // Auth-protected: require login + admin role to access Bull Board
-      app.use('/admin/queues', requireAuth, requireAdmin, serverAdapter.getRouter());
-      console.log('✅ Bull Board UI mounted at /admin/queues (auth-protected)');
+      // Now publicly accessible for monitoring
+      app.use('/admin/queues', serverAdapter.getRouter());
+      console.log('✅ Bull Board UI mounted at /admin/queues (public)');
     }
   } catch (err) {
     console.warn('⚠️  Could not mount Bull Board UI:', err.message);
