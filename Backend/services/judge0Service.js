@@ -9,7 +9,7 @@ const secondaryUrls = process.env.JUDGE0_BASE_URL
 
 // Track active status for each secondary URL
 const secondaryUrlStatus = {};
-secondaryUrls.forEach(url => secondaryUrlStatus[url] = false);
+secondaryUrls.forEach(url => secondaryUrlStatus[url] = null); // null means 'untested'
 
 console.log(`⚖️  Judge0 Config: Primary Public API (ce.judge0.com) is ACTIVE [Fallback & Core]`);
 if (secondaryUrls.length > 0) {
@@ -29,10 +29,9 @@ if (secondaryUrls.length > 0) {
           secondaryUrlStatus[url] = true;
         }
       } catch (error) {
-        if (secondaryUrlStatus[url] || secondaryUrlStatus[url] === undefined) {
-          if (secondaryUrlStatus[url] !== undefined) {
-             console.log(`❌ [Judge0 Health] Secondary API (${url}) is OFFLINE. Removed from load balancer.`);
-          }
+        // If it was previously online or untested (null), log the failure
+        if (secondaryUrlStatus[url] !== false) {
+           console.log(`❌ [Judge0 Health] Secondary API (${url}) is OFFLINE. (Error: ${error.message}). Removed from load balancer.`);
         }
         secondaryUrlStatus[url] = false;
       }
