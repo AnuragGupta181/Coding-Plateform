@@ -40,7 +40,6 @@ if (process.env.JUDGE0_BASE_URL) {
  * Docs: https://ce.judge0.com
  * Language IDs: https://ce.judge0.com/languages
  */
-const JUDGE0_BASE = 'https://judge0-ce.p.rapidapi.com';
 
 // Judge0 Language IDs
 const LANGUAGE_MAP = {
