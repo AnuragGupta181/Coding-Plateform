@@ -114,10 +114,13 @@ exports.startSubmission = async (req, res) => {
 exports.saveAnswer = async (req, res) => {
   try {
     const { submissionId } = req.params;
-    const { questionId, answer } = req.body;
+    const { questionId, answer, answerIndex } = req.body;
 
-    if (!questionId || answer === undefined) {
-      return res.status(400).json({ message: 'questionId and answer are required' });
+    // Support both 'answer' and 'answerIndex' for backwards compatibility
+    const finalAnswer = answer !== undefined ? answer : answerIndex;
+
+    if (!questionId || finalAnswer === undefined) {
+      return res.status(400).json({ message: 'questionId and answer(Index) are required' });
     }
 
     const submission = await Submission.findById(submissionId);
@@ -127,7 +130,7 @@ exports.saveAnswer = async (req, res) => {
     if (!submission.answers) {
       submission.answers = new Map();
     }
-    submission.answers.set(questionId, answer);
+    submission.answers.set(questionId, finalAnswer);
     await submission.save();
 
     res.json({ message: 'Answer saved successfully' });
