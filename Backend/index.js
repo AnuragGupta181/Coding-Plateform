@@ -76,12 +76,12 @@ app.use((req, res, next) => {
 });
 
 // ── Rate Limiting ─────────────────────────────────────────────────────────────
-// Uncomment these lines to enable rate limiting in production:
-// const { authLimiter, queryLimiter, commandLimiter, sseLimiter } = require('./middleware/rateLimiters');
-// app.use('/api/auth', authLimiter);
-// app.use('/api/query/events', sseLimiter);
-// app.use('/api/query', queryLimiter);
-// app.use('/api/command', commandLimiter);
+// Rate limiting enabled for production:
+const { authLimiter, queryLimiter, commandLimiter, sseLimiter } = require('./middleware/rateLimiters');
+app.use('/api/auth', authLimiter);
+app.use('/api/query/events', sseLimiter);
+app.use('/api/query', queryLimiter);
+app.use('/api/command', commandLimiter);
 
 // ══════════════════════════════════════════════════════════════════════════════
 // MOUNT FEATURES

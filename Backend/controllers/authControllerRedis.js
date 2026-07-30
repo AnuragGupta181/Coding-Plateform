@@ -167,10 +167,10 @@ exports.signup = async (req, res) => {
     }
 
     // Apply Dual-Layer Rate Limiter (IP + Email)
-    // const rateCheck = await checkOtpRateLimits(client, req, email);
-    // if (rateCheck.blocked) {
-    //   return res.status(429).json({ message: rateCheck.message });
-    // }
+    const rateCheck = await checkOtpRateLimits(client, req, email);
+    if (rateCheck.blocked) {
+      return res.status(429).json({ message: rateCheck.message });
+    }
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
@@ -308,10 +308,10 @@ exports.resendOTP = async (req, res) => {
     }
 
     // Apply Dual-Layer Rate Limiter (IP + Email)
-    // const rateCheck = await checkOtpRateLimits(client, req, email);
-    // if (rateCheck.blocked) {
-    //   return res.status(429).json({ message: rateCheck.message });
-    // }
+    const rateCheck = await checkOtpRateLimits(client, req, email);
+    if (rateCheck.blocked) {
+      return res.status(429).json({ message: rateCheck.message });
+    }
 
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const hashedOtp = await bcrypt.hash(otpCode, 10);
@@ -352,14 +352,14 @@ exports.login = async (req, res) => {
     const loginKey = `rate_limit:login:${email}:${ip}`;
 
     // Check failed login attempts per (Email + IP)
-    // if (client && redisService.isConnected()) {
-    //   const attempts = parseInt(await client.get(loginKey) || '0', 10);
-    //   if (attempts >= 5) {
-    //     return res.status(429).json({
-    //       message: 'Too many failed login attempts for this account from your IP. Please try again in 15 minutes.'
-    //     });
-    //   }
-    // }
+    if (client && redisService.isConnected()) {
+      const attempts = parseInt(await client.get(loginKey) || '0', 10);
+      if (attempts >= 5) {
+        return res.status(429).json({
+          message: 'Too many failed login attempts for this account from your IP. Please try again in 15 minutes.'
+        });
+      }
+    }
 
     const cleanEmail = email.trim().toLowerCase();
     const escapedEmail = cleanEmail.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
