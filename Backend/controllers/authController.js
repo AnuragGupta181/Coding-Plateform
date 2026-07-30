@@ -160,22 +160,20 @@ exports.login = async (req, res) => {
     }).select('+password');
     
     if (!user || !user.isVerified) {
-      // Check Registration DB (flexible email and isVerified check)
+      // Check Registration DB (extremely flexible email search, ignoring trailing spaces)
       const regUser = await RegistrationUser.findOne({
-        $or: [
-          { email: cleanEmail },
-          { email: { $regex: `^${escapedEmail}$`, $options: 'i' } }
-        ]
+        email: { $regex: escapedEmail, $options: 'i' }
       });
 
-      const isRegVerified = regUser && (regUser.isVerified === true || regUser.isVerified === 'true' || regUser.isVerified === undefined);
-
-      if (!regUser || !isRegVerified) {
-        return res.status(404).json({ message: 'User not found or not verified.' });
+      if (!regUser) {
+        return res.status(404).json({ message: 'User not found in either database.' });
       }
 
       // Check if the provided password matches the phone number in registration DB
-      if (String(password).trim() !== String(regUser.phone).trim()) {
+      // We also trim and remove any spaces from both to ensure a clean match
+      const dbPhone = String(regUser.phone || '').trim().replace(/\s/g, '');
+      const inputPhone = String(password).trim().replace(/\s/g, '');
+      if (inputPhone !== dbPhone) {
         return res.status(401).json({ message: 'Invalid email or password.' });
       }
 
