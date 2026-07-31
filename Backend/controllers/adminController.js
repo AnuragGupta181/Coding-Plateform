@@ -265,33 +265,42 @@ exports.getTestResults = async (req, res) => {
       return res.status(400).json({ message: 'Invalid test ID format' });
     }
 
-    // Aggregate to deduplicate: if a user somehow has multiple submissions
-    // for the same test, only keep the one with the highest score.
-    // Project lightweight fields first to stay within MongoDB RAM limits (< 32MB).
-    const submissions = await Submission.aggregate([
+    // Step 1: Use lightweight projection to deduplicate candidate emails and select top submission IDs.
+    // Keeps MongoDB aggregation RAM usage under 50KB regardless of submission size.
+    const topSubmissions = await Submission.aggregate([
       { $match: { testId: new mongoose.Types.ObjectId(id) } },
       {
         $project: {
           _id: 1,
           candidateEmail: 1,
-          candidateName: 1,
           score: 1,
-          status: 1,
-          updatedAt: 1,
-          createdAt: 1,
-          violations: 1
+          updatedAt: 1
         }
       },
       { $sort: { score: -1, updatedAt: 1 } },
       {
         $group: {
           _id: '$candidateEmail',
-          doc: { $first: '$$ROOT' }
+          topId: { $first: '$_id' },
+          maxScore: { $first: '$score' },
+          updatedAt: { $first: '$updatedAt' }
         }
       },
-      { $replaceRoot: { newRoot: '$doc' } },
-      { $sort: { score: -1, updatedAt: 1 } }
+      { $sort: { maxScore: -1, updatedAt: 1 } }
     ]);
+
+    const targetIds = topSubmissions.map(item => item.topId);
+
+    if (targetIds.length === 0) {
+      return res.json([]);
+    }
+
+    // Step 2: Fetch full submission documents (including all code, answers, test case outputs, and AI feedback)
+    const submissions = await Submission.find({ _id: { $in: targetIds } }).lean();
+
+    // Maintain rank order (highest score first)
+    const idOrderMap = new Map(targetIds.map((id, index) => [id.toString(), index]));
+    submissions.sort((a, b) => (idOrderMap.get(a._id.toString()) ?? 0) - (idOrderMap.get(b._id.toString()) ?? 0));
 
     res.json(submissions);
   } catch (error) {
