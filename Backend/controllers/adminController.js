@@ -261,10 +261,27 @@ exports.getTestResults = async (req, res) => {
     const { id } = req.params;
     const mongoose = require('mongoose');
 
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid test ID format' });
+    }
+
     // Aggregate to deduplicate: if a user somehow has multiple submissions
     // for the same test, only keep the one with the highest score.
+    // Project lightweight fields first to stay within MongoDB RAM limits (< 32MB).
     const submissions = await Submission.aggregate([
       { $match: { testId: new mongoose.Types.ObjectId(id) } },
+      {
+        $project: {
+          _id: 1,
+          candidateEmail: 1,
+          candidateName: 1,
+          score: 1,
+          status: 1,
+          updatedAt: 1,
+          createdAt: 1,
+          violations: 1
+        }
+      },
       { $sort: { score: -1, updatedAt: 1 } },
       {
         $group: {
@@ -278,6 +295,7 @@ exports.getTestResults = async (req, res) => {
 
     res.json(submissions);
   } catch (error) {
+    console.error('getTestResults Error:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
