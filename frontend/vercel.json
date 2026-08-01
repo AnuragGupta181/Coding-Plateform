@@ -1,9 +1,9 @@
 {
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://api.kaarma.studio/api/$1" },
-    { "source": "/admin/queues/(.*)", "destination": "https://api.kaarma.studio/admin/queues/$1" },
-    { "source": "/admin/queues", "destination": "https://api.kaarma.studio/admin/queues" },
-    { "source": "/health", "destination": "https://api.kaarma.studio/health" },
+    { "source": "/api/(.*)", "destination": "https://coding-plateform-sigma.vercel.app/api/$1" },
+    { "source": "/admin/queues/(.*)", "destination": "https://coding-plateform-sigma.vercel.app/admin/queues/$1" },
+    { "source": "/admin/queues", "destination": "https://coding-plateform-sigma.vercel.app/admin/queues" },
+    { "source": "/health", "destination": "https://coding-plateform-sigma.vercel.app/health" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
