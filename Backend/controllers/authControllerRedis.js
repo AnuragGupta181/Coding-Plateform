@@ -135,9 +135,9 @@ exports.signup = async (req, res) => {
       return res.status(400).json({ message: `Password must be at least ${PASSWORD_MIN_LENGTH} characters long.` });
     }
 
-    const emailRegex = /^[a-zA-Z]{3,}25\d{5,7}@akgec\.ac\.in$/;
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(email.trim())) {
-      return res.status(400).json({ message: 'Please use your valid college email ID.' });
+      return res.status(400).json({ message: 'Please use a valid email address.' });
     }
 
     // Verify Turnstile

@@ -8,17 +8,17 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://api.kaarma.studio',
+        target: 'https://coding-plateform-sigma.vercel.app',
         changeOrigin: true,
         secure: false,
       },
       '/admin/queues': {
-        target: 'https://api.kaarma.studio',
+        target: 'https://coding-plateform-sigma.vercel.app',
         changeOrigin: true,
         secure: false,
       },
       '/health': {
-        target: 'https://api.kaarma.studio',
+        target: 'https://coding-plateform-sigma.vercel.app',
         changeOrigin: true,
         secure: false,
       },
