@@ -10,18 +10,18 @@ Full-stack assessment platform for online coding and MCQ tests. Candidates take 
 
 ### Backend (`Backend/`)
 ```bash
-npm install          # install deps
-npm run dev          # start with nodemon (hot reload)
-npm start            # production start (node index.js)
-npm test             # syntax check only (node --check index.js)
+pnpm install          # install deps
+pnpm run dev          # start with nodemon (hot reload)
+pnpm start            # production start (node index.js)
+pnpm test             # syntax check only (node --check index.js)
 ```
 
 ### Frontend (`frontend/`)
 ```bash
-npm install          # install deps
-npm run dev          # vite dev server (localhost:5173)
-npm run build        # tsc -b && vite build
-npm run lint         # eslint
+pnpm install          # install deps
+pnpm run dev          # vite dev server (localhost:5173)
+pnpm run build        # tsc -b && vite build
+pnpm run lint         # eslint
 ```
 
 ### Load testing (`Backend/load-testing/`)
@@ -45,7 +45,7 @@ Single Express server with layered architecture:
 - **`index.js`** — entry point; MongoDB connection with reconnection/healing logic (designed for Vercel serverless cold starts), rate limiters, request timeouts, graceful shutdown with SSE broadcast, and a 15s cron for expired-test cleanup.
 - **`config.js`** — centralized env config; validates required vars in production.
 - **Routes → Controllers → Services** — standard MVC split.
-- **Models** — Mongoose schemas: `User`, `Test` (embeds `questions[]` for MCQ and `codingQuestions[]` with test cases), `Submission`, `OTP`.
+- **Models** — Mongoose schemas: `User`, `RegistrationUser`, `Test` (embeds `questions[]` for MCQ and `codingQuestions[]` with test cases), `Submission`, `OTP`.
 
 Key subsystems:
 - **SSE + Redis Pub/Sub** (`controllers/eventController.js`) — waiting-room real-time updates. Each test gets a Redis channel `test:<testId>`. Falls back to in-memory broadcast when `REDIS_URL` is unset. Admin polls `getWaitingQueueSnapshot()` for head-count.
@@ -58,11 +58,9 @@ API route groups:
 | Prefix | Purpose |
 |---|---|
 | `/api/auth` | signup, login, OTP, password reset |
-| `/api/tests` | candidate-facing test endpoints |
-| `/api/admin` | test CRUD, results, waiting room control |
-| `/api/events/:testId` | SSE stream for waiting room |
-| `/api/code` | Judge0 run/submit, Groq-powered AI code analysis |
-| `/health` | health check (uptime, memory) |
+| `/api/command` | write operations (e.g., test creation, submission) |
+| `/api/query` | read operations (e.g., fetching test data, results) |
+| `/api/query/events` | SSE streams (e.g., waiting room) |
 
 ### Frontend — React 19 + TypeScript + Vite (`frontend/`)
 
@@ -79,7 +77,7 @@ Single workflow triggered on push/PR to `main`. Two jobs:
 - **`frontend`** — installs deps and runs `pnpm run build` (working dir: `frontend/`)
 - **`backend`** — installs deps and runs `pnpm test` (working dir: `Backend/`)
 
-Both jobs use pnpm 9 + Node 20.x and reference `pnpm-lock.yaml` for caching. The local project uses npm (no pnpm lockfiles exist) — CI will fail until this is reconciled (either add `pnpm-lock.yaml` files or switch CI to npm).
+Both jobs use pnpm 9 + Node 20.x and reference `pnpm-lock.yaml` for caching. The local project also uses pnpm, keeping local and CI environments in sync.
 
 ## Environment Variables
 

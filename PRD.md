@@ -54,6 +54,7 @@ NextGen Assessment Systems is a highly scalable, full-stack online coding and as
 
 ### 4.2 Core Data Models
 - **User:** Manages identities, roles, and verification status.
+- **RegistrationUser:** Temporary storage for users during the registration and OTP verification process.
 - **Test:** Stores assessment metadata, MCQs, Coding Questions, and nested Test Cases.
 - **Submission:** Tracks candidate answers, coding execution verdicts, total scores, and violation logs.
 - **OTP:** Temporary storage for email verification.
@@ -68,20 +69,23 @@ The repository is structured as a monorepo containing both the frontend and back
 ├── Backend/
 │   ├── config.js               # Environment variables and core config
 │   ├── index.js                # Express app entry point
-│   ├── controllers/            # Route business logic (auth, admin, code, etc.)
+│   ├── controllers/            # Route business logic (auth, admin, code, event, etc.)
 │   ├── middleware/             # Auth checks (JWT) and file upload handling
-│   ├── models/                 # Mongoose schemas (User, Test, Submission, OTP)
-│   ├── routes/                 # Express route definitions
-│   └── services/               # External integrations (Judge0, Email, Excel, Redis)
+│   ├── models/                 # Mongoose schemas (User, RegistrationUser, Test, Submission, OTP)
+│   ├── routes/                 # Express route definitions (CQRS pattern: command/query routes, eventRoutes)
+│   ├── services/               # External integrations (Judge0, Email, Excel, Redis)
+│   └── load-testing/           # Scripts for load testing and benchmarking
 │
 ├── frontend/
 │   ├── src/
 │   │   ├── App.tsx             # Main router and global layout
 │   │   ├── index.css           # Tailwind configuration and CSS variables
 │   │   ├── components/         # Reusable UI elements (common, auth, coding, admin)
+│   │   ├── constants/          # Application-wide constants
 │   │   ├── hooks/              # Custom React hooks (useCountdownTimer, useProtecting)
-│   │   ├── pages/              # Route components (Login, CreateTest, TestRoom, etc.)
+│   │   ├── pages/              # Route components (Admin/, Auth/, Login, CreateTest, TestRoom, etc.)
 │   │   ├── store/              # Redux slices (authSlice, testSlice)
+│   │   ├── types/              # TypeScript type definitions
 │   │   └── utils/              # API interceptors and retry logic
 │   ├── package.json
 │   └── vite.config.ts
