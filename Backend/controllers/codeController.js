@@ -92,10 +92,11 @@ exports.analyzeCode = async (req, res) => {
     
     // Lazy initialize to avoid crashing if env is missing at startup
     const Groq = require("groq-sdk");
-    if (!process.env.GROQ_API_KEY) {
-      return res.status(500).json({ message: "GROQ_API_KEY is not configured in .env" });
+    const groqApiKey = req.headers['x-groq-api-key'] || process.env.GROQ_API_KEY;
+    if (!groqApiKey) {
+      return res.status(500).json({ message: "GROQ_API_KEY is not configured. Please provide one in the AI Settings." });
     }
-    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    const groq = new Groq({ apiKey: groqApiKey });
 
     let problemContext = `Problem: ${title || 'Coding Challenge'}\nLanguage: ${language}\n`;
     if (description) problemContext += `\nDescription:\n${description}\n`;
@@ -137,7 +138,7 @@ exports.analyzeCode = async (req, res) => {
     res.json({ analysis: analysisResult });
   } catch (error) {
     console.error("AI Analysis Error:", error);
-    res.status(500).json({ message: "AI analysis failed." });
+    res.status(500).json({ message: error.message || "AI analysis failed." });
   }
 };
 
@@ -150,10 +151,11 @@ exports.chatWithCode = async (req, res) => {
     const { messages, sourceCode, language, title } = req.body;
     
     const Groq = require("groq-sdk");
-    if (!process.env.GROQ_API_KEY) {
-      return res.status(500).json({ message: "GROQ_API_KEY is not configured in .env" });
+    const groqApiKey = req.headers['x-groq-api-key'] || process.env.GROQ_API_KEY;
+    if (!groqApiKey) {
+      return res.status(500).json({ message: "GROQ_API_KEY is not configured. Please provide one in the AI Settings." });
     }
-    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    const groq = new Groq({ apiKey: groqApiKey });
 
     let systemContent = "You are a helpful and expert AI assistant for the Admin of a coding platform. You can answer general questions, help generate coding problems, explain algorithms, and assist the admin with technical tasks.";
     
@@ -179,6 +181,6 @@ Answer the admin's questions about this code, explain bugs, or suggest improveme
     res.json({ reply: chatCompletion.choices[0].message.content });
   } catch (error) {
     console.error("AI Chat Error:", error);
-    res.status(500).json({ message: "AI chat failed." });
+    res.status(500).json({ message: error.message || "AI chat failed." });
   }
 };

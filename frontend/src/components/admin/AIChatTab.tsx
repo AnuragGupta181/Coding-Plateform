@@ -140,10 +140,14 @@ export const AIChatTab: React.FC = () => {
         s.id === targetSessionId ? { ...s, messages: finalHistory as any, updatedAt: Date.now() } : s
       ));
     } catch (err: any) {
+      const msg = err.response?.data?.message?.toLowerCase() || '';
       const finalHistory = [...newHistory, { role: 'assistant', content: `Error: ${err.response?.data?.message || 'Failed'}` }];
       saveSessions(currentSessions.map(s => 
         s.id === targetSessionId ? { ...s, messages: finalHistory as any, updatedAt: Date.now() } : s
       ));
+      if (msg.includes('groq') || msg.includes('api_key') || msg.includes('key') || msg.includes('credit')) {
+        window.dispatchEvent(new Event('open-groq-settings'));
+      }
     } finally {
       setIsLoading(false);
     }

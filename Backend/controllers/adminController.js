@@ -530,7 +530,9 @@ exports.analyzeReportedIssue = async (req, res) => {
     }
 
     const Groq = require("groq-sdk");
-    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    const groqApiKey = req.headers['x-groq-api-key'] || process.env.GROQ_API_KEY;
+    if (!groqApiKey) return res.status(500).json({ message: "GROQ_API_KEY is not configured. Please provide one in the AI Settings." });
+    const groq = new Groq({ apiKey: groqApiKey });
 
     const prompt = `A candidate reported an issue with a test question.
 Question Type: ${questionType}
@@ -563,7 +565,7 @@ Respond in JSON format with two fields:
     res.json({ message: 'Issue analyzed', aiEvaluation: issue.aiEvaluation });
   } catch (error) {
     console.error('analyzeReportedIssue Error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: error.message || 'Internal server error' });
   }
 };
 
@@ -597,7 +599,9 @@ exports.analyzeQuestionIssues = async (req, res) => {
     });
 
     const Groq = require("groq-sdk");
-    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    const groqApiKey = req.headers['x-groq-api-key'] || process.env.GROQ_API_KEY;
+    if (!groqApiKey) return res.status(500).json({ message: "GROQ_API_KEY is not configured. Please provide one in the AI Settings." });
+    const groq = new Groq({ apiKey: groqApiKey });
 
     const prompt = `Multiple candidates reported issues with the same test question.
 Question Type: ${questionType}
@@ -636,7 +640,7 @@ Respond in JSON format with two fields:
     res.json({ message: 'Issues analyzed collectively', aiEvaluation });
   } catch (error) {
     console.error('analyzeQuestionIssues Error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: error.message || 'Internal server error' });
   }
 };
 
@@ -656,7 +660,9 @@ exports.analyzeOverallExperience = async (req, res) => {
     });
 
     const Groq = require("groq-sdk");
-    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    const groqApiKey = req.headers['x-groq-api-key'] || process.env.GROQ_API_KEY;
+    if (!groqApiKey) return res.status(500).json({ message: "GROQ_API_KEY is not configured. Please provide one in the AI Settings." });
+    const groq = new Groq({ apiKey: groqApiKey });
 
     const prompt = `Analyze the overall candidate experience for this test based on their feedback and reported issues.
 Number of Feedback Responses: ${feedbacks.length}
@@ -675,7 +681,7 @@ Please provide a highly concise, punchy markdown report (max 4-5 bullet points).
     res.json({ analysis });
   } catch (error) {
     console.error('analyzeOverallExperience Error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: error.message || 'Internal server error' });
   }
 };
 

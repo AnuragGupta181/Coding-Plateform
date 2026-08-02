@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import testService from '../../utils/apiService';
 import ReactMarkdown from 'react-markdown';
+import GroqKeySettings from '../../components/GroqKeySettings';
 
 interface Question {
   _id: string;
@@ -94,6 +95,10 @@ const DetailedResult: React.FC = () => {
       setAiAnalysis(prev => ({ ...prev, [questionId]: { loading: false, result: res.data.analysis } }));
     } catch (err: any) {
       setAiAnalysis(prev => ({ ...prev, [questionId]: { loading: false, error: err.response?.data?.message || 'Failed to analyze code' } }));
+      const msg = err.response?.data?.message?.toLowerCase() || '';
+      if (msg.includes('groq') || msg.includes('api_key') || msg.includes('key') || msg.includes('credit')) {
+        window.dispatchEvent(new Event('open-groq-settings'));
+      }
     }
   };
 
@@ -531,6 +536,7 @@ const DetailedResult: React.FC = () => {
                           <div className="bg-background px-4 py-3 flex items-center justify-between text-[10px] md:text-xs font-mono border-b border-border">
                             <span className="text-muted-foreground font-sans uppercase tracking-widest font-bold">Language: <span className="text-emerald-700 ml-2">{codingAns.language}</span></span>
                             <div className="flex gap-2">
+                              <GroqKeySettings />
                               <button
                                 onClick={() => {
                                   const chatContext = `I have a question about this coding problem and the student's submission.\n\nProblem Title: ${cq.title}\nDescription:\n${cq.description}\n\nStudent's Language: ${codingAns.language}\nStudent's Code:\n${codingAns.sourceCode}`;

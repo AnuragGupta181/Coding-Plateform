@@ -7,6 +7,7 @@ import { TestRepositoryTable } from '../components/admin/TestRepositoryTable';
 import { AIChatTab } from  '../components/admin/AIChatTab';
 import { RealtimeMonitoringPage } from '../components/admin/RealtimeMonitoringPage';
 import { InfrastructureMetricsPage } from '../components/admin/InfrastructureMetricsPage';
+import GroqKeySettings from '../components/GroqKeySettings';
 import type { TestSummary, QueueSummary, AdminSection } from '../types/admin';
 
 const AdminDashboard: React.FC = () => {
@@ -280,10 +281,13 @@ const AdminDashboard: React.FC = () => {
 
           {activeSection === 'aichat' && (
             <div className="animate-fade-in h-[calc(100svh-130px)] lg:h-[calc(100vh-200px)] min-h-[450px] flex flex-col">
-              <header className="mb-6 shrink-0">
-                <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-indigo-500 mb-2">Groq Integration</div>
-                <h2 className="text-3xl lg:text-4xl font-sans text-foreground-bold mb-2">AI Assistant</h2>
-                <p className="text-sm lg:text-base text-muted-foreground font-light italic">Ask questions about platform usage, grading logic, or anything else.</p>
+              <header className="mb-6 shrink-0 flex justify-between items-start">
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-indigo-500 mb-2">Groq Integration</div>
+                  <h2 className="text-3xl lg:text-4xl font-sans text-foreground-bold mb-2">AI Assistant</h2>
+                  <p className="text-sm lg:text-base text-muted-foreground font-light italic">Ask questions about platform usage, grading logic, or anything else.</p>
+                </div>
+                <GroqKeySettings />
               </header>
               <div className="flex-1 bg-background border border-border shadow-sm rounded-sm overflow-hidden flex flex-col min-h-0">
                 <AIChatTab />

@@ -25,6 +25,10 @@ const authInterceptor = (instance: ReturnType<typeof axios.create>) => {
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    const groqKey = localStorage.getItem('custom_groq_api_key');
+    if (groqKey) {
+      config.headers['x-groq-api-key'] = groqKey;
+    }
     return config;
   });
 

@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { testService } from '../../utils/apiService';
 import toast from 'react-hot-toast';
 import ReactMarkdown from 'react-markdown';
+import GroqKeySettings from '../../components/GroqKeySettings';
 
 const AdminTestDashboard: React.FC = () => {
   const { testId } = useParams<{ testId: string }>();
@@ -35,8 +36,12 @@ const AdminTestDashboard: React.FC = () => {
       const res = await testService.analyzeOverallExperience(testId);
       setAiAnalysis(res.data.analysis);
       toast.success('Overall analysis generated');
-    } catch (error) {
-      toast.error('Failed to generate analysis');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to generate analysis');
+      const msg = error.response?.data?.message?.toLowerCase() || '';
+      if (msg.includes('groq') || msg.includes('api_key') || msg.includes('key') || msg.includes('credit')) {
+        window.dispatchEvent(new Event('open-groq-settings'));
+      }
     } finally {
       setAnalyzingOverall(false);
     }
@@ -54,8 +59,12 @@ const AdminTestDashboard: React.FC = () => {
         )
       }));
       toast.success('Question issues analyzed collectively by AI');
-    } catch (error) {
-      toast.error('Failed to analyze issues');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to analyze issues');
+      const msg = error.response?.data?.message?.toLowerCase() || '';
+      if (msg.includes('groq') || msg.includes('api_key') || msg.includes('key') || msg.includes('credit')) {
+        window.dispatchEvent(new Event('open-groq-settings'));
+      }
     } finally {
       setAnalyzingIssues(prev => ({ ...prev, [questionId]: false }));
     }
@@ -133,9 +142,12 @@ const AdminTestDashboard: React.FC = () => {
           <div className="card p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">AI Experience Analysis</h3>
-              <button onClick={handleAnalyzeOverall} disabled={analyzingOverall || data.totalFeedback === 0} className="btn-primary text-xs py-1 px-3">
-                {analyzingOverall ? 'Analyzing...' : 'Generate AI Report'}
-              </button>
+              <div className="flex items-center gap-2">
+                <GroqKeySettings />
+                <button onClick={handleAnalyzeOverall} disabled={analyzingOverall || data.totalFeedback === 0} className="btn-primary text-xs py-1 px-3 whitespace-nowrap">
+                  {analyzingOverall ? 'Analyzing...' : 'Generate AI Report'}
+                </button>
+              </div>
             </div>
             
             {aiAnalysis ? (
@@ -151,7 +163,10 @@ const AdminTestDashboard: React.FC = () => {
         </div>
 
         <div className="card p-6">
-          <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-6">Reported Issues Tracker</h3>
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Reported Issues Tracker</h3>
+            <GroqKeySettings />
+          </div>
           <div className="space-y-4">
             {Object.keys(issuesByQuestion).length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-6">No issues reported during this test.</p>
