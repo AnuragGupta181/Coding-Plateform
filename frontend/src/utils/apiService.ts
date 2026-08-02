@@ -122,10 +122,16 @@ export const testService = {
   // ── Admin Dashboard & AI Routes ─────────────────────────────────────────────
   getTestDashboardData: (testId: string) =>
     queryApi.get(`/admin/test/${testId}/dashboard`),
+  exportTestResults: (testId: string) =>
+    queryApi.get(`/admin/test/${testId}/export`, { responseType: 'blob' }),
+  exportCandidateReport: (submissionId: string) =>
+    queryApi.get(`/admin/submission/${submissionId}/export`, { responseType: 'blob' }),
   analyzeOverallExperience: (testId: string) =>
     commandApi.post(`/admin/test/${testId}/analyze-overall`),
   analyzeReportedIssue: (submissionId: string, issueId: string) =>
     commandApi.post(`/admin/issue/${submissionId}/${issueId}/analyze`),
+  analyzeQuestionIssues: (testId: string, questionId: string) =>
+    commandApi.post(`/admin/issue/question/${testId}/${questionId}/analyze`),
 
   sendProctorMessage: (testId: string, candidateEmail: string, message: string) =>
     commandApi.post(`/admin/test/${testId}/message`, { candidateEmail, message }),

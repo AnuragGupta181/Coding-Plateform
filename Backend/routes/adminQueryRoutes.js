@@ -15,6 +15,7 @@ router.get('/submission/:id', adminController.getSubmissionDetails);
 
 // Export test results to excel
 router.get('/test/:id/export', adminController.exportTestResults);
+router.get('/submission/:id/export', adminController.exportCandidateReport);
 
 // Dashboard data
 router.get('/test/:id/dashboard', adminController.getTestDashboardData);

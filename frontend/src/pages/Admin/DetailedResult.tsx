@@ -149,13 +149,35 @@ const DetailedResult: React.FC = () => {
         </div>
       </nav>
 
-      <div className="max-w-4xl mx-auto px-4 md:px-6">
+      <div className="max-w-4xl mx-auto px-4 md:px-6 flex justify-between items-center mb-8">
         <button 
           onClick={() => navigate(submission?.testId?._id ? `/admin/results/${submission.testId._id}` : '/admin')}
-          className="group flex items-center gap-2 text-[10px] md:text-xs uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground-bold transition-all whitespace-nowrap mb-8"
+          className="group flex items-center gap-2 text-[10px] md:text-xs uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground-bold transition-all whitespace-nowrap"
         >
           <span className="group-hover:-translate-x-1 transition-transform">&larr;</span>
           Back to Results
+        </button>
+        
+        <button
+          onClick={async () => {
+            if (!subId) return;
+            try {
+              const res = await testService.exportCandidateReport(subId);
+              const url = window.URL.createObjectURL(new Blob([res.data]));
+              const link = document.createElement('a');
+              link.href = url;
+              link.setAttribute('download', `candidate_${submission?.candidateEmail || subId}_report.xlsx`);
+              document.body.appendChild(link);
+              link.click();
+              link.parentNode?.removeChild(link);
+              window.URL.revokeObjectURL(url);
+            } catch (err) {
+              console.error('Failed to export', err);
+            }
+          }}
+          className="btn-secondary py-1 px-3 text-[9px] tracking-widest flex items-center gap-1.5"
+        >
+          Download Report &darr;
         </button>
       </div>
 

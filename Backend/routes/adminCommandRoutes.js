@@ -33,5 +33,6 @@ router.post('/cache/clear', adminController.clearTestCache);
 // AI features
 router.post('/test/:id/analyze-overall', adminController.analyzeOverallExperience);
 router.post('/issue/:submissionId/:issueId/analyze', adminController.analyzeReportedIssue);
+router.post('/issue/question/:testId/:questionId/analyze', adminController.analyzeQuestionIssues);
 
 module.exports = router;

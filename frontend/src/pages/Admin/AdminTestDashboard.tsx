@@ -42,23 +42,49 @@ const AdminTestDashboard: React.FC = () => {
     }
   };
 
-  const handleAnalyzeIssue = async (submissionId: string, issueId: string) => {
-    setAnalyzingIssues(prev => ({ ...prev, [issueId]: true }));
+  const handleAnalyzeQuestionIssues = async (questionId: string) => {
+    if (!testId) return;
+    setAnalyzingIssues(prev => ({ ...prev, [questionId]: true }));
     try {
-      const res = await testService.analyzeReportedIssue(submissionId, issueId);
+      const res = await testService.analyzeQuestionIssues(testId, questionId);
       setData((prev: any) => ({
         ...prev,
         reportedProblems: prev.reportedProblems.map((p: any) =>
-          p._id === issueId ? { ...p, aiEvaluation: res.data.aiEvaluation } : p
+          p.questionId === questionId ? { ...p, aiEvaluation: res.data.aiEvaluation } : p
         )
       }));
-      toast.success('Issue analyzed by AI');
+      toast.success('Question issues analyzed collectively by AI');
     } catch (error) {
-      toast.error('Failed to analyze issue');
+      toast.error('Failed to analyze issues');
     } finally {
-      setAnalyzingIssues(prev => ({ ...prev, [issueId]: false }));
+      setAnalyzingIssues(prev => ({ ...prev, [questionId]: false }));
     }
   };
+
+  // Group reported problems by questionId
+  const issuesByQuestion: Record<string, {
+    questionDetails: any,
+    issues: any[],
+    aiEvaluation?: any
+  }> = {};
+
+  if (data?.reportedProblems) {
+    data.reportedProblems.forEach((rp: any) => {
+      const qId = rp.questionId || 'unknown';
+      if (!issuesByQuestion[qId]) {
+        issuesByQuestion[qId] = {
+          questionDetails: rp.questionDetails,
+          issues: [],
+          aiEvaluation: rp.aiEvaluation
+        };
+      }
+      issuesByQuestion[qId].issues.push(rp);
+      
+      if (rp.aiEvaluation && !issuesByQuestion[qId].aiEvaluation) {
+        issuesByQuestion[qId].aiEvaluation = rp.aiEvaluation;
+      }
+    });
+  }
 
   if (loading) {
     return <div className="p-10 text-center animate-pulse">Loading dashboard...</div>;
@@ -127,55 +153,59 @@ const AdminTestDashboard: React.FC = () => {
         <div className="card p-6">
           <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-6">Reported Issues Tracker</h3>
           <div className="space-y-4">
-            {data.reportedProblems.length === 0 ? (
+            {Object.keys(issuesByQuestion).length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-6">No issues reported during this test.</p>
             ) : (
-              data.reportedProblems.map((rp: any) => (
-                <div key={rp._id} className="border border-border p-4 rounded-lg bg-muted/10">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <Link 
-                        to={`/admin/submission/${rp.submissionId}`}
-                        className="font-bold text-foreground mr-2 hover:text-primary hover:underline transition-colors"
-                      >
-                        {rp.candidateEmail}
-                      </Link>
-                      <span className="text-xs text-muted-foreground">reported an issue</span>
+              Object.entries(issuesByQuestion).map(([qId, group]) => (
+                <div key={qId} className="border border-border p-4 rounded-lg bg-muted/10 space-y-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="font-bold text-foreground flex-1">
+                      Target Question: {group.questionDetails ? (group.questionDetails.type === 'mcq' ? group.questionDetails.text : group.questionDetails.title) : 'Unknown Question'}
                     </div>
-                    {!rp.aiEvaluation && (
+                    {!group.aiEvaluation && (
                       <button 
-                        onClick={() => handleAnalyzeIssue(rp.submissionId, rp._id)}
-                        disabled={analyzingIssues[rp._id]}
-                        className="btn-secondary text-[10px] uppercase py-1 px-2"
+                        onClick={() => handleAnalyzeQuestionIssues(qId)}
+                        disabled={analyzingIssues[qId]}
+                        className="btn-secondary text-[10px] uppercase py-1 px-2 whitespace-nowrap ml-4"
                       >
-                        {analyzingIssues[rp._id] ? 'Analyzing...' : 'AI Verify'}
+                        {analyzingIssues[qId] ? 'Analyzing...' : 'AI Verify Question'}
                       </button>
                     )}
                   </div>
-                  <p className="text-sm text-amber-600 dark:text-amber-400 font-medium mb-3">"{rp.description}"</p>
-                  
-                  {rp.questionDetails && (
-                    <div className="mb-3 p-3 bg-background/50 border border-border rounded text-xs space-y-2 text-muted-foreground">
-                      <div className="font-bold text-foreground">
-                        Target Question: {rp.questionDetails.type === 'mcq' ? rp.questionDetails.text : rp.questionDetails.title}
-                      </div>
-                      {rp.questionDetails.type === 'mcq' && rp.questionDetails.options && (
-                        <ol className="list-decimal list-inside pl-2">
-                          {rp.questionDetails.options.map((opt: string, idx: number) => (
-                            <li key={idx} className="truncate">{opt}</li>
-                          ))}
-                        </ol>
-                      )}
-                    </div>
+
+                  {group.questionDetails && group.questionDetails.type === 'mcq' && group.questionDetails.options && (
+                    <ol className="list-decimal list-inside pl-2 text-xs text-muted-foreground mb-4">
+                      {group.questionDetails.options.map((opt: string, idx: number) => (
+                        <li key={idx} className="truncate">{opt}</li>
+                      ))}
+                    </ol>
                   )}
-                  
-                  {rp.aiEvaluation && (
-                    <div className={`mt-3 p-3 rounded text-sm border ${rp.aiEvaluation.isCandidateCorrect ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300' : 'bg-rose-50 dark:bg-rose-900/10 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300'}`}>
-                      <div className="font-bold mb-1 flex items-center gap-2">
-                        <span>{rp.aiEvaluation.isCandidateCorrect ? '✓ Valid Issue' : '✗ Invalid Issue'}</span>
-                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground bg-background/50 px-2 py-0.5 rounded">AI Verified</span>
+
+                  <div className="space-y-3 mt-4 border-t border-border/50 pt-4">
+                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Candidate Reports ({group.issues.length})</h4>
+                    {group.issues.map((rp: any) => (
+                      <div key={rp._id} className="bg-background/50 p-3 rounded border border-border">
+                        <div className="mb-1 flex items-center gap-2">
+                          <Link 
+                            to={`/admin/submission/${rp.submissionId}`}
+                            className="font-bold text-xs text-foreground hover:text-primary hover:underline transition-colors"
+                          >
+                            {rp.candidateEmail}
+                          </Link>
+                          <span className="text-[10px] text-muted-foreground">reported:</span>
+                        </div>
+                        <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">"{rp.description}"</p>
                       </div>
-                      <p className="opacity-90 leading-relaxed">{rp.aiEvaluation.analysis}</p>
+                    ))}
+                  </div>
+
+                  {group.aiEvaluation && (
+                    <div className={`mt-4 p-4 rounded-md text-sm border ${group.aiEvaluation.isCandidateCorrect ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300' : 'bg-rose-50 dark:bg-rose-900/10 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300'}`}>
+                      <div className="font-bold mb-2 flex items-center gap-2">
+                        <span>{group.aiEvaluation.isCandidateCorrect ? '✓ Valid Issue' : '✗ Invalid Issue'}</span>
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground bg-background/50 px-2 py-0.5 rounded">AI Verified (Collective)</span>
+                      </div>
+                      <p className="opacity-90 leading-relaxed text-sm">{group.aiEvaluation.analysis}</p>
                     </div>
                   )}
                 </div>

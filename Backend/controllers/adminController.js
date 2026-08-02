@@ -567,6 +567,79 @@ Respond in JSON format with two fields:
   }
 };
 
+exports.analyzeQuestionIssues = async (req, res) => {
+  try {
+    const { testId, questionId } = req.params;
+    const test = await Test.findById(testId);
+    if (!test) return res.status(404).json({ message: 'Test not found' });
+
+    let questionText = 'Unknown Question';
+    let questionType = 'unknown';
+
+    const mcq = test.questions?.find(q => q._id.toString() === questionId);
+    if (mcq) { questionText = mcq.questionText; questionType = 'MCQ'; }
+    const cq = test.codingQuestions?.find(q => q._id.toString() === questionId);
+    if (cq) { questionText = cq.title + '\\n' + cq.description; questionType = 'Coding'; }
+
+    const submissions = await Submission.find({ testId, 'reportedProblems.questionId': questionId });
+    if (!submissions || submissions.length === 0) return res.status(404).json({ message: 'No reported issues found for this question' });
+
+    const reportedDescriptions = [];
+    const issuesToUpdate = [];
+
+    submissions.forEach(sub => {
+      sub.reportedProblems.forEach(rp => {
+        if (rp.questionId === questionId) {
+          reportedDescriptions.push(`Candidate ${sub.candidateEmail}: ${rp.description}`);
+          issuesToUpdate.push({ sub, rp });
+        }
+      });
+    });
+
+    const Groq = require("groq-sdk");
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+    const prompt = `Multiple candidates reported issues with the same test question.
+Question Type: ${questionType}
+Question Content: ${questionText}
+Candidate Reports: 
+${reportedDescriptions.join('\\n')}
+
+Analyze if the question is actually flawed based on these collective reports (e.g., is the question actually flawed, is the test case wrong, or are the candidates just confused?). 
+Provide a single unified verdict that will be shown to the admin.
+Respond in JSON format with two fields:
+{
+  "isCandidateCorrect": boolean,
+  "analysis": "string detailing your reasoning"
+}`;
+
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [{ role: "user", content: prompt }],
+      model: "llama-3.3-70b-versatile",
+      response_format: { type: "json_object" }
+    });
+
+    const resultStr = chatCompletion.choices[0]?.message?.content || '{}';
+    const result = JSON.parse(resultStr);
+
+    const aiEvaluation = {
+      analysis: result.analysis || 'Analysis failed',
+      isCandidateCorrect: !!result.isCandidateCorrect
+    };
+
+    // Save evaluation to all reported problems
+    for (const { sub, rp } of issuesToUpdate) {
+      rp.aiEvaluation = aiEvaluation;
+      await sub.save();
+    }
+
+    res.json({ message: 'Issues analyzed collectively', aiEvaluation });
+  } catch (error) {
+    console.error('analyzeQuestionIssues Error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 exports.analyzeOverallExperience = async (req, res) => {
   try {
     const { id } = req.params;
@@ -602,6 +675,154 @@ Please provide a highly concise, punchy markdown report (max 4-5 bullet points).
     res.json({ analysis });
   } catch (error) {
     console.error('analyzeOverallExperience Error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+exports.exportTestResults = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const xlsx = require('xlsx');
+
+    const test = await Test.findById(id).select('questions').lean();
+    if (!test) return res.status(404).json({ message: 'Test not found' });
+
+    const submissions = await Submission.find({ testId: id })
+      .select('candidateEmail candidateName score status violations reportedProblems feedback answers')
+      .lean();
+
+    const data = submissions.map(sub => {
+      let correct = 0;
+      let attempted = 0;
+
+      if (sub.answers && test.questions) {
+        test.questions.forEach((q, idx) => {
+          if (sub.answers[q._id] !== undefined) attempted++;
+          if (sub.answers[q._id] === q.correctOptionIndex) correct++;
+        });
+      }
+
+      const totalViolations = sub.violations ? sub.violations.reduce((sum, v) => sum + (v.count || 1), 0) : 0;
+      const issues = sub.reportedProblems && sub.reportedProblems.length > 0 ? sub.reportedProblems.map(rp => rp.description).join('; ') : 'None';
+      const feedbackScore = sub.feedback?.rating || 'N/A';
+      const feedbackComment = sub.feedback?.comment || 'None';
+
+      return {
+        'Candidate Name': sub.candidateName || 'N/A',
+        'Candidate Email': sub.candidateEmail,
+        'Status': sub.status,
+        'Score': sub.score || 0,
+        'Attempted Questions': attempted,
+        'Correct Questions': correct,
+        'Violations': totalViolations,
+        'Reported Issues': issues,
+        'Feedback Rating': feedbackScore,
+        'Feedback Comment': feedbackComment
+      };
+    });
+
+    const ws = xlsx.utils.json_to_sheet(data);
+    const wb = xlsx.utils.book_new();
+    xlsx.utils.book_append_sheet(wb, ws, "Results");
+
+    const excelBuffer = xlsx.write(wb, { bookType: 'xlsx', type: 'buffer' });
+
+    res.setHeader('Content-Disposition', `attachment; filename="test_${id}_results.xlsx"`);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.send(excelBuffer);
+
+  } catch (error) {
+    console.error('exportTestResults Error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+exports.exportCandidateReport = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const mongoose = require('mongoose');
+    const xlsx = require('xlsx');
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid submission ID format' });
+    }
+
+    const submission = await Submission.findById(id).populate('testId').lean();
+    if (!submission || !submission.testId) {
+      return res.status(404).json({ message: 'Submission not found' });
+    }
+
+    const test = submission.testId;
+    const answersData = [];
+
+    // Process MCQs
+    if (test.questions) {
+      test.questions.forEach((q, i) => {
+        const candidateChoiceIdx = submission.answers ? submission.answers[q._id.toString()] : undefined;
+        const candidateChose = candidateChoiceIdx !== undefined ? q.options[candidateChoiceIdx] : 'Unanswered';
+        const correctAns = q.options[q.correctOptionIndex];
+        const isCorrect = candidateChoiceIdx === q.correctOptionIndex;
+        
+        answersData.push({
+          'Q#': `MCQ-${i + 1}`,
+          'Question': q.questionText,
+          'Type': 'Multiple Choice',
+          'Candidate Answer': candidateChose,
+          'Correct Answer': correctAns,
+          'Status': isCorrect ? 'Correct' : (candidateChoiceIdx !== undefined ? 'Incorrect' : 'Blank'),
+          'Points Earned': isCorrect ? (q.points || 1) : 0,
+          'Max Points': q.points || 1
+        });
+      });
+    }
+
+    // Process Coding
+    if (test.codingQuestions) {
+      test.codingQuestions.forEach((q, i) => {
+        const ans = submission.codingAnswers ? submission.codingAnswers[q._id.toString()] : null;
+        
+        answersData.push({
+          'Q#': `CODE-${i + 1}`,
+          'Question': q.title,
+          'Type': 'Coding',
+          'Candidate Answer': ans ? (ans.sourceCode ? `Code Submitted (${ans.language})` : 'Blank') : 'Blank',
+          'Correct Answer': 'N/A',
+          'Status': ans ? `Passed ${ans.passedCases || 0}/${q.testCases?.length || 0}` : 'Blank',
+          'Points Earned': ans ? (ans.score || 0) : 0,
+          'Max Points': q.points || 10
+        });
+      });
+    }
+
+    const summaryData = [{
+      'Candidate Name': submission.candidateName || 'Unknown',
+      'Candidate Email': submission.candidateEmail,
+      'Test Title': test.title,
+      'Final Score': submission.score || 0,
+      'Status': submission.status,
+      'Feedback Rating': submission.feedback?.rating || 'N/A',
+      'Violations Count': submission.violations ? submission.violations.reduce((sum, v) => sum + (v.count || 1), 0) : 0,
+      'Issues Reported': submission.reportedProblems ? submission.reportedProblems.length : 0
+    }];
+
+    const wb = xlsx.utils.book_new();
+    
+    // Add summary sheet
+    const wsSummary = xlsx.utils.json_to_sheet(summaryData);
+    xlsx.utils.book_append_sheet(wb, wsSummary, "Summary");
+    
+    // Add detailed answers sheet
+    const wsDetails = xlsx.utils.json_to_sheet(answersData);
+    xlsx.utils.book_append_sheet(wb, wsDetails, "Detailed Answers");
+
+    const excelBuffer = xlsx.write(wb, { bookType: 'xlsx', type: 'buffer' });
+
+    res.setHeader('Content-Disposition', `attachment; filename="candidate_${submission.candidateEmail}_report.xlsx"`);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.send(excelBuffer);
+
+  } catch (error) {
+    console.error('exportCandidateReport Error:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 };

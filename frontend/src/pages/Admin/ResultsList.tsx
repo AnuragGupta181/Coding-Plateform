@@ -79,14 +79,36 @@ const ResultsList: React.FC = () => {
 
       <header className="max-w-6xl mx-auto px-4 md:px-6 mb-8 md:mb-12 flex flex-col gap-6 md:flex-row md:justify-between md:items-end">
         <div>
-          <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground mb-2 flex items-center gap-4">
+          <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground mb-2 flex flex-wrap items-center gap-4">
             Performance Analytics
-            <button
-              onClick={() => navigate(`/admin/test/${testId}/dashboard`)}
-              className="btn-primary py-1 px-3 text-[9px] tracking-widest flex items-center gap-1.5"
-            >
-              Intelligence Dashboard &rarr;
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={async () => {
+                  try {
+                    const res = await testService.exportTestResults(testId || '');
+                    const url = window.URL.createObjectURL(new Blob([res.data]));
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.setAttribute('download', `test_${testId}_results.xlsx`);
+                    document.body.appendChild(link);
+                    link.click();
+                    link.parentNode?.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                  } catch (err) {
+                    console.error('Failed to export', err);
+                  }
+                }}
+                className="btn-secondary py-1 px-3 text-[9px] tracking-widest flex items-center gap-1.5"
+              >
+                Export Excel &darr;
+              </button>
+              <button
+                onClick={() => navigate(`/admin/test/${testId}/dashboard`)}
+                className="btn-primary py-1 px-3 text-[9px] tracking-widest flex items-center gap-1.5"
+              >
+                Intelligence Dashboard &rarr;
+              </button>
+            </div>
           </div>
           <h1 className="text-3xl md:text-4xl font-sans text-foreground-bold">Assessment Results</h1>
           <p className="text-sm md:text-base text-muted-foreground mt-2 font-light italic">Detailed performance overview for all registered participants.</p>
