@@ -116,25 +116,31 @@ npm run dev
 
 ---
 
-## 🐳 Docker & Docker Compose Setup
+## 🐳 Docker Orchestration Setup
 
-You can also run and deploy the entire application using Docker Compose:
+We use a central `Makefile` to effortlessly orchestrate the NextGen Application and the Judge0 Execution Engine across different environments.
 
 ### 1. Prerequisites
-Ensure Docker and Docker Compose are installed on your machine. Ensure your `Backend/.env` file is set up properly before starting containers.
+Ensure Docker, Docker Compose, and `make` are installed on your machine. Ensure your `Backend/.env` file is set up properly before starting containers.
 
-### 2. Build & Start Containers
-Run in background (detached mode) with build flag:
-```bash
-docker compose up -d --build
-```
-*(For legacy v1 Compose: `docker-compose up -d --build`)*
+### 2. Available Make Commands
 
-### 3. Management & Monitoring Commands
-- **View Logs (Real-time):** `docker compose logs -f`
-- **View Backend Logs:** `docker compose logs -f backend`
-- **Check Container Status:** `docker compose ps`
-- **Stop & Remove Containers:** `docker compose down`
+Run `make help` in the root directory to see all available commands.
+
+#### Full Environments (App + Judge0)
+- **`make dev-up`**: Boots up the complete development stack (NextGen App + Judge0 Dev).
+- **`make dev-down`**: Safely stops the development stack.
+- **`make prod-up`**: Boots up the complete production stack (NextGen App + Judge0 Prod).
+- **`make prod-down`**: Safely stops the production stack.
+
+#### Individual Components
+- **Main Application**: `make app-up` / `make app-down`
+- **Judge0 Dev Environment**: `make judge0-dev-up` / `make judge0-dev-down`
+- **Judge0 Prod Environment**: `make judge0-prod-up` / `make judge0-prod-down`
+
+#### Maintenance & Logs
+- **View Logs (Real-time):** `make logs`
+- **Wipe All Data (Destructive):** `make clean-all`
 
 ---
 

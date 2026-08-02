@@ -1,53 +1,51 @@
 # Judge0 Run Commands
 
-## Local Docker Run
+## Local Docker Run (via Makefile)
 
-Start all services:
+We now use a `Makefile` to simplify running the Judge0 environments.
+
+Start the entire development environment (NextGen App + Judge0 Dev):
 
 ```bash
-docker compose up -d
+make dev-up
 ```
 
-Check running containers:
+Alternatively, to start *only* the Judge0 dev environment:
 
 ```bash
-docker compose ps
+make judge0-dev-up
 ```
 
-Watch server logs:
+Watch logs across all services:
 
 ```bash
-docker compose logs -f server
-```
-
-Watch worker logs:
-
-```bash
-docker compose logs -f worker
+make logs
 ```
 
 Stop services:
 
 ```bash
-docker compose down
+make dev-down
 ```
 
-Stop services and delete the Postgres volume:
+Stop services and delete the Postgres volume (Warning: Destructive!):
 
 ```bash
-docker compose down -v
+make clean-all
 ```
 
 ## Start Redis And Postgres Only
 
+*(Note: In the new setup, the dev environment bundles everything together. If you need to manually manage them, you can still use standard docker-compose commands.)*
+
 ```bash
-docker compose up -d redis db
+docker compose -f docker-compose.dev.yml up -d redis db
 ```
 
 Then start Judge0:
 
 ```bash
-docker compose up -d server worker
+docker compose -f docker-compose-judge0-prod.yml up -d server worker
 ```
 
 ## Local API Test
@@ -179,9 +177,9 @@ After reboot, verify:
 ls /sys/fs/cgroup/memory
 ```
 
-Then restart Judge0:
+Then restart Judge0 using the Makefile:
 
 ```bash
-docker compose down -v
-docker compose up -d
+make clean-all
+make dev-up
 ```
