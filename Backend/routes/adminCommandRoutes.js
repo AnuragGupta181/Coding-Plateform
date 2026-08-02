@@ -30,4 +30,8 @@ router.post('/submission/:id/force-submit', adminController.forceSubmitCandidate
 router.post('/queues/clear', adminController.clearQueues);
 router.post('/cache/clear', adminController.clearTestCache);
 
+// AI features
+router.post('/test/:id/analyze-overall', adminController.analyzeOverallExperience);
+router.post('/issue/:submissionId/:issueId/analyze', adminController.analyzeReportedIssue);
+
 module.exports = router;

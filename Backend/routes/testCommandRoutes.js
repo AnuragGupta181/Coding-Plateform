@@ -8,5 +8,7 @@ router.post('/submission/:submissionId/save-answer', testController.saveAnswer);
 router.post('/submission/:submissionId/clear-answer', testController.clearAnswer);
 router.post('/submission/:submissionId/complete', testController.completeSubmission);
 router.post('/submission/:submissionId/log-violation', testController.logViolation);
+router.post('/submission/:submissionId/report-problem', testController.reportProblem);
+router.post('/submission/:submissionId/feedback', testController.submitFeedback);
 
 module.exports = router;

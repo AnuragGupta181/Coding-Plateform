@@ -230,7 +230,11 @@ eventSource.onmessage = (event) => {
     } else if (data.type === 'FORCE_SUBMIT' && data.targetEmail === user?.email) {
       dispatch(completeTest());
       toast.error('Your test session has been ended by the proctor.', { duration: 4000 });
-      setTimeout(() => navigate('/dashboard'), 2500);
+      if (submissionId) {
+        setTimeout(() => navigate(`/feedback/${submissionId}`), 2500);
+      } else {
+        setTimeout(() => navigate('/dashboard'), 2500);
+      }
     } else if (data.type === 'PROCTOR_MESSAGE' && data.targetEmail === user?.email) {
       toast.error(`PROCTOR MESSAGE:\n${data.message}`, {
         duration: 5000,
@@ -397,13 +401,14 @@ try {
 await saveCurrentAnswer();
 await flushPendingSync(submissionId, testId);
 
-if (testData?.testType === 'mixed') {
-navigate(`/coding-test/${testId}`);
-} else {
-await testService.completeSubmission(submissionId);
-clearTestSession(testId, submissionId);
-dispatch(completeTest());
-}
+        if (testData?.testType === 'mixed') {
+          navigate(`/coding-test/${testId}`);
+        } else {
+          await testService.completeSubmission(submissionId);
+          clearTestSession(testId, submissionId);
+          dispatch(completeTest());
+          navigate(`/feedback/${submissionId}`);
+        }
 } catch (error) {
 console.error('Final submission failed:', error);
 setSyncWarning('Final submission failed. Please try again.');
@@ -421,6 +426,8 @@ return (
   onAction={handleOpenSubmitModal}
   actionText={testData?.testType === 'mixed' ? 'Proceed to Coding' : 'Submit Assessment'}
   isSaving={isSaving}
+  submissionId={submissionId}
+  currentQuestionId={testData?.questions?.[currentQuestionIndex]?._id}
 />
 
 {syncWarning && (

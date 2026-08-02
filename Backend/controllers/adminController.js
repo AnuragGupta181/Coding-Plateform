@@ -278,7 +278,8 @@ exports.getTestResults = async (req, res) => {
           status: 1,
           updatedAt: 1,
           createdAt: 1,
-          violations: 1
+          violations: 1,
+          reportedProblems: 1
         }
       },
       { $sort: { score: -1, updatedAt: 1 } },
@@ -440,5 +441,167 @@ exports.clearTestCache = async (req, res) => {
   } catch (error) {
     console.error('Clear Cache Error:', error);
     res.status(500).json({ message: 'Failed to clear cache' });
+  }
+};
+
+exports.getTestDashboardData = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const mongoose = require('mongoose');
+    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ message: 'Invalid test ID' });
+
+    const submissions = await Submission.find({ testId: new mongoose.Types.ObjectId(id) })
+      .select('candidateEmail candidateName feedback reportedProblems')
+      .lean();
+
+    const allFeedback = [];
+    let totalRating = 0;
+    let ratingCount = 0;
+    const allReportedProblems = [];
+
+    const testDoc = await Test.findById(id).select('questions codingQuestions').lean();
+
+    submissions.forEach(sub => {
+      if (sub.feedback && sub.feedback.rating) {
+        allFeedback.push({
+          candidateName: sub.candidateName,
+          candidateEmail: sub.candidateEmail,
+          rating: sub.feedback.rating,
+          comment: sub.feedback.comment,
+          timestamp: sub.feedback.timestamp
+        });
+        totalRating += sub.feedback.rating;
+        ratingCount++;
+      }
+      if (sub.reportedProblems && sub.reportedProblems.length > 0) {
+        sub.reportedProblems.forEach(rp => {
+          let qDetails = null;
+          if (rp.questionId && testDoc) {
+            const mcq = testDoc.questions?.find(q => q._id.toString() === rp.questionId.toString());
+            if (mcq) {
+              qDetails = { type: 'mcq', text: mcq.questionText, options: mcq.options };
+            } else {
+              const codeQ = testDoc.codingQuestions?.find(q => q._id.toString() === rp.questionId.toString());
+              if (codeQ) qDetails = { type: 'coding', title: codeQ.title, description: codeQ.description };
+            }
+          }
+          allReportedProblems.push({
+            ...rp,
+            submissionId: sub._id,
+            candidateName: sub.candidateName,
+            candidateEmail: sub.candidateEmail,
+            questionDetails: qDetails
+          });
+        });
+      }
+    });
+
+    res.json({
+      averageRating: ratingCount > 0 ? (totalRating / ratingCount).toFixed(1) : null,
+      totalFeedback: ratingCount,
+      feedbacks: allFeedback,
+      reportedProblems: allReportedProblems
+    });
+  } catch (error) {
+    console.error('getTestDashboardData Error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+exports.analyzeReportedIssue = async (req, res) => {
+  try {
+    const { submissionId, issueId } = req.params;
+    const submission = await Submission.findById(submissionId).populate('testId');
+    if (!submission) return res.status(404).json({ message: 'Submission not found' });
+
+    const issue = submission.reportedProblems.id(issueId);
+    if (!issue) return res.status(404).json({ message: 'Issue not found' });
+
+    let questionText = 'Unknown Question';
+    let questionType = 'unknown';
+    
+    // Find question context
+    const test = submission.testId;
+    if (test) {
+      const mcq = test.questions?.find(q => q._id.toString() === issue.questionId);
+      if (mcq) { questionText = mcq.questionText; questionType = 'MCQ'; }
+      const cq = test.codingQuestions?.find(q => q._id.toString() === issue.questionId);
+      if (cq) { questionText = cq.title + '\\n' + cq.description; questionType = 'Coding'; }
+    }
+
+    const Groq = require("groq-sdk");
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+    const prompt = `A candidate reported an issue with a test question.
+Question Type: ${questionType}
+Question Content: ${questionText}
+Candidate's Report: ${issue.description}
+
+Analyze if the candidate is correct in their report (e.g., is the question actually flawed, is the test case wrong, or is the candidate just confused?).
+Respond in JSON format with two fields:
+{
+  "isCandidateCorrect": boolean,
+  "analysis": "string detailing your reasoning"
+}`;
+
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [{ role: "user", content: prompt }],
+      model: "llama-3.3-70b-versatile",
+      response_format: { type: "json_object" }
+    });
+
+    const resultStr = chatCompletion.choices[0]?.message?.content || '{}';
+    const result = JSON.parse(resultStr);
+
+    issue.aiEvaluation = {
+      analysis: result.analysis || 'Analysis failed',
+      isCandidateCorrect: !!result.isCandidateCorrect
+    };
+
+    await submission.save();
+
+    res.json({ message: 'Issue analyzed', aiEvaluation: issue.aiEvaluation });
+  } catch (error) {
+    console.error('analyzeReportedIssue Error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+exports.analyzeOverallExperience = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const mongoose = require('mongoose');
+    const submissions = await Submission.find({ testId: new mongoose.Types.ObjectId(id) })
+      .select('feedback reportedProblems')
+      .lean();
+
+    const feedbacks = [];
+    const issues = [];
+    submissions.forEach(sub => {
+      if (sub.feedback && sub.feedback.rating) feedbacks.push(sub.feedback);
+      if (sub.reportedProblems && sub.reportedProblems.length > 0) issues.push(...sub.reportedProblems);
+    });
+
+    const Groq = require("groq-sdk");
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+    const prompt = `Analyze the overall candidate experience for this test based on their feedback and reported issues.
+Number of Feedback Responses: ${feedbacks.length}
+Average Rating: ${feedbacks.length > 0 ? (feedbacks.reduce((sum, f) => sum + f.rating, 0) / feedbacks.length).toFixed(1) : 'N/A'}
+Feedback Comments: ${JSON.stringify(feedbacks.map(f => f.comment).filter(Boolean))}
+Reported Issues: ${JSON.stringify(issues.map(i => i.description))}
+
+Please provide a highly concise, punchy markdown report (max 4-5 bullet points). Use emojis. Focus only on the most critical insights and 1-2 actionable steps.`;
+
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [{ role: "user", content: prompt }],
+      model: "llama-3.3-70b-versatile",
+    });
+
+    const analysis = chatCompletion.choices[0]?.message?.content || 'Analysis failed';
+    res.json({ analysis });
+  } catch (error) {
+    console.error('analyzeOverallExperience Error:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 };

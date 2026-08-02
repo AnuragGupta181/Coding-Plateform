@@ -10,6 +10,7 @@ interface SubmissionSummary {
   updatedAt: string;
   status: string;
   violations?: { type: string; timestamp: string; count: number }[];
+  reportedProblems?: { description: string; timestamp: string }[];
 }
 
 type SortOption = 'rank' | 'latest' | 'name';
@@ -78,7 +79,15 @@ const ResultsList: React.FC = () => {
 
       <header className="max-w-6xl mx-auto px-4 md:px-6 mb-8 md:mb-12 flex flex-col gap-6 md:flex-row md:justify-between md:items-end">
         <div>
-          <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground mb-2">Performance Analytics</div>
+          <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground mb-2 flex items-center gap-4">
+            Performance Analytics
+            <button
+              onClick={() => navigate(`/admin/test/${testId}/dashboard`)}
+              className="btn-primary py-1 px-3 text-[9px] tracking-widest flex items-center gap-1.5"
+            >
+              Intelligence Dashboard &rarr;
+            </button>
+          </div>
           <h1 className="text-3xl md:text-4xl font-sans text-foreground-bold">Assessment Results</h1>
           <p className="text-sm md:text-base text-muted-foreground mt-2 font-light italic">Detailed performance overview for all registered participants.</p>
         </div>
@@ -109,7 +118,9 @@ const ResultsList: React.FC = () => {
           </div>
         ) : (
           <div className="grid gap-4 md:gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {sortedResults.map((sub, index) => (
+            {sortedResults.map((sub, index) => {
+              const totalViolations = sub.violations?.reduce((sum, v) => sum + (v.count || 1), 0) || 0;
+              return (
               <div
                 key={sub._id}
                 onClick={() => navigate(`/admin/submission/${sub._id}`)}
@@ -141,8 +152,14 @@ const ResultsList: React.FC = () => {
                   </div>
                   <div>
                     <div className="text-[8px] sm:text-[9px] uppercase tracking-wider sm:tracking-widest text-muted-foreground font-bold mb-1">Violations</div>
-                    <div className={`text-2xl md:text-3xl font-sans ${(sub.violations?.length || 0) > 0 ? 'text-red-700' : 'text-cream-300'}`}>
-                      {sub.violations?.length || 0}
+                    <div className={`text-2xl md:text-3xl font-sans ${totalViolations > 0 ? 'text-red-700' : 'text-cream-300'}`}>
+                      {totalViolations}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[8px] sm:text-[9px] uppercase tracking-wider sm:tracking-widest text-muted-foreground font-bold mb-1">Issues</div>
+                    <div className={`text-2xl md:text-3xl font-sans ${(sub.reportedProblems?.length || 0) > 0 ? 'text-amber-500' : 'text-cream-300'}`}>
+                      {sub.reportedProblems?.length || 0}
                     </div>
                   </div>
                 </div>
@@ -156,7 +173,7 @@ const ResultsList: React.FC = () => {
                   </span>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         )}
       </main>

@@ -209,6 +209,58 @@ exports.logViolation = async (req, res) => {
   }
 };
 
+// ── POST /api/submission/:submissionId/report-problem ─────────────────────────
+exports.reportProblem = async (req, res) => {
+  try {
+    const { submissionId } = req.params;
+    const { description, questionId } = req.body;
+
+    if (!description || typeof description !== 'string') {
+      return res.status(400).json({ message: 'Valid description is required' });
+    }
+
+    const result = await Submission.findOneAndUpdate(
+      { _id: submissionId },
+      { $push: { reportedProblems: { description, questionId, timestamp: new Date() } } },
+      { new: true }
+    );
+
+    if (!result) {
+      return res.status(404).json({ message: 'Submission not found' });
+    }
+
+    res.json({ message: 'Problem reported successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// ── POST /api/submission/:submissionId/feedback ─────────────────────────────
+exports.submitFeedback = async (req, res) => {
+  try {
+    const { submissionId } = req.params;
+    const { rating, comment } = req.body;
+
+    if (!rating || typeof rating !== 'number' || rating < 1 || rating > 5) {
+      return res.status(400).json({ message: 'Valid rating between 1 and 5 is required' });
+    }
+
+    const result = await Submission.findOneAndUpdate(
+      { _id: submissionId },
+      { $set: { feedback: { rating, comment, timestamp: new Date() } } },
+      { new: true }
+    );
+
+    if (!result) {
+      return res.status(404).json({ message: 'Submission not found' });
+    }
+
+    res.json({ message: 'Feedback submitted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 // ── GET /api/submissions/me ───────────────────────────────────────────────────
 exports.getStudentSubmissions = async (req, res) => {
   try {

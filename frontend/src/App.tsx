@@ -12,7 +12,9 @@ import TestRoom from './pages/TestRoom';
 import CodingTestRoom from './pages/CodingTestRoom';
 import Dashboard from './pages/Dashboard';
 import WaitingRoom from './pages/WaitingRoom';
+import FeedbackPage from './pages/Student/FeedbackPage';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminTestDashboard from './pages/Admin/AdminTestDashboard';
 import CreateTest from './pages/CreateTest';
 import CreateCodingQuestion from './pages/Admin/CreateCodingQuestion';
 import ResultsList from './pages/Admin/ResultsList';
@@ -97,12 +99,14 @@ const App: React.FC = () => (
         <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
 
         <Route path="/dashboard"       element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/feedback/:subId" element={<ProtectedRoute><FeedbackPage /></ProtectedRoute>} />
         <Route path="/test/wait/:id"   element={<ProtectedRoute><WaitingRoom /></ProtectedRoute>} />
         <Route path="/test/:id"        element={<ProtectedRoute><TestRoom /></ProtectedRoute>} />
         <Route path="/coding-test/:id" element={<ProtectedRoute><CodingTestRoom /></ProtectedRoute>} />
 
         <Route path="/admin"                              element={<AdminRoute><AdminDashboard /></AdminRoute>} />
         <Route path="/admin/create-test"                  element={<AdminRoute><CreateTest /></AdminRoute>} />
+        <Route path="/admin/test/:testId/dashboard"       element={<AdminRoute><AdminTestDashboard /></AdminRoute>} />
         <Route path="/admin/test/:testId/coding-questions" element={<AdminRoute><CreateCodingQuestion /></AdminRoute>} />
         <Route path="/admin/results/:testId"              element={<AdminRoute><ResultsList /></AdminRoute>} />
         <Route path="/admin/submission/:subId"            element={<AdminRoute><DetailedResult /></AdminRoute>} />

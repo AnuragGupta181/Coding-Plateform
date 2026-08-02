@@ -101,6 +101,10 @@ export const testService = {
     commandApi.post(`/submission/${submissionId}/complete`),
   logViolation: (submissionId: string, violation: { type: string; timestamp: number; count: number }) =>
     commandApi.post(`/submission/${submissionId}/log-violation`, violation),
+  reportProblem: (submissionId: string, description: string, questionId?: string) =>
+    commandApi.post(`/submission/${submissionId}/report-problem`, { description, questionId }),
+  submitFeedback: (submissionId: string, rating: number, comment: string) =>
+    commandApi.post(`/submission/${submissionId}/feedback`, { rating, comment }),
 
   createTest: (testData: unknown) =>
     commandApi.post('/admin/test', testData),
@@ -114,6 +118,15 @@ export const testService = {
     commandApi.post(`/admin/test/${testId}/auto-submit`),
   createCodingQuestion: (testId: string, data: unknown) =>
     commandApi.post(`/admin/test/${testId}/coding-question`, data),
+
+  // ── Admin Dashboard & AI Routes ─────────────────────────────────────────────
+  getTestDashboardData: (testId: string) =>
+    queryApi.get(`/admin/test/${testId}/dashboard`),
+  analyzeOverallExperience: (testId: string) =>
+    commandApi.post(`/admin/test/${testId}/analyze-overall`),
+  analyzeReportedIssue: (submissionId: string, issueId: string) =>
+    commandApi.post(`/admin/issue/${submissionId}/${issueId}/analyze`),
+
   sendProctorMessage: (testId: string, candidateEmail: string, message: string) =>
     commandApi.post(`/admin/test/${testId}/message`, { candidateEmail, message }),
   forceSubmitCandidate: (submissionId: string) =>

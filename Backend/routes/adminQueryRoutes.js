@@ -13,4 +13,10 @@ router.get('/test/:id/results', adminController.getTestResults);
 router.get('/test/:id/active-users', adminController.getActiveTestUsers);
 router.get('/submission/:id', adminController.getSubmissionDetails);
 
+// Export test results to excel
+router.get('/test/:id/export', adminController.exportTestResults);
+
+// Dashboard data
+router.get('/test/:id/dashboard', adminController.getTestDashboardData);
+
 module.exports = router;

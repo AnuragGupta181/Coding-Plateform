@@ -33,6 +33,7 @@ interface SubmissionDetail {
   score: number;
   answers: Record<string, number>;
   codingAnswers?: Record<string, CodingAnswer>;
+  reportedProblems?: { description: string; questionId?: string; timestamp: string }[];
   violations?: { type: string; timestamp: string; count: number }[];
   testId: {
     _id: string;
@@ -240,13 +241,15 @@ const DetailedResult: React.FC = () => {
               </div>
             </section>
 
-            {submission.violations && submission.violations.length > 0 && (
+            {submission.violations && submission.violations.length > 0 && (() => {
+              const totalViolations = submission.violations.reduce((sum, v) => sum + (v.count || 1), 0);
+              return (
               <section className="bg-background border border-red-200 rounded-sm shadow-sm p-4 md:p-6">
                 <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-red-500 mb-4">Proctoring Log</div>
                 <div className="flex items-center gap-3 mb-4 pb-4 border-b border-red-50">
-                  <div className="text-3xl font-sans text-red-700">{submission.violations.length}</div>
+                  <div className="text-3xl font-sans text-red-700">{totalViolations}</div>
                   <div className="text-[10px] uppercase tracking-widest font-bold text-red-400">
-                    Violation{submission.violations.length !== 1 ? 's' : ''} Detected
+                    Violation{totalViolations !== 1 ? 's' : ''} Detected
                   </div>
                 </div>
                 <div className="space-y-3 max-h-64 overflow-y-auto custom-scrollbar pr-2">
@@ -269,6 +272,31 @@ const DetailedResult: React.FC = () => {
                     );
                   })}
                 </div>
+              </section>
+              );
+            })()}
+
+            {submission.feedback && submission.feedback.rating && (
+              <section className="bg-background border border-amber-200 dark:border-amber-900/50 rounded-sm shadow-sm p-4 md:p-6 mt-6">
+                <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-amber-600 dark:text-amber-500 mb-4">Candidate Feedback</div>
+                <div className="mb-3">
+                  <div className="text-xl text-amber-500 font-sans tracking-widest">
+                    {'★'.repeat(submission.feedback.rating)}{'☆'.repeat(5 - submission.feedback.rating)}
+                  </div>
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">
+                    {submission.feedback.rating} out of 5 Stars
+                  </div>
+                </div>
+                {submission.feedback.comment && (
+                  <div className="text-xs text-foreground italic border-l-2 border-amber-200 dark:border-amber-800 pl-3 py-1">
+                    "{submission.feedback.comment}"
+                  </div>
+                )}
+                {submission.feedback.submittedAt && (
+                  <div className="text-[9px] font-mono text-muted-foreground mt-4 text-right">
+                    {new Date(submission.feedback.submittedAt).toLocaleTimeString()}
+                  </div>
+                )}
               </section>
             )}
           </aside>
@@ -354,6 +382,30 @@ const DetailedResult: React.FC = () => {
                       );
                     })}
                   </div>
+                  
+                  {submission.reportedProblems && submission.reportedProblems.some(rp => rp.questionId === q._id) && (
+                    <div className="mt-8 p-4 md:p-5 bg-amber-50/50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-700/30 rounded-sm">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-amber-600 dark:text-amber-500 mb-4 flex items-center gap-2">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        Reported Issues
+                      </div>
+                      <div className="space-y-4">
+                        {submission.reportedProblems.filter(rp => rp.questionId === q._id).map((rp, i) => (
+                          <div key={i} className="flex flex-col gap-1 text-xs pb-3 border-b border-amber-200/50 dark:border-amber-700/30 last:border-0 last:pb-0">
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-amber-900 dark:text-amber-400">Candidate Report #{i + 1}</span>
+                              <span className="text-[10px] text-amber-700/70 dark:text-amber-500/70 font-mono">
+                                {new Date(rp.timestamp).toLocaleTimeString()}
+                              </span>
+                            </div>
+                            <span className="text-amber-800 dark:text-amber-200 break-words">{rp.description}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -520,6 +572,30 @@ const DetailedResult: React.FC = () => {
                     ) : (
                       <div className="bg-muted border border-border p-6 text-center rounded-sm text-sm text-slate-500 italic">
                         No code was submitted for this question.
+                      </div>
+                    )}
+
+                    {submission.reportedProblems && submission.reportedProblems.some(rp => rp.questionId === cq._id) && (
+                      <div className="mt-8 p-4 md:p-5 bg-amber-50/50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-700/30 rounded-sm">
+                        <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-amber-600 dark:text-amber-500 mb-4 flex items-center gap-2">
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                          </svg>
+                          Reported Issues
+                        </div>
+                        <div className="space-y-4">
+                          {submission.reportedProblems.filter(rp => rp.questionId === cq._id).map((rp, i) => (
+                            <div key={i} className="flex flex-col gap-1 text-xs pb-3 border-b border-amber-200/50 dark:border-amber-700/30 last:border-0 last:pb-0">
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-amber-900 dark:text-amber-400">Candidate Report #{i + 1}</span>
+                                <span className="text-[10px] text-amber-700/70 dark:text-amber-500/70 font-mono">
+                                  {new Date(rp.timestamp).toLocaleTimeString()}
+                                </span>
+                              </div>
+                              <span className="text-amber-800 dark:text-amber-200 break-words">{rp.description}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>

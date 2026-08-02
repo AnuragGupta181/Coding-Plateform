@@ -24,5 +24,9 @@ router.get('/tests/queues', adminController.getWaitingQueues);
 router.get('/test/:id/results', adminController.getTestResults);
 router.get('/submission/:id', adminController.getSubmissionDetails);
 
+// Dashboard and AI features
+router.get('/test/:id/dashboard', adminController.getTestDashboardData);
+router.post('/test/:id/analyze-overall', adminController.analyzeOverallExperience);
+router.post('/issue/:submissionId/:issueId/analyze', adminController.analyzeReportedIssue);
 module.exports = router;
 

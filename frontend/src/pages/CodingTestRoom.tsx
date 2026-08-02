@@ -171,7 +171,7 @@ const CodingTestRoom: React.FC = () => {
           setFinished(true);
           dispatch(completeTest());
           toast.error('Your test session has been ended by the proctor.', { duration: 4000 });
-          setTimeout(() => navigate('/dashboard'), 2500);
+          setTimeout(() => navigate(submissionId ? `/feedback/${submissionId}` : '/dashboard'), 2500);
         } else if (data.type === 'PROCTOR_MESSAGE' && data.targetEmail === user?.email) {
           toast.error(`PROCTOR MESSAGE:\n${data.message}`, {
             duration: 5000,
@@ -330,7 +330,7 @@ const CodingTestRoom: React.FC = () => {
       <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground mb-2">Protocol Finished</div>
       <h2 className="text-4xl font-sans text-foreground-bold mb-4">Submission Confirmed</h2>
       <p className="text-muted-foreground mb-12 max-w-md font-light italic">Your code has been securely persisted. You may now exit the assessment environment.</p>
-      <button onClick={() => navigate('/')} className="btn-primary">Return to Home</button>
+      <button onClick={() => navigate(`/feedback/${submissionId}`)} className="btn-primary">Continue</button>
     </div>
   );
 
@@ -344,6 +344,8 @@ const CodingTestRoom: React.FC = () => {
         onAction={handleFinishClick}
         actionText="Submit Assessment"
         isSaving={isFinishingTest}
+        submissionId={submissionId}
+        currentQuestionId={activeQuestion._id}
       />
 
       {isFinishingTest && (

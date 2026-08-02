@@ -60,7 +60,21 @@ const submissionSchema = new mongoose.Schema({
     type: { type: String, enum: ['tab_switch', 'window_blur', 'fullscreen_exit'] },
     timestamp: { type: Date },
     count: { type: Number }
-  }]
+  }],
+  reportedProblems: [{
+    description: { type: String, required: true },
+    questionId: { type: String },
+    timestamp: { type: Date, default: Date.now },
+    aiEvaluation: {
+      analysis: { type: String },
+      isCandidateCorrect: { type: Boolean }
+    }
+  }],
+  feedback: {
+    rating: { type: Number, min: 1, max: 5 },
+    comment: { type: String },
+    timestamp: { type: Date, default: Date.now }
+  }
 }, { timestamps: true });
 
 // Unique compound index: one submission per user per test
