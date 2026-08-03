@@ -4,7 +4,7 @@ This document provides a high-level overview of the architecture and technical d
 
 ## 1. System Overview
 
-NextGen Assessment Systems is a full-stack, scalable online coding and assessment platform. It is built to support high-concurrency "thundering herd" scenarios, enabling hundreds of students to submit assessments simultaneously. 
+NextGen Assessment Systems is a full-stack, scalable online coding and assessment platform. It is built to support high-concurrency "thundering herd" scenarios, enabling hundreds of students to submit assessments simultaneously with zero downtime.
 
 The system uses a client-server architecture with a separate frontend SPA and a backend RESTful API.
 
@@ -17,10 +17,12 @@ The system uses a client-server architecture with a separate frontend SPA and a 
 - **State Management:** Redux Toolkit
 - **Animations:** Framer Motion
 - **Code Editor:** Monaco Editor (Browser-based IDE)
+- **Real-Time & Media:** Socket.IO Client, WebRTC (`RTCPeerConnection`), `face-api.js` (Client-side AI vision)
 
 ### Backend (Server)
 - **Runtime:** Node.js
 - **Framework:** Express.js
+- **Real-Time Signaling:** Socket.IO (`socketService.js`)
 - **Database:** MongoDB with Mongoose ODM
 - **Caching & Rate Limiting:** ioredis (Redis)
 - **Authentication:** JWT (JSON Web Tokens)
@@ -59,3 +61,21 @@ To manage sudden spikes in traffic (especially when a timed test ends for all ca
 - **Test:** Assessment configurations, questions, and constraints.
 - **Submission:** Tracks candidate progress, code execution verdicts, and scores.
 - **OTP:** Short-lived tokens for email verification.
+
+### 4.5 Real-Time Camera Sync & WebRTC Proctoring Architecture
+The platform incorporates peer-to-peer real-time video surveillance and candidate state sync:
+
+1. **Client Camera Capture & AI Proctoring (`useCameraProctor`):**
+   - The candidate's browser captures media streams via `navigator.mediaDevices.getUserMedia`.
+   - On-device AI processing (`face-api.js`) periodically evaluates frames for head pose, missing candidate, or multiple faces without streaming video frames to the database, minimizing server CPU load.
+
+2. **WebRTC Peer-to-Peer Video Stream (`useWebRTC` & `socketService`):**
+   - When an Admin selects a student in the **Realtime Monitoring** panel to view their live feed:
+     - The Admin emits a request via Socket.IO: `webrtc:request-feed`.
+     - The target Candidate client receives the event and creates an `RTCPeerConnection`, generating an SDP **Offer**.
+     - The Candidate sends `webrtc:offer` to the server, which relays it directly to the Admin's socket ID.
+     - The Admin client sets the remote description and emits a `webrtc:answer`.
+     - Both clients exchange ICE candidates via `webrtc:ice-candidate` to negotiate NAT traversal.
+   - Once negotiated, the high-resolution camera feed streams **peer-to-peer directly between candidate and admin**, bypassing Node.js backend bandwidth bottlenecks.
+
+![WebRTC Real-Time Video Streaming Architecture](./assets/vedio_streaming.png)

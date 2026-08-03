@@ -39,13 +39,13 @@ make clean-all
 *(Note: In the new setup, the dev environment bundles everything together. If you need to manually manage them, you can still use standard docker-compose commands.)*
 
 ```bash
-docker compose -f docker-compose.dev.yml up -d redis db
+docker compose -f docker-compose.judge0.dev.yml up -d redis db
 ```
 
 Then start Judge0:
 
 ```bash
-docker compose -f docker-compose-judge0-prod.yml up -d server worker
+docker compose -f docker-compose.judge0.prod.yml up -d server worker
 ```
 
 ## Local API Test

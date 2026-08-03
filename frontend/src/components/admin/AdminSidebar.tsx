@@ -63,6 +63,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         ].map((item) => (
           <button
             key={item.id}
+            id={`tour-step-${item.id}`}
             onClick={() => onTabChange(item.id as AdminSection)}
             className={`group relative w-full text-left py-4 px-5 text-xs font-bold uppercase tracking-widest rounded-sm transition-all duration-300 overflow-hidden flex items-center ${
               activeSection === item.id 
@@ -96,6 +97,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
       <div className="p-6 lg:p-8 border-t border-border space-y-4">
         <button 
+          id="tour-step-theme"
           onClick={toggleTheme}
           className="w-full flex items-center justify-center gap-2 py-2 text-xs font-bold uppercase tracking-widest bg-muted text-muted-foreground hover:text-foreground hover:bg-border transition-colors rounded-sm"
         >

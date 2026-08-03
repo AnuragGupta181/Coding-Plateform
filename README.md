@@ -1,8 +1,8 @@
 <div align="center">
 
-# 🚀 Assessment Platform
+# 🚀 NextGen Assessment Platform
 
-**A robust, full-stack hybrid coding and MCQ assessment platform built for online recruitment and technical evaluations.**
+**A robust, full-stack hybrid coding and MCQ assessment platform built for online recruitment, technical evaluations, and real-time proctoring.**
 
 ![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
 ![NodeJS](https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white)
@@ -16,14 +16,15 @@
 
 ## 📌 Overview
 
-This platform provides a comprehensive environment for conducting technical assessments, featuring both **Multiple Choice Questions (MCQ)** and **Coding Challenges**. Built with a focus on reliability, performance, and security, it ensures a seamless candidate experience while providing administrators with powerful tools for test management and result auditing.
+This platform provides a comprehensive environment for conducting technical assessments, featuring both **Multiple Choice Questions (MCQ)** and **Coding Challenges**. Built with a focus on reliability, extreme performance under 500+ candidate concurrency, and security, it ensures a seamless candidate experience while providing administrators with powerful tools for test management, real-time WebRTC camera feeds, and result auditing.
 
 ## ✨ Key Features
 
-### 🛡️ Secure Proctoring & Assessment
+### 🛡️ Secure Proctoring & Real-Time Camera Sync
+- **WebRTC Camera Streaming:** Low-latency peer-to-peer live camera sync allowing admins to request and view candidate webcams directly from the dashboard via Socket.IO signaling.
+- **On-Device AI Vision Proctoring:** Client-side face detection using `face-api.js` for instant integrity alerts (multiple faces, missing candidate, out-of-frame detection).
 - **Violation Tracking:** Intelligent tab-switching and blur detection with threshold limits.
 - **Auto-Submission:** Global countdown timer that strictly enforces assessment duration and auto-submits tests when time expires.
-- **Session Management:** Centralized authentication interceptors to handle expired tokens and log users out seamlessly.
 
 ### 📝 Hybrid Testing Modules
 - **Coding Arena:** Integrated `Monaco Editor` for a rich, IDE-like code writing experience.
@@ -31,14 +32,10 @@ This platform provides a comprehensive environment for conducting technical asse
 - **Seamless Navigation:** Bidirectional flow between MCQ and Coding sections for hybrid tests.
 
 ### 📊 Admin Dashboard
+- **Live Monitor:** Real-time WebRTC camera feed viewer and candidate status board.
 - **Batch Uploading:** Bulk import questions using Excel (`.xlsx`) files.
 - **Result Auditing:** Cohesive, mobile-first result cards providing a detailed candidate performance view.
-- **Intelligent Polling:** Optimized network performance tracking active sessions without overwhelming the server.
-
-### 🎨 Modern & Responsive UI
-- **Mobile-First Design:** Fluid, responsive layouts built with Tailwind CSS v4.
-- **State Management:** Robust global state handled by Redux Toolkit.
-- **Alerts & Notifications:** Real-time toast notifications for proctoring violations and system alerts.
+- **Interactive Walkthrough:** Onboarding tour built with `react-joyride` guiding new admins through the platform.
 
 ---
 
@@ -50,15 +47,16 @@ This platform provides a comprehensive environment for conducting technical asse
 - **Styling:** Tailwind CSS v4
 - **State Management:** Redux Toolkit (`@reduxjs/toolkit`)
 - **Code Editor:** Monaco Editor (`@monaco-editor/react`)
-- **Routing:** React Router DOM v7
+- **Real-Time & Video:** Socket.IO Client, WebRTC (`RTCPeerConnection`), `face-api.js`
+- **Touring:** `react-joyride`
 
 ### Backend
 - **Framework:** Node.js with Express.js
+- **Real-Time Signaling:** Socket.IO (`socketService.js`)
 - **Database:** MongoDB (Mongoose)
 - **Authentication:** JSON Web Tokens (JWT) & bcryptjs
 - **Caching & Rate Limiting:** Redis (`ioredis`)
-- **File Parsing:** Multer & SheetJS (`xlsx`) for batch question uploads
-- **Email Service:** Nodemailer for OTP verification
+- **Execution Engine:** Judge0 (`docker-compose.judge0.prod.yml` / `docker-compose.judge0.dev.yml`)
 
 ---
 
@@ -68,6 +66,7 @@ This platform provides a comprehensive environment for conducting technical asse
 - Node.js (v18+)
 - MongoDB (Local instance or MongoDB Atlas)
 - Redis (Local instance or Upstash/Redis Cloud)
+- pnpm / npm
 
 ### 1. Clone the repository
 ```bash
@@ -76,42 +75,28 @@ cd coding-platform
 ```
 
 ### 2. Backend Setup
-Navigate to the backend directory and configure the environment variables:
 ```bash
 cd Backend
-npm install
+pnpm install
 cp .env.example .env
 ```
-Update the `Backend/.env` file with your credentials:
+Update `Backend/.env` with your credentials:
 ```env
 PORT=5000
 MONGODB_URI=your_mongodb_connection_string
 JWT_SECRET=your_super_secret_jwt_key
-EMAIL_SERVICE=gmail
-EMAIL_USER=your_email@gmail.com
-EMAIL_PASS=your_app_password
-CORS_ORIGIN=http://localhost:5173
 REDIS_URL=redis://localhost:6379
 ```
-Start the backend development server:
+Start backend dev server:
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 ### 3. Frontend Setup
-Open a new terminal, navigate to the frontend directory, and set up environment variables:
 ```bash
 cd frontend
-npm install
-cp .env.example .env
-```
-Update the `frontend/.env` file:
-```env
-VITE_API_BASE_URL=http://localhost:5000/api
-```
-Start the frontend development server:
-```bash
-npm run dev
+pnpm install
+pnpm run dev
 ```
 
 ---
@@ -121,16 +106,16 @@ npm run dev
 We use a central `Makefile` to effortlessly orchestrate the NextGen Application and the Judge0 Execution Engine across different environments.
 
 ### 1. Prerequisites
-Ensure Docker, Docker Compose, and `make` are installed on your machine. Ensure your `Backend/.env` file is set up properly before starting containers.
+Ensure Docker, Docker Compose, and `make` are installed.
 
 ### 2. Available Make Commands
 
 Run `make help` in the root directory to see all available commands.
 
 #### Full Environments (App + Judge0)
-- **`make dev-up`**: Boots up the complete development stack (NextGen App + Judge0 Dev).
+- **`make dev-up`**: Boots up the complete development stack (NextGen App + Judge0 Dev via `docker-compose.judge0.dev.yml`).
 - **`make dev-down`**: Safely stops the development stack.
-- **`make prod-up`**: Boots up the complete production stack (NextGen App + Judge0 Prod).
+- **`make prod-up`**: Boots up the complete production stack (NextGen App + Judge0 Prod via `docker-compose.judge0.prod.yml`).
 - **`make prod-down`**: Safely stops the production stack.
 
 #### Individual Components
@@ -138,49 +123,12 @@ Run `make help` in the root directory to see all available commands.
 - **Judge0 Dev Environment**: `make judge0-dev-up` / `make judge0-dev-down`
 - **Judge0 Prod Environment**: `make judge0-prod-up` / `make judge0-prod-down`
 
+#### ⚡ Load Testing Suites
+- **`make loadtest-500realtime`**: Launch 500 simultaneous concurrent candidates in an active exam simulation.
+- **`make loadtest-500batch`**: Run a 500 candidate batch simulation.
+- **`make loadtest-full`**: Execute the end-to-end full exam simulation scenario.
+- **`make loadtest-realtime`**: Test realtime admin dashboard synchronization load.
+
 #### Maintenance & Logs
 - **View Logs (Real-time):** `make logs`
 - **Wipe All Data (Destructive):** `make clean-all`
-
----
-
-## 🚀 Production Deployment
-
-### Backend Build & Run
-```bash
-cd Backend
-npm ci --omit=dev
-export NODE_ENV=production
-npm start
-```
-*The backend exposes `GET /health` for continuous platform health checks.*
-
-### Frontend Build
-```bash
-cd frontend
-npm ci
-npm run build
-```
-*Deploy the `frontend/dist` directory to any static hosting provider (Vercel, Netlify, AWS S3).*
-
----
-
-## 🔐 Authentication Flow
-
-1. **Registration:** Users create an account providing Name, Email, and Password.
-2. **Verification:** An OTP is sent via email (Nodemailer) to verify the account.
-3. **Login:** Standard Email/Password login issuing a secure JWT.
-4. **Password Recovery:** Secure OTP-based reset flow.
-
----
-
-## 📂 Project Structure Architecture
-
-The codebase adheres to strict, clean, production-ready standards:
-- **Modular Backend:** Separated `routes`, `controllers`, `services`, and `models`.
-- **Custom Frontend Hooks:** Extracted complex logic (like the global countdown timer) into modular custom hooks (`/src/hooks`).
-- **Reusable Components:** Clean UI components ensuring visual consistency across Admin and Candidate portals.
-
----
-
-> **Note:** This project prioritizes data privacy. Test candidate data is securely handled, and anonymization principles are strictly followed in the codebase logic.

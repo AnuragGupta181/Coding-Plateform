@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import testService from '../utils/apiService';
 import { QueueItem } from '../components/admin/QueueItem';
 import { AdminSidebar } from '../components/admin/AdminSidebar';
+import { AdminTour } from '../components/admin/AdminTour';
 import { TestRepositoryTable } from '../components/admin/TestRepositoryTable';
 import { AIChatTab } from  '../components/admin/AIChatTab';
 import { RealtimeMonitoringPage } from '../components/admin/RealtimeMonitoringPage';
@@ -114,6 +115,7 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-background text-foreground font-sans overflow-hidden flex-col lg:flex-row relative">
+      <AdminTour />
       
       {/* Ambient Background Gradient */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">

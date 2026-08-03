@@ -24,9 +24,11 @@ pnpm run build        # tsc -b && vite build
 pnpm run lint         # eslint
 ```
 
-### Load testing (`Backend/load-testing/`)
+### Load testing (`load_testing/`)
 ```bash
-node Backend/load-testing/local/combinedLoadTest.js   # autocannon-based
+make loadtest-500realtime     # 500 candidate active exam load test
+make loadtest-full            # full end-to-end exam simulation
+pnpm --prefix load_testing test:auth # run individual scenario
 ```
 
 ### Utility scripts
@@ -48,8 +50,8 @@ Single Express server with layered architecture:
 - **Models** — Mongoose schemas: `User`, `RegistrationUser`, `Test` (embeds `questions[]` for MCQ and `codingQuestions[]` with test cases), `Submission`, `OTP`.
 
 Key subsystems:
-- **SSE + Redis Pub/Sub** (`controllers/eventController.js`) — waiting-room real-time updates. Each test gets a Redis channel `test:<testId>`. Falls back to in-memory broadcast when `REDIS_URL` is unset. Admin polls `getWaitingQueueSnapshot()` for head-count.
-- **Judge0 code execution** (`services/judge0Service.js`) — three-tier fallback: self-hosted → public CE → RapidAPI. Submits code, polls for result (up to 120s).
+- **SSE + Redis Pub/Sub & WebRTC Socket.IO** (`controllers/eventController.js`, `services/socketService.js`) — waiting-room real-time updates & P2P WebRTC camera video stream signaling (`webrtc:offer`, `webrtc:answer`, `webrtc:ice-candidate`).
+- **Judge0 code execution** (`services/judge0Service.js`) — three-tier fallback: self-hosted (`docker-compose.judge0.prod.yml` / `docker-compose.judge0.dev.yml`) → public CE → RapidAPI. Submits code, polls for result (up to 120s).
 - **Excel bulk import** (`services/excelParserService.js`) — parses `.xlsx` uploads via Multer + SheetJS.
 - **Test lifecycle** (`services/testLifecycleService.js`) — manages test states: `scheduled → waiting → active → completed`. Auto-completes expired tests.
 - **Auth** — JWT-based with OTP email verification (Nodemailer). `authMiddleware.js` guards routes; admin role checked separately.
@@ -68,7 +70,7 @@ API route groups:
 - **API layer**: `utils/apiService.ts` — Axios instance with JWT interceptor and auto-logout on 401. All API calls exported as `testService.*`.
 - **Routing** (`App.tsx`): `ProtectedRoute` (logged-in), `AdminRoute` (role=admin), `PublicRoute` (redirects if already logged in). `AuthStorageSync` watches `localStorage` across tabs.
 - **Key pages**: `TestRoom` (MCQ), `CodingTestRoom` (Monaco editor), `WaitingRoom` (SSE-connected), `AdminDashboard`, `CreateTest`.
-- **Hooks**: `useCountdownTimer` / `useCountdown` (global test timer with auto-submit), `useProtecting` (tab-switch/blur violation tracking).
+- **Hooks & Components**: `useCountdownTimer` / `useCountdown` (global test timer with auto-submit), `useProtecting` (tab-switch/blur violation tracking), `useWebRTC` (admin live stream receiver), `useCameraProctor` (candidate on-device video proctoring + face detection), `AdminTour` (`react-joyride` admin walkthrough).
 - **Styling**: Tailwind CSS v4 via `@tailwindcss/vite` plugin. CSS variables for theming (dark/light).
 
 ### CI/CD (`.github/workflows/ci.yml`)
