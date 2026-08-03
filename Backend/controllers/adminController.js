@@ -43,7 +43,7 @@ exports.parseQuestionsFromExcel = async (req, res) => {
 
 exports.createTest = async (req, res) => {
   try {
-    const { title, description, durationInMinutes, questions, codingQuestions, testType, scheduledFor } = req.body;
+    const { title, description, durationInMinutes, questions, codingQuestions, testType, scheduledFor, proctoringConfig } = req.body;
 
     const testScheduledDate = scheduledFor ? new Date(scheduledFor) : null;
     const isImmediate = !testScheduledDate;
@@ -55,6 +55,7 @@ exports.createTest = async (req, res) => {
       testType: testType || 'mcq',
       questions: questions || [],
       codingQuestions: codingQuestions || [],
+      proctoringConfig: proctoringConfig || { cameraEnabled: true, autoRemoveEnabled: false, maxViolations: 5 },
       scheduledFor: testScheduledDate,
       status: isImmediate ? 'waiting' : 'scheduled'
     });

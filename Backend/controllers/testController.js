@@ -191,12 +191,12 @@ exports.logViolation = async (req, res) => {
     const { submissionId } = req.params;
     const { type, timestamp, count } = req.body;
 
-    // Atomic $push — appends to violations array without reading the full document.
+    // Populate testId to check proctoringConfig
     const result = await Submission.findOneAndUpdate(
       { _id: submissionId, status: 'active' },
       { $push: { violations: { type, timestamp: new Date(timestamp), count } } },
-      { new: true, projection: { violations: { $slice: -1 } } }
-    );
+      { new: true }
+    ).populate('testId');
 
     if (!result) {
       const exists = await Submission.exists({ _id: submissionId });
@@ -204,17 +204,36 @@ exports.logViolation = async (req, res) => {
       return res.status(403).json({ message: 'Test already completed' });
     }
 
+    const test = result.testId;
+
     // ── Broadcast camera violations to admin SSE channel in real-time ────────────
     const cameraViolationTypes = ['camera_multiple_faces', 'camera_no_face', 'camera_blocked'];
     if (cameraViolationTypes.includes(type)) {
       // Broadcast to the test's SSE channel — admin's monitoring page listens here
-      broadcastEvent(String(result.testId), {
+      broadcastEvent(String(test._id), {
         type: 'CAMERA_VIOLATION',
         violationType: type,
         candidateEmail: result.candidateEmail,
         candidateName: result.candidateName,
         timestamp: new Date().toISOString(),
       });
+    }
+
+    // ── Check Auto-Remove Threshold ────────────
+    if (test && test.proctoringConfig && test.proctoringConfig.autoRemoveEnabled) {
+      const totalViolations = result.violations.reduce((sum, v) => sum + (v.count || 1), 0);
+      if (totalViolations >= test.proctoringConfig.maxViolations) {
+        result.score = calculateScore(result, test);
+        result.status = 'completed';
+        await result.save();
+
+        broadcastEvent(String(test._id), {
+          type: 'FORCE_SUBMIT',
+          targetEmail: result.candidateEmail
+        });
+        
+        return res.json({ message: 'Violation logged and test auto-submitted due to threshold breach', autoSubmitted: true });
+      }
     }
 
     res.json({ message: 'Violation logged' });

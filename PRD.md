@@ -40,7 +40,10 @@ NextGen Assessment Systems is a highly scalable, full-stack online coding and as
   - Candidate camera captured via WebRTC (`RTCPeerConnection`).
   - Socket.IO signaling relay (`webrtc:offer`, `webrtc:answer`, `webrtc:ice-candidate`) for low-latency peer-to-peer camera streaming to admins.
   - On-device client-side face detection using `face-api.js` for instant integrity alerts (multiple faces, missing candidate, out-of-frame detection).
-- **Proctoring (Basic):** Detection and logging of tab-switching, window blurring, and exiting full-screen mode.
+  - Configurable per assessment via `proctoringConfig`: Camera Monitoring can be toggled off per test to skip video feeds, socket connections, and local AI model loading.
+- **Independent Auto-Removal & Violation Limits:**
+  - Detection and logging of tab-switching, window blurring, and exiting full-screen mode.
+  - Admins can configure an independent `autoRemoveEnabled` rule with a custom `maxViolations` threshold. Breaching the threshold triggers backend auto-grading and immediate SSE `FORCE_SUBMIT` eviction.
 - **Integrated Code Editor:** Browser-based IDE (Monaco Editor) supporting Python, JavaScript, C++, and Java.
 - **Auto-Grading Engine:** Integration with Judge0 for secure remote execution of candidate code against hidden test cases.
 

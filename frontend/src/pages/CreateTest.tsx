@@ -23,6 +23,15 @@ const CreateTest: React.FC = () => {
   const [showUploader, setShowUploader] = useState(false);
   const [importSuccess, setImportSuccess] = useState<{ mcq: number; coding: number } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Proctoring Settings
+  const [cameraEnabled, setCameraEnabled] = useState(true);
+  const [autoRemoveEnabled, setAutoRemoveEnabled] = useState(false);
+  const [maxViolations, setMaxViolations] = useState(5);
+
+  // Info Box Visibility
+  const [showGlobalInfo, setShowGlobalInfo] = useState(false);
+  const [showProctoringInfo, setShowProctoringInfo] = useState(false);
 
   // ─── Question Handlers ───────────────────────────────────────────────────
 
@@ -151,6 +160,11 @@ const CreateTest: React.FC = () => {
         questions: validQuestions,
         codingQuestions,
         testType: finalTestType,
+        proctoringConfig: {
+          cameraEnabled,
+          autoRemoveEnabled,
+          maxViolations
+        },
         scheduledFor: scheduleMode === 'schedule' ? new Date(scheduledDateTime).toISOString() : null
       });
 
@@ -199,7 +213,42 @@ const CreateTest: React.FC = () => {
 
         {/* ── Test Basics ── */}
         <section className="bg-background p-5 md:p-12 rounded-sm border border-border shadow-sm space-y-6 md:space-y-10">
-          <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground border-b border-cream-50 pb-3 md:pb-4">Global Parameters</div>
+          <div className="flex flex-col gap-2 border-b border-border pb-3 md:pb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Global Parameters</div>
+              <button
+                type="button"
+                onClick={() => setShowGlobalInfo(!showGlobalInfo)}
+                title="Click for info"
+                className={`flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold font-mono transition-all border shadow-sm ${
+                  showGlobalInfo
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-primary/10 text-primary hover:bg-primary/20 border-primary/30'
+                }`}
+                aria-expanded={showGlobalInfo}
+              >
+                i
+              </button>
+            </div>
+            {showGlobalInfo && (
+              <div className="mt-2 p-3.5 bg-primary/5 border border-primary/20 rounded-md text-xs text-foreground flex items-start justify-between gap-3 animate-in fade-in duration-200">
+                <div className="flex items-start gap-2.5">
+                  <span className="text-primary font-bold text-sm shrink-0">💡</span>
+                  <p className="leading-relaxed">
+                    <strong>Global Parameters Guide:</strong> Set foundational details for your assessment. The Title and Description are displayed to candidates, while Duration strictly limits their total testing time once started.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowGlobalInfo(false)}
+                  className="text-muted-foreground hover:text-foreground text-xs font-bold p-1 rounded-sm transition-colors shrink-0"
+                  title="Close"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+          </div>
 
           <div className="space-y-5 md:space-y-6">
             <div>
@@ -233,6 +282,94 @@ const CreateTest: React.FC = () => {
                 className="input font-mono text-base md:text-lg"
               />
             </div>
+          </div>
+        </section>
+
+        {/* ── Proctoring Settings ── */}
+        <section className="bg-background p-5 md:p-12 rounded-sm border border-border shadow-sm space-y-6 md:space-y-10">
+          <div className="flex flex-col gap-2 border-b border-border pb-3 md:pb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Proctoring & Security</div>
+              <button
+                type="button"
+                onClick={() => setShowProctoringInfo(!showProctoringInfo)}
+                title="Click for info"
+                className={`flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold font-mono transition-all border shadow-sm ${
+                  showProctoringInfo
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-primary/10 text-primary hover:bg-primary/20 border-primary/30'
+                }`}
+                aria-expanded={showProctoringInfo}
+              >
+                i
+              </button>
+            </div>
+            {showProctoringInfo && (
+              <div className="mt-2 p-3.5 bg-primary/5 border border-primary/20 rounded-md text-xs text-foreground flex items-start justify-between gap-3 animate-in fade-in duration-200">
+                <div className="flex items-start gap-2.5">
+                  <span className="text-primary font-bold text-sm shrink-0">🛡️</span>
+                  <p className="leading-relaxed">
+                    <strong>Proctoring & Security Guide:</strong> Enable camera monitoring for live face AI detection & P2P video stream. Turn on Auto-Remove to automatically submit and remove candidates who breach the maximum violation limit.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowProctoringInfo(false)}
+                  className="text-muted-foreground hover:text-foreground text-xs font-bold p-1 rounded-sm transition-colors shrink-0"
+                  title="Close"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-5 md:space-y-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <div className="text-xs font-bold text-foreground uppercase tracking-wide">Enable Camera Monitoring</div>
+                <div className="text-[10px] text-muted-foreground">Activates P2P WebRTC camera feed and face AI detection.</div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer select-none shrink-0">
+                <input
+                  type="checkbox"
+                  checked={cameraEnabled}
+                  onChange={(e) => setCameraEnabled(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-slate-300 dark:bg-slate-700 peer-focus:ring-2 peer-focus:ring-primary/20 rounded-full peer peer-checked:bg-primary transition-colors border border-slate-400/40 dark:border-slate-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-md peer-checked:after:translate-x-full"></div>
+              </label>
+            </div>
+
+            <div className="flex items-center justify-between gap-4 pt-4 border-t border-border">
+              <div>
+                <div className="text-xs font-bold text-foreground uppercase tracking-wide">Auto-Remove on Violations</div>
+                <div className="text-[10px] text-muted-foreground">Automatically submits the test if candidate exceeds maximum violations (tab switch, window blur, etc.).</div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer select-none shrink-0">
+                <input
+                  type="checkbox"
+                  checked={autoRemoveEnabled}
+                  onChange={(e) => setAutoRemoveEnabled(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-slate-300 dark:bg-slate-700 peer-focus:ring-2 peer-focus:ring-primary/20 rounded-full peer peer-checked:bg-primary transition-colors border border-slate-400/40 dark:border-slate-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-md peer-checked:after:translate-x-full"></div>
+              </label>
+            </div>
+
+            {autoRemoveEnabled && (
+              <div className="w-full md:w-1/3 pt-2">
+                <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-2 md:mb-3">Max Allowed Violations</label>
+                <input
+                  type="number"
+                  min={1}
+                  required
+                  value={maxViolations}
+                  onChange={e => setMaxViolations(Number(e.target.value))}
+                  className="input font-mono text-base md:text-lg"
+                />
+              </div>
+            )}
           </div>
         </section>
 
@@ -307,22 +444,25 @@ const CreateTest: React.FC = () => {
                 {q.options.map((opt, oIndex) => (
                   <div
                     key={oIndex}
-                    className={`flex items-center gap-3 p-3 md:p-4 rounded-sm border transition-all ${q.correctOptionIndex === oIndex ? 'bg-background border-cream-900' : 'bg-background border-cream-100'
-                      }`}
+                    className={`flex items-center gap-3 p-3 md:p-4 rounded-sm border transition-all ${
+                      q.correctOptionIndex === oIndex
+                        ? 'bg-primary/5 border-primary shadow-sm ring-1 ring-primary/20'
+                        : 'bg-background border-border hover:border-primary/40'
+                    }`}
                   >
                     <input
                       type="radio"
                       name={`correct-${qIndex}`}
                       checked={q.correctOptionIndex === oIndex}
                       onChange={() => handleCorrectIndexChange(qIndex, oIndex)}
-                      className="w-4 h-4 accent-cream-950 cursor-pointer shrink-0"
+                      className="w-4 h-4 text-primary accent-primary cursor-pointer shrink-0 border-2 border-slate-400 dark:border-slate-600 checked:border-primary focus:ring-2 focus:ring-primary/20"
                     />
                     <input
                       required
                       value={opt}
                       onChange={e => handleOptionChange(qIndex, oIndex, e.target.value)}
                       placeholder={`Choice ${String.fromCharCode(65 + oIndex)}`}
-                      className="w-full bg-transparent border-none p-0 focus:ring-0 text-xs md:text-sm font-light text-foreground placeholder:text-cream-300"
+                      className="w-full bg-transparent border-none p-0 focus:ring-0 text-xs md:text-sm font-light text-foreground placeholder:text-muted-foreground/60"
                     />
                   </div>
                 ))}
@@ -561,13 +701,17 @@ const CreateTest: React.FC = () => {
             </div>
 
             <div className="space-y-4">
-              <label className="flex items-center gap-3 p-4 border border-border rounded-sm cursor-pointer hover:border-primary/40 transition-colors">
+              <label className={`flex items-center gap-3 p-4 border rounded-sm cursor-pointer transition-all ${
+                scheduleMode === 'immediate'
+                  ? 'bg-primary/5 border-primary shadow-sm ring-1 ring-primary/20'
+                  : 'border-border hover:border-primary/40'
+              }`}>
                 <input
                   type="radio"
                   name="scheduleMode"
                   checked={scheduleMode === 'immediate'}
                   onChange={() => setScheduleMode('immediate')}
-                  className="accent-primary"
+                  className="w-4 h-4 text-primary accent-primary cursor-pointer shrink-0"
                 />
                 <div>
                   <div className="text-xs font-bold text-foreground uppercase tracking-wide">Start Immediately</div>
@@ -575,13 +719,17 @@ const CreateTest: React.FC = () => {
                 </div>
               </label>
 
-              <label className="flex items-center gap-3 p-4 border border-border rounded-sm cursor-pointer hover:border-primary/40 transition-colors">
+              <label className={`flex items-center gap-3 p-4 border rounded-sm cursor-pointer transition-all ${
+                scheduleMode === 'schedule'
+                  ? 'bg-primary/5 border-primary shadow-sm ring-1 ring-primary/20'
+                  : 'border-border hover:border-primary/40'
+              }`}>
                 <input
                   type="radio"
                   name="scheduleMode"
                   checked={scheduleMode === 'schedule'}
                   onChange={() => setScheduleMode('schedule')}
-                  className="accent-primary"
+                  className="w-4 h-4 text-primary accent-primary cursor-pointer shrink-0"
                 />
                 <div>
                   <div className="text-xs font-bold text-foreground uppercase tracking-wide">Schedule for Later</div>

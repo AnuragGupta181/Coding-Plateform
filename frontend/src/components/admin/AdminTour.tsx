@@ -21,7 +21,6 @@ export const AdminTour: React.FC = () => {
       placement: 'center',
       title: 'Welcome to the Admin Dashboard!',
       content: "Let's take a quick tour of your administrative tools.",
-      disableBeacon: true,
     },
     {
       target: '#tour-step-create',
@@ -61,24 +60,31 @@ export const AdminTour: React.FC = () => {
 
   return (
     <Joyride
-      callback={handleJoyrideCallback}
+      onEvent={handleJoyrideCallback}
       continuous
-      hideCloseButton
       run={run}
       scrollToFirstStep
-      showProgress
-      showSkipButton
       steps={steps}
+      options={{
+        arrowColor: 'var(--background)',
+        backgroundColor: 'var(--background)',
+        buttons: ['back', 'skip', 'primary'],
+        overlayColor: 'rgba(0, 0, 0, 0.5)',
+        primaryColor: '#7c3aed',
+        textColor: 'var(--foreground)',
+        zIndex: 1000,
+      }}
       styles={{
-        options: {
-          arrowColor: 'var(--background)',
-          backgroundColor: 'var(--background)',
-          overlayColor: 'rgba(0, 0, 0, 0.5)',
-          primaryColor: '#7c3aed', // matches project's primary color
-          textColor: 'var(--foreground)',
+        arrow: {
+          color: 'var(--background)',
+        },
+        overlay: {
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
           zIndex: 1000,
         },
         tooltip: {
+          backgroundColor: 'var(--background)',
+          color: 'var(--foreground)',
           borderRadius: '0.375rem',
           boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
           border: '1px solid var(--border)',

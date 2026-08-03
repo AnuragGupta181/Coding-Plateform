@@ -17,6 +17,11 @@ export interface Test {
   completedAt?: string | null;
   questions: Question[];
   codingQuestions?: any[];
+  proctoringConfig?: {
+    cameraEnabled?: boolean;
+    autoRemoveEnabled?: boolean;
+    maxViolations?: number;
+  };
 }
 
 export interface Submission {

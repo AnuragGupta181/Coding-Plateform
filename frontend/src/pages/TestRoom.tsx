@@ -35,6 +35,7 @@ import TestRoomHeader from '../components/test/TestRoomHeader';
 import { MobileBottomBar } from '../components/test/MobileBottomBar';
 import { MobileQuestionDrawer } from '../components/test/MobileQuestionDrawer';
 import { ErrorView, LoadingView, CompletedView } from '../components/test/TestRoomStatusViews';
+import CameraPermissionGate from '../components/test/CameraPermissionGate';
 
 const TestRoom: React.FC = () => {
 const { id: testId } = useParams<{ id: string }>();
@@ -103,17 +104,8 @@ const handleAutoSubmit = useCallback(() => {
 executeSubmission(true);
 }, [executeSubmission]);
 
-  useProtecting({
-    onViolation: handleViolation,
-    onAutoSubmit: handleAutoSubmit,
-    submissionId,
-    maxViolations: MAX_VIOLATIONS,
-    cooldownMs: 1500,
-    enabled: status === 'active',
-    initialViolations,
-  });
+  const cameraEnabled = status === 'active' && !!testData && testData.proctoringConfig?.cameraEnabled !== false;
 
-  // ── Camera Proctoring (silent, no UI indicator to student) ────────────────────
   const { socket } = useProctorSocket({
     role: 'student',
     testId,
@@ -121,15 +113,25 @@ executeSubmission(true);
     name: user?.name,
     email: user?.email,
     submissionId,
-    enabled: status === 'active',
+    enabled: cameraEnabled,
   });
 
-  const { videoRef: cameraVideoRef } = useCameraProctor({
+  const { videoRef: cameraVideoRef, cameraStatus } = useCameraProctor({
     submissionId,
     testId,
     socket,
-    enabled: status === 'active',
+    enabled: cameraEnabled,
     adminRequest,
+  });
+
+  useProtecting({
+    onViolation: handleViolation,
+    onAutoSubmit: handleAutoSubmit,
+    submissionId,
+    maxViolations: MAX_VIOLATIONS,
+    cooldownMs: 1500,
+    enabled: status === 'active' && (!cameraEnabled || cameraStatus === 'active'),
+    initialViolations,
   });
 
 useEffect(() => {
@@ -299,6 +301,10 @@ const eventSource = new EventSource(createEventSourceUrl(`/events/test/${testId}
 
   if (status === 'idle' || status === 'loading' || !testData) {
     return <LoadingView />;
+  }
+
+  if (cameraEnabled && cameraStatus !== 'active') {
+    return <CameraPermissionGate cameraStatus={cameraStatus} onRetry={() => window.location.reload()} />;
   }
 
 const currentQuestion = testData.questions[currentQuestionIndex];

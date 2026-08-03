@@ -10,7 +10,7 @@ import CameraPermissionGate from '../components/CameraPermissionGate';
 const WaitingRoom: React.FC = () => {
   const { id: testId } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user, token } = useSelector((state: RootState) => state.auth);
+  const { user } = useSelector((state: RootState) => state.auth);
   const [statusMessage, setStatusMessage] = useState('Awaiting administrator signal to commence...');
   const [scheduledFor, setScheduledFor] = useState<string | null>(null);
   const [timerText, setTimerText] = useState<string>('00:00');
@@ -105,6 +105,12 @@ const WaitingRoom: React.FC = () => {
         testTypeRef.current = res.data.testType ?? 'mcq';
         if (res.data.scheduledFor) {
           setScheduledFor(res.data.scheduledFor);
+        }
+        
+        // Skip camera gate if camera monitoring is disabled for this test
+        if (res.data.proctoringConfig && res.data.proctoringConfig.cameraEnabled === false) {
+          setCameraGateDone(true);
+          sessionStorage.setItem(cameraGateDoneKey, 'true');
         }
         
         if (res.data.status === 'active') {

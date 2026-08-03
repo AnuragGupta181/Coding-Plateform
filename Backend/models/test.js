@@ -54,7 +54,12 @@ const testSchema = new mongoose.Schema({
   completedAt: { type: Date, default: null },
   scheduledFor: { type: Date, default: null },
   questions: [questionSchema],               // MCQ questions
-  codingQuestions: [codingQuestionSchema]    // Coding questions
+  codingQuestions: [codingQuestionSchema],   // Coding questions
+  proctoringConfig: {
+    cameraEnabled: { type: Boolean, default: true },
+    autoRemoveEnabled: { type: Boolean, default: false },
+    maxViolations: { type: Number, default: 5 }
+  }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Test', testSchema);

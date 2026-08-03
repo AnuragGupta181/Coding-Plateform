@@ -13,6 +13,7 @@ import ProblemStatement, { type CodingQuestion, type TestCaseResult } from '../c
 import OutputPanel from '../components/coding/OutputPanel';
 import TestRoomHeader from '../components/test/TestRoomHeader';
 import { deterministicShuffle } from '../utils/shuffle';
+import CameraPermissionGate from '../components/test/CameraPermissionGate';
 
 import { LANG_META } from '../constants/langMeta';
 
@@ -21,6 +22,11 @@ interface TestData {
   durationInMinutes: number; startedAt: string;
   testType?: 'mcq' | 'coding' | 'mixed';
   codingQuestions: CodingQuestion[];
+  proctoringConfig?: {
+    cameraEnabled?: boolean;
+    autoRemoveEnabled?: boolean;
+    maxViolations?: number;
+  };
 }
 
 const CodingTestRoom: React.FC = () => {
@@ -238,17 +244,8 @@ const CodingTestRoom: React.FC = () => {
     }
   }, [submissionId]);
 
-  useProtecting({
-    onViolation: handleViolation,
-    onAutoSubmit: handleAutoSubmit,
-    submissionId,
-    maxViolations: MAX_VIOLATIONS,
-    cooldownMs: 1500,
-    enabled: !!testData && !finished,
-    initialViolations,
-  });
+  const cameraEnabled = status === 'active' && !!testData && testData.proctoringConfig?.cameraEnabled !== false;
 
-  // ── Camera Proctoring (silent, continues from TestRoom session) ────────────
   const { socket } = useProctorSocket({
     role: 'student',
     testId,
@@ -256,15 +253,25 @@ const CodingTestRoom: React.FC = () => {
     name: user?.name,
     email: user?.email,
     submissionId,
-    enabled: status === 'active',
+    enabled: cameraEnabled,
   });
 
-  const { videoRef: cameraVideoRef } = useCameraProctor({
+  const { videoRef: cameraVideoRef, cameraStatus } = useCameraProctor({
     submissionId,
     testId,
     socket,
-    enabled: status === 'active',
+    enabled: cameraEnabled,
     adminRequest,
+  });
+
+  useProtecting({
+    onViolation: handleViolation,
+    onAutoSubmit: handleAutoSubmit,
+    submissionId,
+    maxViolations: MAX_VIOLATIONS,
+    cooldownMs: 1500,
+    enabled: !!testData && !finished && (!cameraEnabled || cameraStatus === 'active'),
+    initialViolations,
   });
 
   const handleQuestionChange = (idx: number) => {
@@ -366,6 +373,10 @@ const CodingTestRoom: React.FC = () => {
   );
 
   if (!testData || !activeQuestion) return null;
+
+  if (cameraEnabled && cameraStatus !== 'active') {
+    return <CameraPermissionGate cameraStatus={cameraStatus} onRetry={() => window.location.reload()} />;
+  }
 
   return (
     <div className="h-screen flex flex-col bg-background text-foreground font-sans overflow-hidden">

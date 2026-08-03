@@ -78,4 +78,8 @@ The platform incorporates peer-to-peer real-time video surveillance and candidat
      - Both clients exchange ICE candidates via `webrtc:ice-candidate` to negotiate NAT traversal.
    - Once negotiated, the high-resolution camera feed streams **peer-to-peer directly between candidate and admin**, bypassing Node.js backend bandwidth bottlenecks.
 
+3. **Resource-Optimized Scoping (`proctoringConfig`):**
+   - All WebRTC socket signaling (`useProctorSocket`), media device capture (`getUserMedia`), and local AI model loading (`face-api.js`) are conditionally scoped to `proctoringConfig.cameraEnabled === true`.
+   - If Camera Monitoring is disabled by an admin during test creation, candidates run standard non-video proctoring (`useProtecting`) with zero WebSocket or webcam overhead.
+
 ![WebRTC Real-Time Video Streaming Architecture](./assets/vedio_streaming.png)

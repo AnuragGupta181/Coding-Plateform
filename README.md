@@ -23,7 +23,9 @@ This platform provides a comprehensive environment for conducting technical asse
 ### 🛡️ Secure Proctoring & Real-Time Camera Sync
 - **WebRTC Camera Streaming:** Low-latency peer-to-peer live camera sync allowing admins to request and view candidate webcams directly from the dashboard via Socket.IO signaling.
 - **On-Device AI Vision Proctoring:** Client-side face detection using `face-api.js` for instant integrity alerts (multiple faces, missing candidate, out-of-frame detection).
-- **Violation Tracking:** Intelligent tab-switching and blur detection with threshold limits.
+- **Per-Assessment Proctoring Config:** Toggle Camera Monitoring on/off per test. When disabled, WebSockets, camera access, and AI model downloads are completely bypassed.
+- **Independent Auto-Removal:** Option to automatically submit and evict candidates when total violations (tab switches, window blurs, camera blocks) exceed a custom admin-set threshold.
+- **Violation Tracking:** Intelligent tab-switching, window blur, and fullscreen exit detection.
 - **Auto-Submission:** Global countdown timer that strictly enforces assessment duration and auto-submits tests when time expires.
 
 ### 📝 Hybrid Testing Modules
