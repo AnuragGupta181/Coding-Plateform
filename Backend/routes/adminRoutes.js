@@ -9,6 +9,7 @@ router.use(requireAdmin);
 
 router.post('/test', adminController.createTest);
 router.put('/test/:id', adminController.updateTest);
+router.delete('/test/:id', adminController.deleteTest);
 router.post('/test/:id/open-waiting-room', adminController.openWaitingRoom);
 router.post('/test/:id/start', adminController.startTest);
 router.post('/test/:id/complete', adminController.completeTest);

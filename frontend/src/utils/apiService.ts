@@ -140,6 +140,8 @@ export const testService = {
     commandApi.post('/admin/test', testData),
   updateTest: (id: string, testData: unknown) =>
     commandApi.put(`/admin/test/${id}`, testData),
+  deleteTest: (id: string) =>
+    commandApi.delete(`/admin/test/${id}`),
   openWaitingRoom: (testId: string) =>
     commandApi.post(`/admin/test/${testId}/open-waiting-room`),
   startTest: (testId: string) =>

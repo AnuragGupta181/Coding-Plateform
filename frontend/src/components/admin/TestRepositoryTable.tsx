@@ -2,14 +2,37 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { TestSummary } from '../../types/admin';
 import { SearchBar } from '../common/SearchBar';
+import testService from '../../utils/apiService';
+import toast from 'react-hot-toast';
 
 interface TestRepositoryTableProps {
   tests: TestSummary[];
+  onRefresh?: () => void;
 }
 
-export const TestRepositoryTable: React.FC<TestRepositoryTableProps> = ({ tests }) => {
+export const TestRepositoryTable: React.FC<TestRepositoryTableProps> = ({ tests, onRefresh }) => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDelete = async (testId: string, testStatus: string) => {
+    if (testStatus === 'active') {
+      toast.error('Cannot delete an active test.');
+      return;
+    }
+    if (!window.confirm('Are you sure you want to delete this test and all its submissions? This action cannot be undone.')) return;
+    
+    setDeletingId(testId);
+    try {
+      await testService.deleteTest(testId);
+      toast.success('Test deleted successfully!');
+      if (onRefresh) onRefresh();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to delete test');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const filteredTests = tests.filter((test) => {
     const q = searchQuery.toLowerCase().trim();
@@ -69,13 +92,33 @@ export const TestRepositoryTable: React.FC<TestRepositoryTableProps> = ({ tests 
                         {test.createdAt ? new Date(test.createdAt).toLocaleDateString() : 'N/A'}
                       </td>
                       <td className="px-4 lg:px-8 py-4 lg:py-6 text-right">
-                        <button
-                          onClick={() => navigate(`/admin/results/${test._id}`)}
-                          className="group text-[9px] lg:text-[10px] font-black text-foreground uppercase tracking-widest whitespace-nowrap flex items-center justify-end gap-2 ml-auto hover:text-primary transition-colors"
-                        >
-                          <span>Access Results</span>
-                          <span className="group-hover:translate-x-1 transition-transform">&rarr;</span>
-                        </button>
+                        <div className="flex items-center justify-end gap-3">
+                          <button
+                            onClick={() => navigate(`/admin/results/${test._id}`)}
+                            className="group/btn text-[9px] lg:text-[10px] font-black text-foreground uppercase tracking-widest whitespace-nowrap flex items-center gap-2 hover:text-primary transition-colors"
+                          >
+                            <span>Access Results</span>
+                            <span className="group-hover/btn:translate-x-1 transition-transform">&rarr;</span>
+                          </button>
+                          <button
+                            onClick={() => handleDelete(test._id, test.status)}
+                            disabled={deletingId === test._id || test.status === 'active'}
+                            className={`text-[10px] font-bold p-1.5 rounded transition-all ${
+                              test.status === 'active' 
+                                ? 'text-muted-foreground opacity-50 cursor-not-allowed' 
+                                : 'text-red-500 hover:bg-red-500/10'
+                            }`}
+                            title={test.status === 'active' ? "Cannot delete active tests" : "Delete test"}
+                          >
+                            {deletingId === test._id ? (
+                              <span className="inline-block w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></span>
+                            ) : (
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            )}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -100,13 +143,26 @@ export const TestRepositoryTable: React.FC<TestRepositoryTableProps> = ({ tests 
                     <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
                       {test.createdAt ? new Date(test.createdAt).toLocaleDateString() : 'N/A'}
                     </span>
-                    <button
-                      onClick={() => navigate(`/admin/results/${test._id}`)}
-                      className="group text-[9px] font-black text-foreground uppercase tracking-widest flex items-center gap-1 hover:text-primary transition-colors"
-                    >
-                      <span>Results</span>
-                      <span className="group-hover:translate-x-1 transition-transform">&rarr;</span>
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => handleDelete(test._id, test.status)}
+                        disabled={deletingId === test._id || test.status === 'active'}
+                        className={`text-[9px] font-bold p-1 rounded transition-all ${
+                          test.status === 'active' 
+                            ? 'text-muted-foreground opacity-50 cursor-not-allowed' 
+                            : 'text-red-500 hover:bg-red-500/10'
+                        }`}
+                      >
+                        {deletingId === test._id ? 'DELETING...' : 'DELETE'}
+                      </button>
+                      <button
+                        onClick={() => navigate(`/admin/results/${test._id}`)}
+                        className="group/btn text-[9px] font-black text-foreground uppercase tracking-widest flex items-center gap-1 hover:text-primary transition-colors"
+                      >
+                        <span>Results</span>
+                        <span className="group-hover/btn:translate-x-1 transition-transform">&rarr;</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

@@ -282,7 +282,7 @@ const AdminDashboard: React.FC = () => {
                   <p className="text-sm lg:text-base text-muted-foreground font-light italic">Access historical session data and consolidated performance metrics.</p>
                 </div>
               </header>
-              <TestRepositoryTable tests={tests} />
+              <TestRepositoryTable tests={tests} onRefresh={fetchTests} />
             </div>
           )}
 

@@ -264,6 +264,33 @@ exports.updateTest = async (req, res) => {
   }
 };
 
+exports.deleteTest = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const test = await Test.findById(id);
+    if (!test) {
+      return res.status(404).json({ message: 'Test not found.' });
+    }
+
+    if (test.status === 'active') {
+      return res.status(400).json({ message: 'Cannot delete an active test.' });
+    }
+
+    // Also delete any submissions tied to this test to prevent orphaned data
+    const Submission = require('../models/submission');
+    await Submission.deleteMany({ testId: id });
+    
+    await Test.findByIdAndDelete(id);
+    await cache.del('tests:available');
+    
+    res.json({ message: 'Test and associated submissions deleted successfully.' });
+  } catch (error) {
+    console.error('Error deleting test:', error);
+    res.status(500).json({ message: 'Internal server error', error: error.message });
+  }
+};
+
 exports.getWaitingQueues = async (req, res) => {
   try {
     const queueSnapshot = eventController.getWaitingQueueSnapshot();
