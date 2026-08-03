@@ -52,7 +52,7 @@ const AdminDashboard: React.FC = () => {
   const fetchTests = async () => {
     try {
       const res = await testService.getTestHistory();
-      setTests(res.data);
+      setTests(prev => (JSON.stringify(prev) === JSON.stringify(res.data) ? prev : res.data));
     } catch (err) {
       console.error('Failed to fetch tests:', err);
     }
@@ -61,7 +61,7 @@ const AdminDashboard: React.FC = () => {
   const fetchQueues = async () => {
     try {
       const res = await testService.getWaitingQueues();
-      setQueues(res.data);
+      setQueues(prev => (JSON.stringify(prev) === JSON.stringify(res.data) ? prev : res.data));
     } catch (err) {
       console.error('Failed to fetch queues:', err);
     }
@@ -216,6 +216,7 @@ const AdminDashboard: React.FC = () => {
                       onOpenWaitingRoom={handleOpenWaitingRoom}
                       onStartTest={handleStartTest}
                       onMarkCompleted={handleMarkCompleted}
+                      onRefresh={fetchQueues}
                     />
                   ))
                 )}

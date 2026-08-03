@@ -14,8 +14,14 @@ export interface WaitingUser {
 export interface QueueSummary {
   testId: string;
   title: string;
+  description?: string;
   status: string;
   durationInMinutes?: number;
+  proctoringConfig?: {
+    cameraEnabled?: boolean;
+    autoRemoveEnabled?: boolean;
+    maxViolations?: number;
+  };
   startedAt?: string;
   scheduledFor?: string;
   activeSubmissionCount: number;

@@ -218,13 +218,43 @@ exports.getTestHistory = async (req, res) => {
   }
 };
 
+exports.updateTest = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, description, durationInMinutes, proctoringConfig } = req.body;
+
+    const test = await Test.findById(id);
+    if (!test) {
+      return res.status(404).json({ message: 'Test not found.' });
+    }
+
+    if (title !== undefined) test.title = title;
+    if (description !== undefined) test.description = description;
+    if (durationInMinutes !== undefined) test.durationInMinutes = Number(durationInMinutes);
+    if (proctoringConfig !== undefined) {
+      test.proctoringConfig = {
+        ...test.proctoringConfig,
+        ...proctoringConfig,
+      };
+    }
+
+    await test.save();
+    await cache.del('tests:available');
+
+    res.json({ message: 'Test updated successfully.', test });
+  } catch (error) {
+    console.error('Error updating test:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 exports.getWaitingQueues = async (req, res) => {
   try {
     const queueSnapshot = eventController.getWaitingQueueSnapshot();
 
     // Run all 3 DB queries in PARALLEL instead of sequentially (~3x faster)
     const [tests, activeSubmissions, completedSubmissions] = await Promise.all([
-      Test.find({ status: { $ne: 'completed' } }, 'title status durationInMinutes startedAt scheduledFor').lean(),
+      Test.find({ status: { $ne: 'completed' } }, 'title description durationInMinutes startedAt scheduledFor proctoringConfig status').lean(),
       Submission.aggregate([
         { $match: { status: 'active' } },
         { $group: { _id: '$testId', count: { $sum: 1 } } }
@@ -242,8 +272,10 @@ exports.getWaitingQueues = async (req, res) => {
     const response = tests.map((test) => ({
       testId: String(test._id),
       title: test.title,
+      description: test.description,
       status: test.status,
       durationInMinutes: test.durationInMinutes,
+      proctoringConfig: test.proctoringConfig,
       startedAt: test.startedAt || (test.status === 'active' ? test.createdAt : null),
       scheduledFor: test.scheduledFor,
       activeSubmissionCount: activeMap.get(String(test._id)) || 0,

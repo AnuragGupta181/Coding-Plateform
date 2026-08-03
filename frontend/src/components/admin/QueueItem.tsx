@@ -8,11 +8,14 @@ const Spinner = ({ red }: { red?: boolean }) => (
   </svg>
 );
 
+import { EditTestModal } from './EditTestModal';
+
 interface QueueItemProps {
   queue: QueueSummary;
   onOpenWaitingRoom: (id: string) => void;
   onStartTest: (id: string) => void;
   onMarkCompleted: (id: string) => void;
+  onRefresh?: () => void;
 }
 
 const ActiveQueueTimer: React.FC<{ startedAt?: string; durationInMinutes: number }> = ({ startedAt, durationInMinutes }) => {
@@ -64,16 +67,23 @@ export const QueueItem: React.FC<QueueItemProps> = ({
   onOpenWaitingRoom,
   onStartTest,
   onMarkCompleted,
+  onRefresh,
 }) => {
   const isWaiting = queue.status === 'waiting';
   const isActive = queue.status === 'active';
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
+  const [showEditModal, setShowEditModal] = useState<boolean>(false);
 
   return (
     <div className="bg-background border border-border p-6 lg:p-10 rounded-sm shadow-sm mb-6 lg:mb-8 transition-all hover:shadow-premium group">
       <div className="flex flex-col lg:flex-row justify-between items-start mb-8 lg:mb-10 gap-4">
         <div>
           <h3 className="text-xl lg:text-2xl font-sans text-foreground-bold mb-2 group-hover:text-cream-700 transition-colors">{queue.title}</h3>
+          {queue.description && (
+            <p className="text-xs text-muted-foreground font-light mb-3 max-w-xl line-clamp-2">
+              {queue.description}
+            </p>
+          )}
           <div className="flex items-center gap-3 flex-wrap">
             <span className={`text-[9px] uppercase font-black tracking-widest px-3 py-1 rounded-full border ${
               isActive ? 'bg-green-50 border-green-100 text-green-700' : 'bg-background border-border text-muted-foreground'
@@ -81,6 +91,11 @@ export const QueueItem: React.FC<QueueItemProps> = ({
               {queue.status}
             </span>
             <span className="text-[10px] text-cream-300 font-bold uppercase tracking-widest">ID: {queue.testId.slice(-6)}</span>
+            {queue.proctoringConfig && (
+              <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest border border-border px-2 py-0.5 rounded">
+                Camera: {queue.proctoringConfig.cameraEnabled !== false ? 'ON' : 'OFF'} | Auto-Remove: {queue.proctoringConfig.autoRemoveEnabled ? `Limit ${queue.proctoringConfig.maxViolations || 5}` : 'OFF'}
+              </span>
+            )}
             {queue.scheduledFor && (
               <span className="text-[10px] text-muted-foreground font-medium flex items-center gap-1.5 ml-2">
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -99,6 +114,18 @@ export const QueueItem: React.FC<QueueItemProps> = ({
         </div>
 
         <div className="flex flex-wrap gap-3 w-full lg:w-auto">
+          {/* Edit Session Parameters Button */}
+          <button
+            onClick={() => setShowEditModal(true)}
+            className="btn-secondary py-2 px-4 flex-1 lg:flex-none text-center justify-center flex items-center gap-1.5 hover:bg-muted text-xs font-bold uppercase tracking-wider"
+            title="Edit Session Parameters"
+          >
+            <svg className="w-3.5 h-3.5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            <span>Edit Session</span>
+          </button>
+
           {queue.status === 'scheduled' && (
             <button
               disabled={loadingAction === 'allow_entry'}
@@ -140,6 +167,15 @@ export const QueueItem: React.FC<QueueItemProps> = ({
           )}
         </div>
       </div>
+
+      <EditTestModal
+        queue={queue}
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onSaveSuccess={() => {
+          if (onRefresh) onRefresh();
+        }}
+      />
 
       {isWaiting && (
         <div className="pt-6 lg:pt-8 border-t border-cream-50">
