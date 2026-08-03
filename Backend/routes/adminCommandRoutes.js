@@ -6,6 +6,14 @@ const upload = require('../middleware/upload');
 
 router.use(requireAuth);
 router.use(requireAdmin);
+router.use((req, res, next) => {
+  console.log('adminCommandRoutes request:', {
+    method: req.method,
+    url: req.originalUrl,
+    body: req.body,
+  });
+  next();
+});
 
 // ── Command (Write) Admin Routes ──────────────────────────────────────────────
 router.post('/test', adminController.createTest);
@@ -34,5 +42,9 @@ router.post('/cache/clear', adminController.clearTestCache);
 router.post('/test/:id/analyze-overall', adminController.analyzeOverallExperience);
 router.post('/issue/:submissionId/:issueId/analyze', adminController.analyzeReportedIssue);
 router.post('/issue/question/:testId/:questionId/analyze', adminController.analyzeQuestionIssues);
+
+// WebRTC Camera Commands
+router.post('/test/:id/request-camera', adminController.requestCandidateCamera);
+router.post('/test/:id/stop-camera', adminController.stopCandidateCamera);
 
 module.exports = router;

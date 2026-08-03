@@ -17,6 +17,8 @@ const useElapsed = (startTime: string) => {
 import toast from 'react-hot-toast';
 import testService from '../../utils/apiService';
 import type { ActiveUser, QueueSummary } from '../../types/admin';
+import useProctorSocket from '../../hooks/useProctorSocket';
+import useWebRTC from '../../hooks/useWebRTC';
 
 // ─── Level 1: Active Test Card ────────────────────────────────────────────────
 
@@ -143,6 +145,17 @@ const StudentDetail: React.FC<StudentDetailProps> = ({ user, testId, onBack }) =
   const totalViolations = user.violations.reduce((sum, v) => sum + v.count, 0);
   const elapsed = useElapsed(user.startTime);
 
+  const { isConnected, socket } = useProctorSocket({ role: 'admin', testId });
+  const { remoteStream, endFeed } = useWebRTC({ socket });
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isRequesting, setIsRequesting] = useState(false);
+
+  useEffect(() => {
+    if (videoRef.current && remoteStream) {
+      videoRef.current.srcObject = remoteStream;
+    }
+  }, [remoteStream]);
+
   const handleSend = async () => {
     if (!message.trim()) return;
     setSending(true);
@@ -215,6 +228,75 @@ const StudentDetail: React.FC<StudentDetailProps> = ({ user, testId, onBack }) =
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Live WebRTC Camera Feed */}
+      <div className="bg-background border border-border rounded-sm p-6 lg:p-8 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Live Camera Stream</div>
+          <div className="flex items-center gap-3">
+            {!isConnected && <span className="text-xs text-muted-foreground italic">Connecting to socket...</span>}
+            {!remoteStream && (
+              <button
+                onClick={async () => {
+                  console.log('Admin: requestCandidateCamera clicked', { testId, email: user.email, socketId: socket?.id, isConnected, isRequesting });
+                  setIsRequesting(true);
+                  try {
+                    const response = await testService.requestCandidateCamera(testId, user.email, socket?.id || '');
+                    console.log('Admin requestCandidateCamera success', response?.data);
+                  } catch (err) {
+                    console.error('Admin requestCandidateCamera failed', err);
+                    toast.error('Failed to request camera');
+                  } finally {
+                    setIsRequesting(false);
+                  }
+                }}
+                disabled={!isConnected || isRequesting}
+                className="btn-primary py-1 px-3 text-[10px] tracking-widest disabled:opacity-50"
+              >
+                {!isConnected ? 'Connecting to socket...' : isRequesting ? 'Waking up Candidate Camera...' : 'Request Video Feed'}
+              </button>
+            )}
+            {remoteStream && (
+              <button
+                onClick={async () => {
+                  try {
+                    await testService.stopCandidateCamera(testId, user.email);
+                    endFeed();
+                    setIsRequesting(false);
+                  } catch (err) {
+                    toast.error('Failed to stop camera');
+                  }
+                }}
+                className="px-3 py-1 text-[10px] font-black uppercase tracking-widest border border-red-300 text-red-600 rounded-sm hover:bg-red-50 transition-colors"
+              >
+                Stop Feed
+              </button>
+            )}
+          </div>
+        </div>
+        
+        <div className={`relative w-full rounded-sm overflow-hidden bg-black aspect-video border border-border ${remoteStream ? 'block' : 'hidden'}`}>
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className="w-full h-full object-cover"
+          />
+        </div>
+
+        {!remoteStream && (
+          <div className="w-full aspect-video bg-muted/20 border border-dashed border-border rounded-sm flex flex-col items-center justify-center text-muted-foreground">
+            <svg className="w-8 h-8 mb-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            <div className="text-sm font-medium">No active video stream</div>
+            <div className="text-[10px] uppercase tracking-widest mt-1 opacity-70">
+              {'Click Request Video Feed to wake up the candidate\'s camera stream.'}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Violations log */}

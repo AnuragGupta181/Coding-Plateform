@@ -57,7 +57,14 @@ const submissionSchema = new mongoose.Schema({
     default: null
   },
   violations: [{
-    type: { type: String, enum: ['tab_switch', 'window_blur', 'fullscreen_exit'] },
+    type: {
+      type: String,
+      enum: [
+        'tab_switch', 'window_blur', 'fullscreen_exit',
+        // Camera proctoring violation types (face-api.js, client-side detection)
+        'camera_multiple_faces', 'camera_no_face', 'camera_blocked'
+      ]
+    },
     timestamp: { type: Date },
     count: { type: Number }
   }],

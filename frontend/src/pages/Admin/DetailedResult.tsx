@@ -36,6 +36,7 @@ interface SubmissionDetail {
   codingAnswers?: Record<string, CodingAnswer>;
   reportedProblems?: { description: string; questionId?: string; timestamp: string }[];
   violations?: { type: string; timestamp: string; count: number }[];
+  feedback?: { rating: number; comment?: string; submittedAt: string };
   testId: {
     _id: string;
     title: string;

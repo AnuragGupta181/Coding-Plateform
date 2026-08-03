@@ -2,6 +2,7 @@ const Test = require('../models/test');
 const Submission = require('../models/submission');
 const { calculateScore } = require('../services/testLifecycleService');
 const cache = require('../services/redisClient');
+const { broadcastEvent } = require('./eventController');
 
 const TEST_CACHE_TTL = 600; // Cache test documents for 10 minutes
 
@@ -201,6 +202,19 @@ exports.logViolation = async (req, res) => {
       const exists = await Submission.exists({ _id: submissionId });
       if (!exists) return res.status(404).json({ message: 'Submission not found' });
       return res.status(403).json({ message: 'Test already completed' });
+    }
+
+    // ── Broadcast camera violations to admin SSE channel in real-time ────────────
+    const cameraViolationTypes = ['camera_multiple_faces', 'camera_no_face', 'camera_blocked'];
+    if (cameraViolationTypes.includes(type)) {
+      // Broadcast to the test's SSE channel — admin's monitoring page listens here
+      broadcastEvent(String(result.testId), {
+        type: 'CAMERA_VIOLATION',
+        violationType: type,
+        candidateEmail: result.candidateEmail,
+        candidateName: result.candidateName,
+        timestamp: new Date().toISOString(),
+      });
     }
 
     res.json({ message: 'Violation logged' });

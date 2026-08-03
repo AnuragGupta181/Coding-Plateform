@@ -12,12 +12,12 @@ const { requireAuth } = require('../middleware/authMiddleware');
 // Uses requireAuth (which now supports ?token=... query param for EventSource)
 router.use('/events', requireAuth, eventRoutes);
 
+// Admin reads (requireAuth + requireAdmin enforced inside adminQueryRoutes)
+router.use('/admin', adminQueryRoutes);
+
 // Public + auth-gated test reads
 // Note: router.use(middleware, subRouter) applies middleware to EVERYTHING defined after it if path is omitted,
 // so /events must be defined above this line!
 router.use(requireAuth, testQueryRoutes);
-
-// Admin reads (requireAuth + requireAdmin enforced inside adminQueryRoutes)
-router.use('/admin', adminQueryRoutes);
 
 module.exports = router;

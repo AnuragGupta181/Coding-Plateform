@@ -105,22 +105,6 @@ const testSlice = createSlice({
     completeTest: (state) => {
       state.status = 'completed';
       state.timeRemaining = 0;
-      state.submissionId = null;
-      state.testId = null;
-      state.answers = {};
-      state.viewedQuestionIds = {};
-      state.markedQuestionIds = {};
-      state.currentQuestionIndex = 0;
-    },
-    clearTest: (state) => {
-      state.status = 'idle';
-      state.timeRemaining = 0;
-      state.submissionId = null;
-      state.testId = null;
-      state.answers = {};
-      state.viewedQuestionIds = {};
-      state.markedQuestionIds = {};
-      state.currentQuestionIndex = 0;
     },
     setError: (state) => {
       state.status = 'error';
@@ -137,7 +121,6 @@ export const {
   toggleMarkQuestion,
   updateTime,
   completeTest,
-  clearTest,
   setError
 } = testSlice.actions;
 export default testSlice.reducer;

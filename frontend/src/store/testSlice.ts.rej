@@ -1,0 +1,12 @@
+--- frontend/src/store/testSlice.ts
++++ frontend/src/store/testSlice.ts
+@@ -29,6 +29,9 @@
+     setSubmissionId: (state, action: PayloadAction<string | null>) => {
+       state.submissionId = action.payload;
+     },
++    clearSubmission: (state) => {
++      state.submissionId = null;
++    },
+     setStatus: (state, action: PayloadAction<TestState['status']>) => {
+       state.status = action.payload;
+     },

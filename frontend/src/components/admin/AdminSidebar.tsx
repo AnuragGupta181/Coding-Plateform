@@ -53,12 +53,12 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       
       <nav className="flex-1 overflow-y-auto overflow-x-hidden px-4 lg:px-6 py-6 lg:py-8 space-y-2">
         {[
+          { id: 'create', label: 'Design Session' },
           { id: 'overview', label: 'Active Sessions' },
+          { id: 'history', label: 'Test Repository' },
           { id: 'monitoring', label: 'Realtime Monitoring' },
           { id: 'system', label: 'System Metrics 🖥️' },
           { id: 'queues', label: 'BullMQ Queues ⚡' },
-          { id: 'history', label: 'Test Repository' },
-          { id: 'create', label: 'Design Session' },
           { id: 'aichat', label: 'Ask AI Assistant ✨' },
         ].map((item) => (
           <button

@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import useProtecting from '../hooks/useProtecting';
+import useCameraProctor from '../hooks/useCameraProctor';
+import useProctorSocket from '../hooks/useProctorSocket';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import Editor from '@monaco-editor/react';
@@ -35,6 +37,7 @@ const CodingTestRoom: React.FC = () => {
   const [activeQIndex, setActiveQIndex] = useState(0);
   const [language, setLanguage]         = useState('javascript');
   const [initialViolations, setInitialViolations] = useState(0);
+  const [adminRequest, setAdminRequest] = useState<{ adminSocketId: string } | null>(null);
   const [editorTheme, setEditorTheme]   = useState<'vs-light' | 'vs-dark'>('vs-light');
 
   const [code, setCode]             = useState<Record<string, string>>(() => {
@@ -161,9 +164,12 @@ const CodingTestRoom: React.FC = () => {
   useEffect(() => {
     if (!testId) return;
     const es = new EventSource(createEventSourceUrl(`/events/test/${testId}`));
+    es.onopen = () => console.debug('CodingTestRoom SSE connected', { testId });
+    es.onerror = (error) => console.warn('CodingTestRoom SSE error', error);
     es.onmessage = e => {
       try {
         const data = JSON.parse(e.data);
+        console.debug('CodingTestRoom SSE event received', data);
         if (data.type === 'AUTO_SUBMIT' || data.type === 'TEST_COMPLETED') {
           setFinished(true);
           dispatch(completeTest());
@@ -184,6 +190,12 @@ const CodingTestRoom: React.FC = () => {
               color: '#7f1d1d'
             }
           });
+        } else if (data.type === 'REQUEST_CAMERA' && data.targetEmail?.toLowerCase() === user?.email?.toLowerCase()) {
+          console.debug('CodingTestRoom received REQUEST_CAMERA', data);
+          setAdminRequest({ adminSocketId: data.adminSocketId });
+        } else if (data.type === 'STOP_CAMERA' && data.targetEmail?.toLowerCase() === user?.email?.toLowerCase()) {
+          console.debug('CodingTestRoom received STOP_CAMERA', data);
+          setAdminRequest(null);
         } else if (data.type === 'CODE_SUBMIT_RESULT' && data.targetEmail === user?.email) {
           setIsCodeSubmitting(prev => ({ ...prev, [data.questionId]: false }));
           setSubmitResult(prev => ({ ...prev, [data.questionId]: data.result }));
@@ -201,7 +213,7 @@ const CodingTestRoom: React.FC = () => {
       } catch (err) {}
     };
     return () => es.close();
-  }, [testId, dispatch, navigate, user?.email]);
+  }, [testId, dispatch, navigate, user?.email, submissionId]);
 
   const MAX_VIOLATIONS = 999999;
 
@@ -234,6 +246,25 @@ const CodingTestRoom: React.FC = () => {
     cooldownMs: 1500,
     enabled: !!testData && !finished,
     initialViolations,
+  });
+
+  // ── Camera Proctoring (silent, continues from TestRoom session) ────────────
+  const { socket } = useProctorSocket({
+    role: 'student',
+    testId,
+    userId: submissionId || user?.email || undefined,
+    name: user?.name,
+    email: user?.email,
+    submissionId,
+    enabled: status === 'active',
+  });
+
+  const { videoRef: cameraVideoRef } = useCameraProctor({
+    submissionId,
+    testId,
+    socket,
+    enabled: status === 'active',
+    adminRequest,
   });
 
   const handleQuestionChange = (idx: number) => {
@@ -338,13 +369,15 @@ const CodingTestRoom: React.FC = () => {
 
   return (
     <div className="h-screen flex flex-col bg-background text-foreground font-sans overflow-hidden">
+      {/* Hidden camera element for proctoring — invisible to student */}
+      <video ref={cameraVideoRef} muted playsInline style={{ display: 'none' }} aria-hidden="true" />
       <TestRoomHeader
         candidateName={user?.name}
         testTitle={testData?.title}
         onAction={handleFinishClick}
         actionText="Submit Assessment"
         isSaving={isFinishingTest}
-        submissionId={submissionId}
+        submissionId={submissionId || undefined}
         currentQuestionId={activeQuestion._id}
       />
 

@@ -106,7 +106,7 @@ if (redisSubscriber) {
 function getWaitingUsersByTest(testId) {
   const result = [];
   clientMap.forEach((client) => {
-    if (client.testId === testId) {
+    if (client.testId === testId && client.role !== 'admin') {
       result.push({ id: client.id, name: client.name, email: client.email, joinedAt: client.joinedAt });
     }
   });
@@ -116,6 +116,7 @@ function getWaitingUsersByTest(testId) {
 function getWaitingQueueSnapshot() {
   const grouped = new Map();
   clientMap.forEach((client) => {
+    if (client.role === 'admin') return;
     if (!grouped.has(client.testId)) grouped.set(client.testId, []);
     grouped.get(client.testId).push({
       id: client.id, name: client.name, email: client.email, joinedAt: client.joinedAt
@@ -155,6 +156,7 @@ exports.getEvents = async (req, res) => {
     testId,
     name: query.name || 'Candidate',
     email: query.email || '',
+    role: req.user?.role || 'candidate',
     joinedAt: new Date().toISOString(),
     res,
     redisChannel: channel

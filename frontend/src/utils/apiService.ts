@@ -25,16 +25,37 @@ const authInterceptor = (instance: ReturnType<typeof axios.create>) => {
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    const groqKey = localStorage.getItem('custom_groq_api_key');
-    if (groqKey) {
-      config.headers['x-groq-api-key'] = groqKey;
+    if (import.meta.env.DEV) {
+      console.debug('API request:', {
+        url: config.baseURL ? `${config.baseURL}${config.url}` : config.url,
+        method: config.method,
+        data: config.data,
+        headers: config.headers,
+      });
     }
     return config;
   });
 
   instance.interceptors.response.use(
-    (response) => response,
+    (response) => {
+      if (import.meta.env.DEV) {
+        console.debug('API response:', {
+          url: response.config.baseURL ? `${response.config.baseURL}${response.config.url}` : response.config.url,
+          status: response.status,
+          data: response.data,
+        });
+      }
+      return response;
+    },
     (error) => {
+      if (import.meta.env.DEV) {
+        console.error('API response error:', {
+          url: error.config?.baseURL ? `${error.config.baseURL}${error.config.url}` : error.config?.url,
+          status: error.response?.status,
+          data: error.response?.data,
+          message: error.message,
+        });
+      }
       if (error.response && error.response.status === 401) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
@@ -93,6 +114,11 @@ export const testService = {
     queryApi.get(`/admin/test/${testId}/active-users`),
   getSubmissionDetails: (subId: string) =>
     queryApi.get(`/admin/submission/${subId}`),
+  // Camera proctoring
+  getActiveProctorStudents: (testId: string) =>
+    queryApi.get(`/admin/test/${testId}/proctor/students`),
+  getCameraViolationSummary: (testId: string) =>
+    queryApi.get(`/admin/test/${testId}/proctor/violations`),
 
   // ── Command Routes (POST /api/command/...) ──────────────────────────────────
   startSubmission: (candidateEmail: string, candidateName: string, testId: string) =>
@@ -139,6 +165,10 @@ export const testService = {
 
   sendProctorMessage: (testId: string, candidateEmail: string, message: string) =>
     commandApi.post(`/admin/test/${testId}/message`, { candidateEmail, message }),
+  requestCandidateCamera: (testId: string, candidateEmail: string, adminSocketId: string) =>
+    commandApi.post(`/admin/test/${testId}/request-camera`, { candidateEmail, adminSocketId }),
+  stopCandidateCamera: (testId: string, candidateEmail: string) =>
+    commandApi.post(`/admin/test/${testId}/stop-camera`, { candidateEmail }),
   forceSubmitCandidate: (submissionId: string) =>
     commandApi.post(`/admin/submission/${submissionId}/force-submit`),
   clearQueues: () =>
@@ -160,7 +190,8 @@ export const testService = {
 export const createEventSourceUrl = (path: string) => {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   const token = localStorage.getItem('token');
-  const tokenParam = token ? `?token=${encodeURIComponent(token)}` : '';
+  const separator = normalizedPath.includes('?') ? '&' : '?';
+  const tokenParam = token ? `${separator}token=${encodeURIComponent(token)}` : '';
   return `${QUERY_BASE_URL}/query${normalizedPath}${tokenParam}`;
 };
 

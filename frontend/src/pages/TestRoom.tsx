@@ -2,6 +2,8 @@ import React, { useEffect, useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { useParams, useNavigate } from 'react-router-dom';
 import useProtecting from '../hooks/useProtecting';
+import useCameraProctor from '../hooks/useCameraProctor';
+import useProctorSocket from '../hooks/useProctorSocket';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '../store';
 import {
@@ -57,6 +59,7 @@ const [showMobilePanel, setShowMobilePanel] = useState(false);
 const [syncWarning, setSyncWarning] = useState<string | null>(null);
 const [pendingSyncCount, setPendingSyncCount] = useState(0);
 const [initialViolations, setInitialViolations] = useState(0);
+const [adminRequest, setAdminRequest] = useState<{ adminSocketId: string } | null>(null);
 
 const executeSubmission = useCallback(async (forceComplete: boolean = false) => {
 const sid = submissionId;
@@ -100,15 +103,34 @@ const handleAutoSubmit = useCallback(() => {
 executeSubmission(true);
 }, [executeSubmission]);
 
-useProtecting({
-onViolation: handleViolation,
-onAutoSubmit: handleAutoSubmit,
-submissionId,
-maxViolations: MAX_VIOLATIONS,
-cooldownMs: 1500,
-enabled: status === 'active',
-initialViolations,
-});
+  useProtecting({
+    onViolation: handleViolation,
+    onAutoSubmit: handleAutoSubmit,
+    submissionId,
+    maxViolations: MAX_VIOLATIONS,
+    cooldownMs: 1500,
+    enabled: status === 'active',
+    initialViolations,
+  });
+
+  // ── Camera Proctoring (silent, no UI indicator to student) ────────────────────
+  const { socket } = useProctorSocket({
+    role: 'student',
+    testId,
+    userId: submissionId || user?.email || undefined,
+    name: user?.name,
+    email: user?.email,
+    submissionId,
+    enabled: status === 'active',
+  });
+
+  const { videoRef: cameraVideoRef } = useCameraProctor({
+    submissionId,
+    testId,
+    socket,
+    enabled: status === 'active',
+    adminRequest,
+  });
 
 useEffect(() => {
 const initTest = async () => {
@@ -222,43 +244,62 @@ useEffect(() => {
 if (!testId) return;
 
 const eventSource = new EventSource(createEventSourceUrl(`/events/test/${testId}`));
-eventSource.onmessage = (event) => {
-  try {
-    const data = JSON.parse(event.data);
-    if (data.type === 'AUTO_SUBMIT') {
-      dispatch(completeTest());
-    } else if (data.type === 'FORCE_SUBMIT' && data.targetEmail === user?.email) {
-      dispatch(completeTest());
-      toast.error('Your test session has been ended by the proctor.', { duration: 4000 });
-      if (submissionId) {
-        setTimeout(() => navigate(`/feedback/${submissionId}`), 2500);
-      } else {
-        setTimeout(() => navigate('/dashboard'), 2500);
-      }
-    } else if (data.type === 'PROCTOR_MESSAGE' && data.targetEmail === user?.email) {
-      toast.error(`PROCTOR MESSAGE:\n${data.message}`, {
-        duration: 5000,
-        style: {
-          fontSize: '1.25rem',
-          fontWeight: 'bold',
-          padding: '20px',
-          border: '4px solid #ef4444',
-          backgroundColor: '#fef2f2',
-          color: '#7f1d1d'
+    eventSource.onopen = () => console.debug('TestRoom SSE connected', { testId });
+    eventSource.onerror = (error) => console.warn('TestRoom SSE error', error);
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.debug('TestRoom SSE event received', data);
+        if (data.type === 'AUTO_SUBMIT') {
+          dispatch(completeTest());
+        } else if (data.type === 'FORCE_SUBMIT' && data.targetEmail === user?.email) {
+          dispatch(completeTest());
+          toast.error('Your test session has been ended by the proctor.', { duration: 4000 });
+          if (submissionId) {
+            setTimeout(() => navigate(`/feedback/${submissionId}`), 2500);
+          } else {
+            setTimeout(() => navigate('/dashboard'), 2500);
+          }
+        } else if (data.type === 'PROCTOR_MESSAGE' && data.targetEmail === user?.email) {
+          toast.error(`PROCTOR MESSAGE:\n${data.message}`, {
+            duration: 5000,
+            style: {
+              fontSize: '1.25rem',
+              fontWeight: 'bold',
+              padding: '20px',
+              border: '4px solid #ef4444',
+              backgroundColor: '#fef2f2',
+              color: '#7f1d1d'
+            }
+          });
+        } else if (data.type === 'REQUEST_CAMERA' && data.targetEmail?.toLowerCase() === user?.email?.toLowerCase()) {
+          console.debug('TestRoom received REQUEST_CAMERA', data);
+          setAdminRequest({ adminSocketId: data.adminSocketId });
+        } else if (data.type === 'STOP_CAMERA' && data.targetEmail?.toLowerCase() === user?.email?.toLowerCase()) {
+          console.debug('TestRoom received STOP_CAMERA', data);
+          setAdminRequest(null);
         }
-      });
-    }
-  } catch { /* malformed event — ignore */ }
-};
+      } catch (err) {
+        console.warn('TestRoom SSE parse error', err);
+      }
+    };
 
-return () => {
-eventSource.close();
-};
-}, [dispatch, testId, navigate, user?.email]);
+    return () => {
+      eventSource.close();
+    };
+  }, [dispatch, testId, navigate, user?.email, submissionId]);
 
-if (status === 'error') return <ErrorView />;
-if (!testData || status === 'loading') return <LoadingView />;
-if (status === 'completed') return <CompletedView />;
+  if (status === 'error') {
+    return <ErrorView />;
+  }
+
+  if (status === 'completed') {
+    return <CompletedView />;
+  }
+
+  if (status === 'idle' || status === 'loading' || !testData) {
+    return <LoadingView />;
+  }
 
 const currentQuestion = testData.questions[currentQuestionIndex];
 const selectedAnswer = answers[currentQuestion._id];
@@ -420,13 +461,15 @@ setShowSubmitModal(false);
 
 return (
 <div className="min-h-screen flex flex-col bg-background font-sans text-foreground">
+{/* Hidden camera element for proctoring — invisible to student */}
+<video ref={cameraVideoRef} muted playsInline style={{ display: 'none' }} aria-hidden="true" />
 <TestRoomHeader
   candidateName={user?.name}
   testTitle={testData?.title}
   onAction={handleOpenSubmitModal}
   actionText={testData?.testType === 'mixed' ? 'Proceed to Coding' : 'Submit Assessment'}
   isSaving={isSaving}
-  submissionId={submissionId}
+  submissionId={submissionId || undefined}
   currentQuestionId={testData?.questions?.[currentQuestionIndex]?._id}
 />
 

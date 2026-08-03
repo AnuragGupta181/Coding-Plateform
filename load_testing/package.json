@@ -1,0 +1,23 @@
+{
+  "name": "coding-platform-load-testing",
+  "version": "1.0.0",
+  "description": "Load testing suite for Coding Platform",
+  "main": "index.js",
+  "scripts": {
+    "test:auth": "node scenarios/auth.js",
+    "test:fetch": "node scenarios/fetch_tests.js",
+    "test:submit": "node scenarios/test_submission.js",
+    "test:realtime": "node scenarios/realtime_sync.js",
+    "test:judge0": "node scenarios/judge0.js",
+    "test:full": "node workflows/full_exam_simulation.js",
+    "test:500realtime": "node workflows/realtime500ActiveExam.js",
+    "test:500batch": "node workflows/simulate500Candidates.js"
+  },
+  "dependencies": {
+    "autocannon": "^7.14.0",
+    "axios": "^1.6.5",
+    "dotenv": "^16.3.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^9.9.1"
+  }
+}

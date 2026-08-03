@@ -23,6 +23,7 @@ const { startScheduleWatcher } = require('./services/scheduleWatcher');
 const { broadcastEvent } = require('./controllers/eventController');
 const { mountBullBoard } = require('./services/bullBoard');
 const { mountHealthCheck } = require('./routes/healthRoutes');
+const socketService = require('./services/socketService');
 
 // ── CQRS Service Mode ─────────────────────────────────────────────────────────
 const SERVICE_MODE = (process.env.SERVICE_MODE || 'both').toLowerCase();
@@ -76,12 +77,12 @@ app.use((req, res, next) => {
 });
 
 // ── Rate Limiting ─────────────────────────────────────────────────────────────
-// Rate limiting enabled for production:
-const { authLimiter, queryLimiter, commandLimiter, sseLimiter } = require('./middleware/rateLimiters');
-app.use('/api/auth', authLimiter);
-app.use('/api/query/events', sseLimiter);
-app.use('/api/query', queryLimiter);
-app.use('/api/command', commandLimiter);
+// Rate limiting disabled for testing/load testing:
+// const { authLimiter, queryLimiter, commandLimiter, sseLimiter } = require('./middleware/rateLimiters');
+// app.use('/api/auth', authLimiter);
+// app.use('/api/query/events', sseLimiter);
+// app.use('/api/query', queryLimiter);
+// app.use('/api/command', commandLimiter);
 
 // ══════════════════════════════════════════════════════════════════════════════
 // MOUNT FEATURES
@@ -106,6 +107,11 @@ app.use(async (req, res, next) => {
 // ══════════════════════════════════════════════════════════════════════════════
 // ROUTES
 // ══════════════════════════════════════════════════════════════════════════════
+
+app.use((req, res, next) => {
+  console.log(`[GLOBAL] ${req.method} ${req.url}`);
+  next();
+});
 
 app.use('/api/auth', authRoutes);
 
@@ -167,6 +173,10 @@ if (process.env.DISABLE_CRON !== 'true') {
 const server = app.listen(config.port, () => {
   console.log(`🚀 Server running on port ${config.port} [SERVICE_MODE=${SERVICE_MODE}]`);
 });
+
+// ── Socket.IO Proctoring ────────────────────────────────────────────────
+// Attaches to the SAME HTTP server — no extra port or process needed.
+SocketService = socketService.init(server, config.corsOrigins);
 
 // ── Graceful Shutdown ─────────────────────────────────────────────────────────
 async function gracefulShutdown(signal) {

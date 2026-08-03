@@ -4,6 +4,8 @@
     { "source": "/admin/queues/(.*)", "destination": "https://coding-plateform-sigma.vercel.app/admin/queues/$1" },
     { "source": "/admin/queues", "destination": "https://coding-plateform-sigma.vercel.app/admin/queues" },
     { "source": "/health", "destination": "https://coding-plateform-sigma.vercel.app/health" },
+    { "source": "/socket.io/(.*)", "destination": "https://coding-plateform-sigma.vercel.app/socket.io/$1" },
+    { "source": "/socket.io", "destination": "https://coding-plateform-sigma.vercel.app/socket.io" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

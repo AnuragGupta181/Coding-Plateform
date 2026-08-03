@@ -832,3 +832,58 @@ exports.exportCandidateReport = async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+
+exports.requestCandidateCamera = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { candidateEmail, adminSocketId } = req.body;
+
+    console.log('requestCandidateCamera called', { testId: id, candidateEmail, adminSocketId });
+    if (!candidateEmail || !adminSocketId) {
+      console.warn('requestCandidateCamera missing payload', { testId: id, body: req.body });
+      return res.status(400).json({ error: 'Missing candidateEmail or adminSocketId' });
+    }
+
+    const socketService = require('../services/socketService');
+    if (!socketService.isAdminSocketForTest(adminSocketId, id)) {
+      console.warn('requestCandidateCamera invalid admin socket', { testId: id, adminSocketId, candidateEmail });
+      return res.status(403).json({ error: 'Invalid admin socket for this test' });
+    }
+
+    const { broadcastEvent } = require('./eventController');
+    const event = {
+      type: 'REQUEST_CAMERA',
+      targetEmail: candidateEmail,
+      adminSocketId
+    };
+    console.log('requestCandidateCamera broadcasting event', event);
+    broadcastEvent(id, event);
+
+    res.json({ message: 'Camera request sent successfully' });
+  } catch (error) {
+    console.error('Request Camera Error:', error);
+    res.status(500).json({ error: 'Failed to request camera' });
+  }
+};
+
+exports.stopCandidateCamera = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { candidateEmail } = req.body;
+    
+    if (!candidateEmail) {
+      return res.status(400).json({ error: 'Missing candidateEmail' });
+    }
+
+    const { broadcastEvent } = require('./eventController');
+    broadcastEvent(id, {
+      type: 'STOP_CAMERA',
+      targetEmail: candidateEmail
+    });
+
+    res.json({ message: 'Stop camera command sent successfully' });
+  } catch (error) {
+    console.error('Stop Camera Error:', error);
+    res.status(500).json({ error: 'Failed to stop camera' });
+  }
+};

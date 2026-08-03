@@ -30,10 +30,10 @@
     "morgan": "^1.11.0",
     "multer": "^2.2.0",
     "nodemailer": "^9.0.0",
+    "socket.io": "^4.8.1",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "autocannon": "^8.0.0",
     "nodemon": "^3.1.14",
     "pidusage": "^4.0.1"
   }

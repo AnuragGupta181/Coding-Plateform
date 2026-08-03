@@ -19,6 +19,7 @@ import CreateTest from './pages/CreateTest';
 import CreateCodingQuestion from './pages/Admin/CreateCodingQuestion';
 import ResultsList from './pages/Admin/ResultsList';
 import DetailedResult from './pages/Admin/DetailedResult';
+
 import Signup from './pages/Auth/Signup';
 import VerifyOTP from './pages/Auth/VerifyOTP';
 import Login from './pages/Auth/Login';
@@ -110,6 +111,7 @@ const App: React.FC = () => (
         <Route path="/admin/test/:testId/coding-questions" element={<AdminRoute><CreateCodingQuestion /></AdminRoute>} />
         <Route path="/admin/results/:testId"              element={<AdminRoute><ResultsList /></AdminRoute>} />
         <Route path="/admin/submission/:subId"            element={<AdminRoute><DetailedResult /></AdminRoute>} />
+
 
         <Route path="*" element={<div className="p-10 text-center">Page Not Found</div>} />
       </Routes>
