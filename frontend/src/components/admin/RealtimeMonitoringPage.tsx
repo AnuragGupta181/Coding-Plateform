@@ -19,6 +19,7 @@ import testService from '../../utils/apiService';
 import type { ActiveUser, QueueSummary } from '../../types/admin';
 import useProctorSocket from '../../hooks/useProctorSocket';
 import useWebRTC from '../../hooks/useWebRTC';
+import { SearchBar } from '../common/SearchBar';
 
 // ─── Level 1: Active Test Card ────────────────────────────────────────────────
 
@@ -371,8 +372,15 @@ export const RealtimeMonitoringPage: React.FC<RealtimeMonitoringPageProps> = ({ 
   const [students, setStudents] = useState<ActiveUser[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
   const [sortBy, setSortBy] = useState<'violations' | 'name' | 'elapsed'>('violations');
+  const [testSearchQuery, setTestSearchQuery] = useState('');
+  const [studentSearchQuery, setStudentSearchQuery] = useState('');
 
   const activeQueues = queues.filter(q => q.status === 'active');
+  const filteredActiveQueues = activeQueues.filter(q => {
+    const query = testSearchQuery.toLowerCase().trim();
+    if (!query) return true;
+    return q.title?.toLowerCase().includes(query) || q.testId?.toLowerCase().includes(query);
+  });
 
   const fetchStudents = useCallback(async (testId: string) => {
     setLoadingStudents(true);
@@ -393,7 +401,13 @@ export const RealtimeMonitoringPage: React.FC<RealtimeMonitoringPageProps> = ({ 
     return () => clearInterval(interval);
   }, [view, fetchStudents]);
 
-  const sortedStudents = [...students].sort((a, b) => {
+  const filteredStudents = students.filter(u => {
+    const query = studentSearchQuery.toLowerCase().trim();
+    if (!query) return true;
+    return u.name?.toLowerCase().includes(query) || u.email?.toLowerCase().includes(query);
+  });
+
+  const sortedStudents = [...filteredStudents].sort((a, b) => {
     if (sortBy === 'violations') {
       return b.violations.reduce((s, v) => s + v.count, 0) - a.violations.reduce((s, v) => s + v.count, 0);
     }
@@ -425,9 +439,17 @@ export const RealtimeMonitoringPage: React.FC<RealtimeMonitoringPageProps> = ({ 
           ← Back to Tests
         </button>
 
-        <header className="mb-8">
-          <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground mb-1">Live Candidates</div>
-          <h2 className="text-2xl lg:text-3xl font-sans text-foreground-bold">{view.testTitle}</h2>
+        <header className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground mb-1">Live Candidates</div>
+            <h2 className="text-2xl lg:text-3xl font-sans text-foreground-bold">{view.testTitle}</h2>
+          </div>
+          <SearchBar
+            value={studentSearchQuery}
+            onChange={setStudentSearchQuery}
+            className="w-full sm:w-72"
+            placeholder="Search candidate by name or email..."
+          />
         </header>
 
         {loadingStudents && students.length === 0 ? (
@@ -436,10 +458,14 @@ export const RealtimeMonitoringPage: React.FC<RealtimeMonitoringPageProps> = ({ 
           <div className="py-20 text-center border border-dashed border-border-hover rounded-sm text-muted-foreground italic px-4">
             No active candidates found for this test.
           </div>
+        ) : sortedStudents.length === 0 ? (
+          <div className="py-16 text-center border border-dashed border-border-hover rounded-sm text-muted-foreground italic px-4">
+            No active candidates match your search filter.
+          </div>
         ) : (
           <>
             <div className="flex items-center justify-between mb-4">
-              <div className="text-sm font-bold text-foreground-bold">{students.length} candidate{students.length !== 1 ? 's' : ''} active</div>
+              <div className="text-sm font-bold text-foreground-bold">{sortedStudents.length} candidate{sortedStudents.length !== 1 ? 's' : ''} shown</div>
               <select
                 className="bg-background border border-border text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-sm outline-none focus:border-primary/50"
                 value={sortBy}
@@ -469,21 +495,33 @@ export const RealtimeMonitoringPage: React.FC<RealtimeMonitoringPageProps> = ({ 
   // ── Level 1: Active Test List ──────────────────────────────────────────────
   return (
     <div className="animate-fade-in">
-      <header className="mb-8 lg:mb-12">
-        <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground mb-2">Realtime Insights</div>
-        <h2 className="text-3xl lg:text-4xl font-sans text-foreground-bold mb-2">Live Monitoring</h2>
-        <p className="text-sm lg:text-base text-muted-foreground font-light italic">
-          Select an active test to drill into live candidate activity and proctoring data.
-        </p>
+      <header className="mb-8 lg:mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground mb-2">Realtime Insights</div>
+          <h2 className="text-3xl lg:text-4xl font-sans text-foreground-bold mb-2">Live Monitoring</h2>
+          <p className="text-sm lg:text-base text-muted-foreground font-light italic">
+            Select an active test to drill into live candidate activity and proctoring data.
+          </p>
+        </div>
+        <SearchBar
+          value={testSearchQuery}
+          onChange={setTestSearchQuery}
+          className="w-full sm:w-72 shrink-0"
+          placeholder="Search by Test Name or ID..."
+        />
       </header>
 
       {activeQueues.length === 0 ? (
         <div className="py-20 lg:py-32 text-center border border-dashed border-border-hover rounded-sm text-muted-foreground font-light italic px-4">
           No tests are currently active.
         </div>
+      ) : filteredActiveQueues.length === 0 ? (
+        <div className="py-16 text-center border border-dashed border-border-hover rounded-sm text-muted-foreground font-light italic px-4">
+          No active tests match your search filter.
+        </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {activeQueues.map(q => (
+          {filteredActiveQueues.map(q => (
             <ActiveTestCard
               key={q.testId}
               queue={q}

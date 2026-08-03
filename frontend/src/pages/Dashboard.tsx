@@ -7,11 +7,13 @@ import type { RootState } from '../store';
 import { DashboardNavbar } from '../components/dashboard/DashboardNavbar';
 import { TestCard, type TestSummary } from '../components/dashboard/TestCard';
 import InstructionsContent from '../components/common/InstructionsContent';
+import { SearchBar } from '../components/common/SearchBar';
 
 const Dashboard: React.FC = () => {
   const [tests, setTests] = useState<TestSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [showInstructionsModal, setShowInstructionsModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const { user } = useSelector((state: RootState) => state.auth);
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -51,6 +53,14 @@ const Dashboard: React.FC = () => {
     fetchTests();
   }, [user?.email]);
 
+  const filteredTests = tests.filter((t) => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return true;
+    const titleMatch = t.title?.toLowerCase().includes(q);
+    const idMatch = t._id?.toLowerCase().includes(q);
+    return titleMatch || idMatch;
+  });
+
   const handleLogout = () => {
     dispatch(logout());
     navigate('/login');
@@ -76,7 +86,7 @@ const Dashboard: React.FC = () => {
       <DashboardNavbar userName={user?.name} onLogout={handleLogout} />
 
       <main className="max-w-6xl mx-auto py-16 px-6 relative">
-        <header className="mb-16 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground mb-2">Available Sessions</div>
             <h2 className="text-4xl text-foreground-bold mb-4">Assigned Assessments</h2>
@@ -84,12 +94,20 @@ const Dashboard: React.FC = () => {
               Please select an assessment to begin. Note that you can only enter the waiting room when the administrator has authorized entry.
             </p>
           </div>
-          <button 
-            onClick={() => setShowInstructionsModal(true)}
-            className="shrink-0 bg-secondary text-secondary-foreground border border-border px-6 py-2 rounded-sm text-xs font-bold uppercase tracking-widest hover:bg-secondary/80 transition-colors"
-          >
-            View Instructions
-          </button>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 shrink-0">
+            <SearchBar
+              value={searchQuery}
+              onChange={setSearchQuery}
+              className="w-full sm:w-72"
+              placeholder="Search by Test Name or ID..."
+            />
+            <button 
+              onClick={() => setShowInstructionsModal(true)}
+              className="shrink-0 bg-secondary text-secondary-foreground border border-border px-6 py-2 rounded-sm text-xs font-bold uppercase tracking-widest hover:bg-secondary/80 transition-colors"
+            >
+              View Instructions
+            </button>
+          </div>
         </header>
 
         {showInstructionsModal && (
@@ -124,9 +142,14 @@ const Dashboard: React.FC = () => {
           <div className="bg-card/40 backdrop-blur-md border border-dashed border-border rounded-sm p-24 text-center shadow-sm">
             <p className="text-muted-foreground font-light italic">There are currently no assessments assigned to your account.</p>
           </div>
+        ) : filteredTests.length === 0 ? (
+          <div className="bg-card/40 backdrop-blur-md border border-dashed border-border rounded-sm p-16 text-center shadow-sm">
+            <p className="text-muted-foreground font-light italic mb-2">No matching assessments found.</p>
+            <p className="text-xs text-muted-foreground">Try searching with a different test name or test ID.</p>
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {tests.map((test) => (
+            {filteredTests.map((test) => (
               <TestCard 
                 key={test._id} 
                 test={test} 

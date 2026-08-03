@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import testService from '../../utils/apiService';
+import { SearchBar } from '../../components/common/SearchBar';
 
 interface SubmissionSummary {
   _id: string;
@@ -21,6 +22,7 @@ const ResultsList: React.FC = () => {
   const [results, setResults] = useState<SubmissionSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<SortOption>('rank');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -38,7 +40,16 @@ const ResultsList: React.FC = () => {
     fetchResults();
   }, [testId]);
 
-  const sortedResults = [...results].sort((a, b) => {
+  const filteredResults = results.filter((sub) => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return true;
+    const nameMatch = sub.candidateName?.toLowerCase().includes(q);
+    const emailMatch = sub.candidateEmail?.toLowerCase().includes(q);
+    const idMatch = sub._id?.toLowerCase().includes(q);
+    return nameMatch || emailMatch || idMatch;
+  });
+
+  const sortedResults = [...filteredResults].sort((a, b) => {
     if (sortBy === 'latest') {
       return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
     }
@@ -115,16 +126,24 @@ const ResultsList: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 md:gap-4">
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest shrink-0">Sort Metrics</span>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as SortOption)}
-            className="bg-background border border-border rounded-sm px-3 md:px-4 py-2 text-[10px] md:text-xs font-bold uppercase tracking-wide text-foreground focus:outline-none focus:border-cream-900 transition-colors flex-1"
-          >
-            <option value="rank">By Rank</option>
-            <option value="latest">By Date</option>
-            <option value="name">By Name</option>
-          </select>
+          <SearchBar
+            value={searchQuery}
+            onChange={setSearchQuery}
+            className="w-full sm:w-64"
+            placeholder="Search by Candidate Name, Email or ID..."
+          />
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest shrink-0">Sort Metrics</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortOption)}
+              className="bg-background border border-border rounded-sm px-3 md:px-4 py-2 text-[10px] md:text-xs font-bold uppercase tracking-wide text-foreground focus:outline-none focus:border-cream-900 transition-colors"
+            >
+              <option value="rank">By Rank</option>
+              <option value="latest">By Date</option>
+              <option value="name">By Name</option>
+            </select>
+          </div>
         </div>
       </header>
 
@@ -134,9 +153,13 @@ const ResultsList: React.FC = () => {
             <div className="w-10 h-10 border-2 border-border border-t-cream-900 rounded-full animate-spin"></div>
             <p className="mt-6 text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Retrieving Data...</p>
           </div>
-        ) : sortedResults.length === 0 ? (
+        ) : results.length === 0 ? (
           <div className="bg-background border border-dashed border-border-hover rounded-sm p-12 md:p-24 text-center shadow-sm">
             <p className="text-muted-foreground font-light italic text-sm md:text-base">No completed submissions recorded for this assessment.</p>
+          </div>
+        ) : sortedResults.length === 0 ? (
+          <div className="bg-background border border-dashed border-border-hover rounded-sm p-12 md:p-20 text-center shadow-sm">
+            <p className="text-muted-foreground font-light italic text-sm md:text-base">No submissions match your search filter.</p>
           </div>
         ) : (
           <div className="grid gap-4 md:gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">

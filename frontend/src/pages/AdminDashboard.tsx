@@ -9,6 +9,7 @@ import { AIChatTab } from  '../components/admin/AIChatTab';
 import { RealtimeMonitoringPage } from '../components/admin/RealtimeMonitoringPage';
 import { InfrastructureMetricsPage } from '../components/admin/InfrastructureMetricsPage';
 import GroqKeySettings from '../components/GroqKeySettings';
+import { SearchBar } from '../components/common/SearchBar';
 import type { TestSummary, QueueSummary, AdminSection } from '../types/admin';
 
 const AdminDashboard: React.FC = () => {
@@ -21,6 +22,15 @@ const AdminDashboard: React.FC = () => {
   const [activeSection, setActiveSection] = useState<AdminSection>(initialTab);
   const [message, setMessage] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [overviewSearchQuery, setOverviewSearchQuery] = useState('');
+
+  const filteredQueues = queues.filter((q) => {
+    const query = overviewSearchQuery.toLowerCase().trim();
+    if (!query) return true;
+    const titleMatch = q.title?.toLowerCase().includes(query);
+    const idMatch = q.testId?.toLowerCase().includes(query);
+    return titleMatch || idMatch;
+  });
 
   const handleTabChange = (tab: AdminSection) => {
     setActiveSection(tab);
@@ -176,18 +186,30 @@ const AdminDashboard: React.FC = () => {
 
           {activeSection === 'overview' && (
             <div className="animate-fade-in">
-              <header className="mb-8 lg:mb-16">
-                <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground mb-2">Operational Overview</div>
-                <h2 className="text-3xl lg:text-4xl font-sans text-foreground-bold mb-2">Live Sessions</h2>
-                <p className="text-sm lg:text-base text-muted-foreground font-light italic">Monitor and orchestrate all currently active and pending assessment environments.</p>
+              <header className="mb-8 lg:mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground mb-2">Operational Overview</div>
+                  <h2 className="text-3xl lg:text-4xl font-sans text-foreground-bold mb-2">Live Sessions</h2>
+                  <p className="text-sm lg:text-base text-muted-foreground font-light italic">Monitor and orchestrate all currently active and pending assessment environments.</p>
+                </div>
+                <SearchBar
+                  value={overviewSearchQuery}
+                  onChange={setOverviewSearchQuery}
+                  className="w-full sm:w-72 shrink-0"
+                  placeholder="Search by Test Name or ID..."
+                />
               </header>
               <div className="space-y-4">
                 {queues.length === 0 ? (
                   <div className="py-20 lg:py-32 text-center border border-dashed border-border-hover rounded-sm text-muted-foreground font-light italic px-4">
                     No active or scheduled sessions found in the current buffer.
                   </div>
+                ) : filteredQueues.length === 0 ? (
+                  <div className="py-16 text-center border border-dashed border-border-hover rounded-sm text-muted-foreground font-light italic px-4">
+                    No active or scheduled sessions match your search filter.
+                  </div>
                 ) : (
-                  queues.map(q => (
+                  filteredQueues.map(q => (
                     <QueueItem 
                       key={q.testId} 
                       queue={q} 
