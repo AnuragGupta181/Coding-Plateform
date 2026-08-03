@@ -13,7 +13,8 @@ clearAnswer,
 setCurrentQuestion,
 toggleMarkQuestion,
 completeTest,
-setError
+setError,
+updateTestDuration
 } from '../store/testSlice';
 import testService, { createEventSourceUrl } from '../utils/apiService';
 import { normalizeSubmissionAnswers } from '../utils/submissionAnswers';
@@ -36,6 +37,7 @@ import { MobileBottomBar } from '../components/test/MobileBottomBar';
 import { MobileQuestionDrawer } from '../components/test/MobileQuestionDrawer';
 import { ErrorView, LoadingView, CompletedView } from '../components/test/TestRoomStatusViews';
 import CameraPermissionGate from '../components/test/CameraPermissionGate';
+import { getServerTime } from '../utils/serverTime';
 
 const TestRoom: React.FC = () => {
 const { id: testId } = useParams<{ id: string }>();
@@ -85,7 +87,9 @@ setIsSaving(false);
 }
 }, [submissionId, testId, testData?.testType, navigate, dispatch]);
 
-const MAX_VIOLATIONS = 999999;
+const MAX_VIOLATIONS = testData?.proctoringConfig?.autoRemoveEnabled
+  ? testData.proctoringConfig.maxViolations ?? 999999
+  : 999999;
 
 const handleViolation = useCallback((_count: number, type: string) => {
 const labels: Record<string, string> = {
@@ -254,6 +258,19 @@ const eventSource = new EventSource(createEventSourceUrl(`/events/test/${testId}
         console.debug('TestRoom SSE event received', data);
         if (data.type === 'AUTO_SUBMIT') {
           dispatch(completeTest());
+        } else if (data.type === 'TEST_UPDATED') {
+          console.debug('Test updated via SSE', data);
+          setTestData(prev => prev ? { 
+            ...prev, 
+            durationInMinutes: data.durationInMinutes, 
+            title: data.title,
+            ...(data.proctoringConfig && { proctoringConfig: data.proctoringConfig })
+          } : prev);
+          dispatch(updateTestDuration({ 
+            duration: data.durationInMinutes, 
+            startedAt: data.startedAt,
+            now: getServerTime() 
+          }));
         } else if (data.type === 'FORCE_SUBMIT' && data.targetEmail === user?.email) {
           dispatch(completeTest());
           toast.error('Your test session has been ended by the proctor.', { duration: 4000 });

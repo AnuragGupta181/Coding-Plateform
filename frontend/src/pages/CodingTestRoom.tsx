@@ -7,8 +7,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import Editor from '@monaco-editor/react';
 import type { RootState } from '../store';
-import { startTest, completeTest } from '../store/testSlice';
+import { startTest, completeTest, updateTestDuration } from '../store/testSlice';
 import testService, { createEventSourceUrl } from '../utils/apiService';
+import { getServerTime } from '../utils/serverTime';
 import ProblemStatement, { type CodingQuestion, type TestCaseResult } from '../components/coding/ProblemStatement';
 import OutputPanel from '../components/coding/OutputPanel';
 import TestRoomHeader from '../components/test/TestRoomHeader';
@@ -179,6 +180,19 @@ const CodingTestRoom: React.FC = () => {
         if (data.type === 'AUTO_SUBMIT' || data.type === 'TEST_COMPLETED') {
           setFinished(true);
           dispatch(completeTest());
+        } else if (data.type === 'TEST_UPDATED') {
+          console.debug('Test updated via SSE', data);
+          setTestData(prev => prev ? { 
+            ...prev, 
+            durationInMinutes: data.durationInMinutes, 
+            title: data.title,
+            ...(data.proctoringConfig && { proctoringConfig: data.proctoringConfig })
+          } : prev);
+          dispatch(updateTestDuration({ 
+            duration: data.durationInMinutes, 
+            startedAt: data.startedAt,
+            now: getServerTime() 
+          }));
         } else if (data.type === 'FORCE_SUBMIT' && data.targetEmail === user?.email) {
           setFinished(true);
           dispatch(completeTest());
@@ -221,7 +235,9 @@ const CodingTestRoom: React.FC = () => {
     return () => es.close();
   }, [testId, dispatch, navigate, user?.email, submissionId]);
 
-  const MAX_VIOLATIONS = 999999;
+  const MAX_VIOLATIONS = testData?.proctoringConfig?.autoRemoveEnabled
+    ? testData.proctoringConfig.maxViolations ?? 999999
+    : 999999;
 
   const handleViolation = useCallback((_count: number, type: string) => {
     const labels: Record<string, string> = {

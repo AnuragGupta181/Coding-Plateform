@@ -232,19 +232,35 @@ exports.updateTest = async (req, res) => {
     if (description !== undefined) test.description = description;
     if (durationInMinutes !== undefined) test.durationInMinutes = Number(durationInMinutes);
     if (proctoringConfig !== undefined) {
-      test.proctoringConfig = {
-        ...test.proctoringConfig,
-        ...proctoringConfig,
-      };
+      if (!test.proctoringConfig) {
+        test.proctoringConfig = proctoringConfig;
+      } else {
+        if (proctoringConfig.cameraEnabled !== undefined) test.proctoringConfig.cameraEnabled = proctoringConfig.cameraEnabled;
+        if (proctoringConfig.autoRemoveEnabled !== undefined) test.proctoringConfig.autoRemoveEnabled = proctoringConfig.autoRemoveEnabled;
+        if (proctoringConfig.maxViolations !== undefined) test.proctoringConfig.maxViolations = proctoringConfig.maxViolations;
+      }
     }
 
     await test.save();
     await cache.del('tests:available');
 
+    // Notify active participants about the duration/title change
+    if (test.status === 'active') {
+      const eventController = require('./eventController');
+      eventController.broadcastEvent(String(test._id), {
+        type: 'TEST_UPDATED',
+        testId: String(test._id),
+        durationInMinutes: test.durationInMinutes,
+        startedAt: test.startedAt,
+        title: test.title,
+        proctoringConfig: test.proctoringConfig,
+      });
+    }
+
     res.json({ message: 'Test updated successfully.', test });
   } catch (error) {
     console.error('Error updating test:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: 'Internal server error', error: error.message, stack: error.stack });
   }
 };
 

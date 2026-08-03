@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { getServerTime } from '../../utils/serverTime';
 
 // Live elapsed-time hook — ticks every second
 const useElapsed = (startTime: string) => {
   const [elapsed, setElapsed] = useState(0);
   const startMs = useRef(new Date(startTime).getTime());
   useEffect(() => {
-    const tick = () => setElapsed(Math.max(0, Math.floor((Date.now() - startMs.current) / 1000)));
+    const tick = () => setElapsed(Math.max(0, Math.floor((getServerTime() - startMs.current) / 1000)));
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
@@ -35,7 +36,7 @@ const ActiveTestCard: React.FC<TestCardProps> = ({ queue, onClick }) => {
     if (!queue.startedAt || !queue.durationInMinutes) return;
     const update = () => {
       const endMs = new Date(queue.startedAt!).getTime() + queue.durationInMinutes! * 60 * 1000;
-      const diffSec = Math.max(0, Math.floor((endMs - Date.now()) / 1000));
+      const diffSec = Math.max(0, Math.floor((endMs - getServerTime()) / 1000));
       const m = Math.floor(diffSec / 60);
       const s = diffSec % 60;
       setTimeLeft(`${m}:${s < 10 ? '0' : ''}${s}`);

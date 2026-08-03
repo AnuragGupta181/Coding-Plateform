@@ -8,6 +8,14 @@ const { requireAuth } = require('../middleware/authMiddleware');
 // ── Query Service Routes (GET /api/query/...) ─────────────────────────────────
 // All read-only routes. Safe to run on a read-replica or separate service.
 
+// Public server time synchronization endpoint (unauthenticated)
+router.get('/time', (req, res) => {
+  res.json({
+    serverTime: Date.now(),
+    iso: new Date().toISOString(),
+  });
+});
+
 // SSE events (GET only — long-lived streams)
 // Uses requireAuth (which now supports ?token=... query param for EventSource)
 router.use('/events', requireAuth, eventRoutes);

@@ -54,14 +54,11 @@ export const EditTestModal: React.FC<EditTestModalProps> = ({
         title: title.trim(),
         description: description.trim(),
         durationInMinutes: Number(durationInMinutes),
-        // Only update proctoringConfig if not commenced
-        ...(!isCommenced && {
-          proctoringConfig: {
-            cameraEnabled,
-            autoRemoveEnabled,
-            maxViolations: Number(maxViolations),
-          },
-        }),
+        proctoringConfig: {
+          cameraEnabled: isCommenced ? queue.proctoringConfig?.cameraEnabled : cameraEnabled,
+          autoRemoveEnabled: isCommenced ? queue.proctoringConfig?.autoRemoveEnabled : autoRemoveEnabled,
+          maxViolations: Number(maxViolations),
+        },
       });
       toast.success('Session parameters updated successfully!');
       onSaveSuccess();
@@ -207,9 +204,9 @@ export const EditTestModal: React.FC<EditTestModalProps> = ({
               </div>
             )}
             
-            <div className={`space-y-3 ${isCommenced ? 'opacity-50 pointer-events-none' : ''}`}>
+            <div className={`space-y-3`}>
               {/* Enable Camera Monitoring */}
-              <label className="flex items-center justify-between p-3.5 bg-muted/30 border border-border rounded-md cursor-pointer hover:bg-muted/50 transition-all">
+              <label className={`flex items-center justify-between p-3.5 bg-muted/30 border border-border rounded-md transition-all ${isCommenced ? 'opacity-50 pointer-events-none' : 'cursor-pointer hover:bg-muted/50'}`}>
                 <div>
                   <span className="text-xs font-bold text-foreground block">Enable Camera Monitoring</span>
                   <span className="text-[10px] text-muted-foreground block mt-0.5">
@@ -226,7 +223,7 @@ export const EditTestModal: React.FC<EditTestModalProps> = ({
               </label>
 
               {/* Auto-Remove on Violations */}
-              <label className="flex items-center justify-between p-3.5 bg-muted/30 border border-border rounded-md cursor-pointer hover:bg-muted/50 transition-all">
+              <label className={`flex items-center justify-between p-3.5 bg-muted/30 border border-border rounded-md transition-all ${isCommenced ? 'opacity-50 pointer-events-none' : 'cursor-pointer hover:bg-muted/50'}`}>
                 <div>
                   <span className="text-xs font-bold text-foreground block">Auto-Remove on Violations</span>
                   <span className="text-[10px] text-muted-foreground block mt-0.5">
@@ -244,7 +241,7 @@ export const EditTestModal: React.FC<EditTestModalProps> = ({
 
               {/* Max Violations Counter (Enabled when Auto-Remove is ON) */}
               <div className={`p-4 border rounded-md transition-all ${
-                autoRemoveEnabled && !isCommenced
+                autoRemoveEnabled
                   ? 'bg-amber-500/10 border-amber-500/30'
                   : 'bg-muted/20 border-border opacity-60'
               }`}>
@@ -261,7 +258,7 @@ export const EditTestModal: React.FC<EditTestModalProps> = ({
                   <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
-                      disabled={isCommenced || !autoRemoveEnabled || maxViolations <= 1}
+                      disabled={!autoRemoveEnabled || maxViolations <= 1}
                       onClick={() => setMaxViolations((v) => Math.max(1, v - 1))}
                       className="w-8 h-8 rounded border border-border bg-background hover:bg-muted text-foreground font-mono font-bold flex items-center justify-center disabled:opacity-40 transition-all hover:scale-105 active:scale-95 cursor-pointer"
                     >
@@ -271,14 +268,14 @@ export const EditTestModal: React.FC<EditTestModalProps> = ({
                       type="number"
                       min={1}
                       max={100}
-                      disabled={isCommenced || !autoRemoveEnabled}
+                      disabled={!autoRemoveEnabled}
                       value={maxViolations}
                       onChange={(e) => setMaxViolations(Math.max(1, parseInt(e.target.value) || 1))}
                       className="w-16 bg-background border border-border rounded px-2 py-1 text-center font-mono font-bold text-sm text-foreground focus:outline-none focus:border-primary disabled:opacity-40"
                     />
                     <button
                       type="button"
-                      disabled={isCommenced || !autoRemoveEnabled}
+                      disabled={!autoRemoveEnabled}
                       onClick={() => setMaxViolations((v) => v + 1)}
                       className="w-8 h-8 rounded border border-border bg-background hover:bg-muted text-foreground font-mono font-bold flex items-center justify-center disabled:opacity-40 transition-all hover:scale-105 active:scale-95 cursor-pointer"
                     >

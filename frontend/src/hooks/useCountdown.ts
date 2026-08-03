@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { getServerTime } from '../utils/serverTime';
 
 export function useCountdown(durationMin: number, startedAt: string | null, onExpire: () => void) {
   const [remaining, setRemaining] = useState(durationMin * 60);
@@ -6,8 +7,9 @@ export function useCountdown(durationMin: number, startedAt: string | null, onEx
 
   useEffect(() => {
     const tick = () => {
-      const start = startedAt ? new Date(startedAt).getTime() : Date.now();
-      const left = Math.max(0, Math.floor((start + durationMin * 60_000 - Date.now()) / 1000));
+      const now = getServerTime();
+      const start = startedAt ? new Date(startedAt).getTime() : now;
+      const left = Math.max(0, Math.floor((start + durationMin * 60_000 - now) / 1000));
       setRemaining(left);
       if (left === 0 && !fired.current) { fired.current = true; onExpire(); }
     };

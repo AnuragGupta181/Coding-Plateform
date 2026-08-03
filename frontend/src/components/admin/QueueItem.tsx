@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { QueueSummary } from '../../types/admin';
+import { getServerTime } from '../../utils/serverTime';
 
 const Spinner = ({ red }: { red?: boolean }) => (
   <svg className={`animate-spin h-3 w-3 ${red ? 'text-red-700' : 'text-current'}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -21,13 +22,14 @@ interface QueueItemProps {
 const ActiveQueueTimer: React.FC<{ startedAt?: string; durationInMinutes: number }> = ({ startedAt, durationInMinutes }) => {
   const [timeLeft, setTimeLeft] = useState<string>('');
   const [isExpired, setIsExpired] = useState<boolean>(false);
-  const [stableStartMs] = useState<number>(() => startedAt ? new Date(startedAt).getTime() : Date.now());
+  const [stableStartMs] = useState<number>(() => startedAt ? new Date(startedAt).getTime() : getServerTime());
 
   useEffect(() => {
-    const startMs = startedAt ? new Date(startedAt).getTime() : stableStartMs;
     const update = () => {
+      const now = getServerTime();
+      const startMs = startedAt ? new Date(startedAt).getTime() : stableStartMs;
       const endMs = startMs + (durationInMinutes || 60) * 60 * 1000;
-      const diffSec = Math.floor(Math.max(0, endMs - Date.now()) / 1000);
+      const diffSec = Math.floor(Math.max(0, endMs - now) / 1000);
 
       if (diffSec <= 0) {
         setTimeLeft('00:00');

@@ -7,6 +7,8 @@ import InstructionsContent from '../components/common/InstructionsContent';
 import { MinimalFooter } from '../components/common/MinimalFooter';
 import CameraPermissionGate from '../components/CameraPermissionGate';
 
+import { getServerTime } from '../utils/serverTime';
+
 const WaitingRoom: React.FC = () => {
   const { id: testId } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -45,7 +47,7 @@ const WaitingRoom: React.FC = () => {
 
     const updateTimer = () => {
       const target = new Date(scheduledFor).getTime();
-      const diffSec = Math.max(0, Math.floor((target - Date.now()) / 1000));
+      const diffSec = Math.max(0, Math.floor((target - getServerTime()) / 1000));
       
       if (diffSec <= 0) {
         setTimerLabel('Status');

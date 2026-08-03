@@ -1,6 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-
-
+import { getServerTime } from '../utils/serverTime';
 interface TestState {
   submissionId: string | null;
   testId: string | null;
@@ -39,7 +38,7 @@ const testSlice = createSlice({
       if (action.payload.startedAt) {
         const startTime = new Date(action.payload.startedAt).getTime();
         const durationMs = action.payload.duration * 60 * 1000;
-        const now = Date.now();
+        const now = getServerTime();
         const remainingMs = Math.max(0, startTime + durationMs - now);
         state.timeRemaining = Math.floor(remainingMs / 1000);
       } else {
@@ -70,7 +69,7 @@ const testSlice = createSlice({
       if (action.payload.startedAt) {
         const startTime = new Date(action.payload.startedAt).getTime();
         const durationMs = action.payload.duration * 60 * 1000;
-        const now = Date.now();
+        const now = getServerTime();
         const remainingMs = Math.max(0, startTime + durationMs - now);
         state.timeRemaining = Math.floor(remainingMs / 1000);
       } else {
@@ -124,6 +123,17 @@ const testSlice = createSlice({
     },
     setError: (state) => {
       state.status = 'error';
+    },
+    updateTestDuration: (state, action: PayloadAction<{ duration: number; startedAt?: string; now: number }>) => {
+      if (action.payload.startedAt) {
+        const startTime = new Date(action.payload.startedAt).getTime();
+        const durationMs = action.payload.duration * 60 * 1000;
+        const now = action.payload.now;
+        const remainingMs = Math.max(0, startTime + durationMs - now);
+        state.timeRemaining = Math.floor(remainingMs / 1000);
+      } else {
+        state.timeRemaining = action.payload.duration * 60;
+      }
     }
   },
 });
@@ -138,6 +148,7 @@ export const {
   updateTime,
   completeTest,
   clearTest,
-  setError
+  setError,
+  updateTestDuration
 } = testSlice.actions;
 export default testSlice.reducer;
