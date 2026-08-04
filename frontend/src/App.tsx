@@ -72,11 +72,14 @@ const BackendWarmup = () => {
     // Fire-and-forget pings to wake up sleeping backends (like Render free tier)
     const socketUrl = import.meta.env.VITE_SOCKET_URL;
     if (socketUrl) {
-      fetch(`${socketUrl}/health`, { method: 'GET', mode: 'no-cors' }).catch(() => {});
+      const cleanSocketUrl = socketUrl.replace(/\/+$/, '');
+      fetch(`${cleanSocketUrl}/health`, { method: 'GET', mode: 'no-cors' }).catch(() => {});
     }
     const apiBase = import.meta.env.VITE_API_BASE_URL || '';
     if (apiBase) {
-      fetch(`${apiBase}/health`, { method: 'GET', mode: 'no-cors' }).catch(() => {});
+      // Strip /api suffix so health request hits root /health endpoint
+      const healthUrl = apiBase.replace(/\/api\/?$/, '') + '/health';
+      fetch(healthUrl, { method: 'GET', mode: 'no-cors' }).catch(() => {});
     }
   }, []);
   return null;
