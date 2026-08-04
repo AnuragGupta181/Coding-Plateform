@@ -22,9 +22,9 @@ export const Navbar: React.FC = () => {
         </div>
 
         <div className="hidden lg:flex flex-1 justify-center items-center gap-8 xl:gap-12 text-[10px] uppercase font-bold tracking-[0.2em] text-muted-foreground px-8">
-          <a href="#features" className="hover:text-foreground-bold transition-colors">Infrastructure</a>
-          <a href="#methodology" className="hover:text-foreground-bold transition-colors">Methodology</a>
-          <Link to="/admin" className="hover:text-foreground-bold transition-colors">Administrative</Link>
+          <a href="#features" className="hover:text-foreground-bold transition-colors">Features</a>
+          <a href="#languages" className="hover:text-foreground-bold transition-colors">Languages</a>
+          <Link to="/admin" className="hover:text-foreground-bold transition-colors">Admin Console</Link>
         </div>
 
         <div className="flex items-center gap-4 md:gap-8">

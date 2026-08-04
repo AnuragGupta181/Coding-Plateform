@@ -14,12 +14,12 @@ export const FeaturesGrid: React.FC = () => {
             <div className="max-w-2xl">
               <div className="flex items-center gap-3 mb-4">
                 <span className="w-8 h-[1px] bg-primary"></span>
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Core Infrastructure</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Core Features</span>
               </div>
-              <h2 className="text-4xl md:text-6xl font-sans text-foreground-bold tracking-tight">Architectural <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-600">Integrity</span></h2>
+              <h2 className="text-4xl md:text-6xl font-sans text-foreground-bold tracking-tight">Built for <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-purple-400 to-fuchsia-400">Reliable Assessments</span></h2>
             </div>
             <p className="text-base md:text-lg text-muted-foreground max-w-sm border-l-2 border-primary/30 pl-6 py-2 backdrop-blur-sm">
-              We provide the underlying stability required for high-stakes technical evaluations.
+              Everything you need to create, run, and evaluate technical assessments effortlessly.
             </p>
           </div>
         </FadeInUp>
@@ -27,8 +27,8 @@ export const FeaturesGrid: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10">
           {[
             {
-              title: 'Synchronized Start',
-              desc: 'Absolute fairness through precise orchestration. All candidates commence their assessments at the exact designated microsecond.',
+              title: 'Synchronized Tests',
+              desc: 'Fair & simultaneous exam starts. All candidates begin and finish their assessments at the exact designated time.',
               icon: (
                 <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -37,8 +37,8 @@ export const FeaturesGrid: React.FC = () => {
               color: 'from-blue-500 to-cyan-400'
             },
             {
-              title: 'Immutable Persistence',
-              desc: 'Zero data loss architecture. Every keystroke and response is mirrored across redundant nodes for total session resilience.',
+              title: 'Auto-Save & Recovery',
+              desc: 'Continuous real-time saving guarantees no work is lost, even during unexpected internet disconnects.',
               icon: (
                 <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 00-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0112 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 01-.673-.38m0 0A2.18 2.18 0 013 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 013.413-.387m7.5 0V5.25A2.25 2.25 0 0013.5 3h-3a2.25 2.25 0 00-2.25 2.25v.894m7.5 0a48.667 48.667 0 00-7.5 0M12 12.75h.008v.008H12v-.008z" />
@@ -47,8 +47,8 @@ export const FeaturesGrid: React.FC = () => {
               color: 'from-purple-500 to-pink-500'
             },
             {
-              title: 'Objective Logic',
-              desc: 'Beyond simple grading. Receive structured, multi-dimensional performance vectors to identify truly exceptional talent.',
+              title: 'Automated Grading',
+              desc: 'Instant code execution against test cases with clear performance feedback and score breakdowns.',
               icon: (
                 <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
