@@ -67,8 +67,24 @@ const AuthStorageSync = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const BackendWarmup = () => {
+  useEffect(() => {
+    // Fire-and-forget pings to wake up sleeping backends (like Render free tier)
+    const socketUrl = import.meta.env.VITE_SOCKET_URL;
+    if (socketUrl) {
+      fetch(`${socketUrl}/health`, { method: 'GET', mode: 'no-cors' }).catch(() => {});
+    }
+    const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+    if (apiBase) {
+      fetch(`${apiBase}/health`, { method: 'GET', mode: 'no-cors' }).catch(() => {});
+    }
+  }, []);
+  return null;
+};
+
 const App: React.FC = () => (
   <Router>
+    <BackendWarmup />
     <div className="relative min-h-screen bg-background text-foreground font-sans overflow-x-hidden selection:bg-primary/20 selection:text-primary">
       {/* Global Ambient Glowing Orbs */}
       <div className="fixed top-0 left-[-10%] w-[50vw] h-[500px] rounded-full bg-primary/30 dark:bg-primary/15 blur-[120px] pointer-events-none z-0"></div>

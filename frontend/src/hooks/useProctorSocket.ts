@@ -11,6 +11,9 @@ import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 
 const SOCKET_URL = (() => {
+  if (import.meta.env.VITE_SOCKET_URL) {
+    return import.meta.env.VITE_SOCKET_URL;
+  }
   let base = import.meta.env.VITE_API_BASE_URL || '';
   if (base === '/api' && import.meta.env.DEV) {
     return 'http://localhost:5000';
