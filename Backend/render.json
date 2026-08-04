@@ -1,0 +1,92 @@
+{
+  "$schema": "https://render.com/schema/render.yaml.json",
+  "services": [
+    {
+      "type": "web",
+      "name": "nextgen-backend",
+      "env": "node",
+      "buildCommand": "npm install",
+      "startCommand": "npm start",
+      "autoDeploy": true,
+      "healthCheckPath": "/",
+      "envVars": [
+        {
+          "key": "NODE_ENV",
+          "value": "production"
+        },
+        {
+          "key": "PORT",
+          "value": "5000"
+        },
+        {
+          "key": "SERVICE_MODE",
+          "value": "both"
+        },
+        {
+          "key": "MONGO_POOL_SIZE",
+          "value": "80"
+        },
+        {
+          "key": "DISABLE_CRON",
+          "value": "false"
+        },
+        {
+          "key": "MONGODB_URI",
+          "sync": false
+        },
+        {
+          "key": "REGISTRATION_MONGODB_URI",
+          "sync": false
+        },
+        {
+          "key": "JWT_SECRET",
+          "sync": false
+        },
+        {
+          "key": "CORS_ORIGIN",
+          "sync": false
+        },
+        {
+          "key": "EMAIL_SERVICE",
+          "value": "gmail"
+        },
+        {
+          "key": "EMAIL_USER",
+          "sync": false
+        },
+        {
+          "key": "EMAIL_PASS",
+          "sync": false
+        },
+        {
+          "key": "EMAIL_FROM",
+          "sync": false
+        },
+        {
+          "key": "REDIS_URL",
+          "sync": false
+        },
+        {
+          "key": "GROQ_API_KEY",
+          "sync": false
+        },
+        {
+          "key": "JUDGE0_BASE_URL",
+          "sync": false
+        },
+        {
+          "key": "JUDGE0_RAPIDAPI_KEY",
+          "sync": false
+        },
+        {
+          "key": "JUDGE0_RAPIDAPI_HOST",
+          "sync": false
+        },
+        {
+          "key": "TURNSTILE_SECRET_KEY",
+          "sync": false
+        }
+      ]
+    }
+  ]
+}
