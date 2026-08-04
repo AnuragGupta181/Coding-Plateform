@@ -142,6 +142,8 @@ export const testService = {
     commandApi.put(`/admin/test/${id}`, testData),
   deleteTest: (id: string) =>
     commandApi.delete(`/admin/test/${id}`),
+  bulkDeleteTests: (testIds: string[]) =>
+    commandApi.post('/admin/tests/bulk-delete', { testIds }),
   openWaitingRoom: (testId: string) =>
     commandApi.post(`/admin/test/${testId}/open-waiting-room`),
   startTest: (testId: string) =>

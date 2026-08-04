@@ -14,6 +14,8 @@ export const TestRepositoryTable: React.FC<TestRepositoryTableProps> = ({ tests,
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const handleDelete = async (testId: string, testStatus: string) => {
     if (testStatus === 'active') {
@@ -26,11 +28,48 @@ export const TestRepositoryTable: React.FC<TestRepositoryTableProps> = ({ tests,
     try {
       await testService.deleteTest(testId);
       toast.success('Test deleted successfully!');
+      setSelectedIds(prev => {
+        const next = new Set(prev);
+        next.delete(testId);
+        return next;
+      });
       if (onRefresh) onRefresh();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to delete test');
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredTests.length && filteredTests.length > 0) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredTests.map(t => t._id)));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedIds(next);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!window.confirm(`Are you sure you want to delete ${selectedIds.size} selected test(s)? This action cannot be undone.`)) return;
+
+    setIsBulkDeleting(true);
+    try {
+      await testService.bulkDeleteTests(Array.from(selectedIds));
+      toast.success('Selected tests deleted successfully!');
+      setSelectedIds(new Set());
+      if (onRefresh) onRefresh();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to delete tests');
+    } finally {
+      setIsBulkDeleting(false);
     }
   };
 
@@ -45,12 +84,30 @@ export const TestRepositoryTable: React.FC<TestRepositoryTableProps> = ({ tests,
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <SearchBar
-          value={searchQuery}
-          onChange={setSearchQuery}
-          className="w-full sm:w-80"
-          placeholder="Search repository by Test Name or ID..."
-        />
+        <div className="flex items-center gap-3">
+          <SearchBar
+            value={searchQuery}
+            onChange={setSearchQuery}
+            className="w-full sm:w-80"
+            placeholder="Search repository by Test Name or ID..."
+          />
+          {selectedIds.size > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              disabled={isBulkDeleting}
+              className="text-xs bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/20 px-3 py-2 rounded-sm font-bold uppercase tracking-wider flex items-center gap-2 transition-colors whitespace-nowrap"
+            >
+              {isBulkDeleting ? (
+                <span className="inline-block w-3.5 h-3.5 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></span>
+              ) : (
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              )}
+              Delete Selected ({selectedIds.size})
+            </button>
+          )}
+        </div>
         <div className="text-xs text-muted-foreground font-mono">
           Showing {filteredTests.length} of {tests.length} tests
         </div>
@@ -67,6 +124,14 @@ export const TestRepositoryTable: React.FC<TestRepositoryTableProps> = ({ tests,
               <table className="w-full text-left text-sm min-w-[600px]">
                 <thead className="bg-muted/50 text-muted-foreground uppercase text-[9px] font-black tracking-[0.2em] border-b border-border">
                   <tr>
+                    <th className="px-4 py-4 lg:py-5 w-12">
+                      <input 
+                        type="checkbox"
+                        className="cursor-pointer w-4 h-4 rounded border-border bg-background checked:bg-primary accent-primary"
+                        checked={selectedIds.size === filteredTests.length && filteredTests.length > 0}
+                        onChange={toggleSelectAll}
+                      />
+                    </th>
                     <th className="px-4 lg:px-8 py-4 lg:py-5">Assessment Title</th>
                     <th className="px-4 lg:px-8 py-4 lg:py-5">Test ID</th>
                     <th className="px-4 lg:px-8 py-4 lg:py-5">System Status</th>
@@ -76,7 +141,18 @@ export const TestRepositoryTable: React.FC<TestRepositoryTableProps> = ({ tests,
                 </thead>
                 <tbody className="divide-y divide-border">
                   {filteredTests.map((test) => (
-                    <tr key={test._id} className="hover:bg-muted/30 transition-colors group">
+                    <tr 
+                      key={test._id} 
+                      className={`transition-colors group ${selectedIds.has(test._id) ? 'bg-primary/5' : 'hover:bg-muted/30'}`}
+                    >
+                      <td className="px-4 py-4 lg:py-6">
+                        <input 
+                          type="checkbox"
+                          className="cursor-pointer w-4 h-4 rounded border-border bg-background checked:bg-primary accent-primary"
+                          checked={selectedIds.has(test._id)}
+                          onChange={() => toggleSelect(test._id)}
+                        />
+                      </td>
                       <td className="px-4 lg:px-8 py-4 lg:py-6 font-sans text-base lg:text-lg text-foreground-bold group-hover:text-primary transition-colors">
                         {test.title}
                       </td>
@@ -128,18 +204,37 @@ export const TestRepositoryTable: React.FC<TestRepositoryTableProps> = ({ tests,
 
             {/* Mobile Card Layout */}
             <div className="md:hidden divide-y divide-border">
+              {filteredTests.length > 0 && (
+                <div className="p-4 bg-muted/20 border-b border-border flex items-center gap-3">
+                  <input 
+                    type="checkbox"
+                    className="cursor-pointer w-4 h-4 rounded border-border bg-background checked:bg-primary accent-primary"
+                    checked={selectedIds.size === filteredTests.length && filteredTests.length > 0}
+                    onChange={toggleSelectAll}
+                  />
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Select All</span>
+                </div>
+              )}
               {filteredTests.map((test) => (
-                <div key={test._id} className="p-5 flex flex-col gap-4">
-                  <div className="flex justify-between items-start gap-3">
-                    <div>
-                      <h3 className="font-sans text-base text-foreground-bold">{test.title}</h3>
-                      <div className="text-[10px] font-mono text-muted-foreground mt-0.5">ID: {test._id}</div>
+                <div key={test._id} className={`p-5 flex flex-col gap-4 transition-colors ${selectedIds.has(test._id) ? 'bg-primary/5' : ''}`}>
+                  <div className="flex items-start gap-3">
+                    <input 
+                      type="checkbox"
+                      className="cursor-pointer w-4 h-4 rounded border-border bg-background checked:bg-primary accent-primary mt-1 shrink-0"
+                      checked={selectedIds.has(test._id)}
+                      onChange={() => toggleSelect(test._id)}
+                    />
+                    <div className="flex-1 flex justify-between items-start gap-3">
+                      <div>
+                        <h3 className="font-sans text-base text-foreground-bold">{test.title}</h3>
+                        <div className="text-[10px] font-mono text-muted-foreground mt-0.5">ID: {test._id}</div>
+                      </div>
+                      <span className="text-[8px] uppercase font-black px-2 py-1 rounded-full border border-border bg-background text-muted-foreground shrink-0">
+                        {test.status}
+                      </span>
                     </div>
-                    <span className="text-[8px] uppercase font-black px-2 py-1 rounded-full border border-border bg-background text-muted-foreground shrink-0">
-                      {test.status}
-                    </span>
                   </div>
-                  <div className="flex items-center justify-between mt-2">
+                  <div className="flex items-center justify-between mt-2 pl-7">
                     <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
                       {test.createdAt ? new Date(test.createdAt).toLocaleDateString() : 'N/A'}
                     </span>

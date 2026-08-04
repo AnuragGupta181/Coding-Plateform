@@ -291,6 +291,32 @@ exports.deleteTest = async (req, res) => {
   }
 };
 
+exports.bulkDeleteTests = async (req, res) => {
+  try {
+    const { testIds } = req.body;
+    if (!testIds || !Array.isArray(testIds)) {
+      return res.status(400).json({ message: 'Invalid testIds array.' });
+    }
+
+    const tests = await Test.find({ _id: { $in: testIds } });
+    const activeTestIds = tests.filter(t => t.status === 'active').map(t => String(t._id));
+
+    const deletableIds = testIds.filter(id => !activeTestIds.includes(String(id)));
+
+    if (deletableIds.length > 0) {
+      const Submission = require('../models/submission');
+      await Submission.deleteMany({ testId: { $in: deletableIds } });
+      await Test.deleteMany({ _id: { $in: deletableIds } });
+      await cache.del('tests:available');
+    }
+
+    res.json({ message: `Successfully deleted ${deletableIds.length} tests.`, ignoredActiveCount: activeTestIds.length });
+  } catch (error) {
+    console.error('Error bulk deleting tests:', error);
+    res.status(500).json({ message: 'Internal server error', error: error.message });
+  }
+};
+
 exports.getWaitingQueues = async (req, res) => {
   try {
     const queueSnapshot = eventController.getWaitingQueueSnapshot();

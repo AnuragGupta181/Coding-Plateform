@@ -17,6 +17,7 @@ router.use((req, res, next) => {
 
 // ── Command (Write) Admin Routes ──────────────────────────────────────────────
 router.post('/test', adminController.createTest);
+router.post('/tests/bulk-delete', adminController.bulkDeleteTests);
 router.put('/test/:id', adminController.updateTest);
 router.delete('/test/:id', adminController.deleteTest);
 router.post('/test/:id/open-waiting-room', adminController.openWaitingRoom);
