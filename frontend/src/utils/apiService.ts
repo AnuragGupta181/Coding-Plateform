@@ -17,6 +17,11 @@ const QUERY_BASE_URL = trimTrailingSlash(
 const COMMAND_BASE_URL = trimTrailingSlash(
   import.meta.env.VITE_COMMAND_BASE_URL || DEFAULT_BASE
 );
+const SOCKET_COMMAND_BASE_URL = trimTrailingSlash(
+  import.meta.env.VITE_SOCKET_URL
+    ? `${import.meta.env.VITE_SOCKET_URL}/api`
+    : COMMAND_BASE_URL
+);
 const AUTH_BASE_URL = DEFAULT_BASE;
 
 const authInterceptor = (instance: ReturnType<typeof axios.create>) => {
@@ -79,6 +84,9 @@ const queryApi = authInterceptor(
 );
 const commandApi = authInterceptor(
   axios.create({ baseURL: `${COMMAND_BASE_URL}/command`, headers: { 'Content-Type': 'application/json' } })
+);
+const socketCommandApi = authInterceptor(
+  axios.create({ baseURL: `${SOCKET_COMMAND_BASE_URL}/command`, headers: { 'Content-Type': 'application/json' } })
 );
 
 export const testService = {
@@ -170,11 +178,11 @@ export const testService = {
     commandApi.post(`/admin/issue/question/${testId}/${questionId}/analyze`),
 
   sendProctorMessage: (testId: string, candidateEmail: string, message: string) =>
-    commandApi.post(`/admin/test/${testId}/message`, { candidateEmail, message }),
+    socketCommandApi.post(`/admin/test/${testId}/message`, { candidateEmail, message }),
   requestCandidateCamera: (testId: string, candidateEmail: string, adminSocketId: string) =>
-    commandApi.post(`/admin/test/${testId}/request-camera`, { candidateEmail, adminSocketId }),
+    socketCommandApi.post(`/admin/test/${testId}/request-camera`, { candidateEmail, adminSocketId }),
   stopCandidateCamera: (testId: string, candidateEmail: string) =>
-    commandApi.post(`/admin/test/${testId}/stop-camera`, { candidateEmail }),
+    socketCommandApi.post(`/admin/test/${testId}/stop-camera`, { candidateEmail }),
   forceSubmitCandidate: (submissionId: string) =>
     commandApi.post(`/admin/submission/${submissionId}/force-submit`),
   clearQueues: () =>
