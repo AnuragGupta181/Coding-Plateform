@@ -1,6 +1,8 @@
 <div align="center">
 
-# 🚀 NextGen Assessment Platform
+<img src="./assets/logo.svg" alt="NextGen Logo" width="333" />
+
+# NextGen
 
 **A robust, full-stack hybrid coding and MCQ assessment platform built for online recruitment, technical evaluations, and real-time proctoring.**
 
