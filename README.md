@@ -8,15 +8,20 @@
 ![NodeJS](https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white)
 ![Express.js](https://img.shields.io/badge/express.js-%23404d59.svg?style=for-the-badge&logo=express&logoColor=%2361DAFB)
 ![MongoDB](https://img.shields.io/badge/MongoDB-%234ea94b.svg?style=for-the-badge&logo=mongodb&logoColor=white)
-![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
 ![Redis](https://img.shields.io/badge/redis-%23DD0031.svg?style=for-the-badge&logo=redis&logoColor=white)
+![BullMQ](https://img.shields.io/badge/BullMQ-%23CC292B.svg?style=for-the-badge&logo=redis&logoColor=white)
+![Socket.io](https://img.shields.io/badge/Socket.io-010101?style=for-the-badge&logo=socket.io&logoColor=white)
+![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
+![Vite](https://img.shields.io/badge/vite-%23646CFF.svg?style=for-the-badge&logo=vite&logoColor=white)
+![Groq AI](https://img.shields.io/badge/Groq_AI-%23F05023.svg?style=for-the-badge&logo=openai&logoColor=white)
 
 </div>
 
 ## 📌 Overview
 
-This platform provides a comprehensive environment for conducting technical assessments, featuring both **Multiple Choice Questions (MCQ)** and **Coding Challenges**. Built with a focus on reliability, extreme performance under 500+ candidate concurrency, and security, it ensures a seamless candidate experience while providing administrators with powerful tools for test management, real-time WebRTC camera feeds, and result auditing.
+This platform provides a comprehensive environment for conducting technical assessments, featuring both **Multiple Choice Questions (MCQ)** and **Coding Challenges**. Built with a focus on reliability, extreme performance under 500+ candidate concurrency, and security, it ensures a seamless candidate experience while providing administrators with powerful tools for test management, real-time WebRTC camera feeds, BullMQ queue execution board, and result auditing.
 
 ## ✨ Key Features
 
@@ -33,8 +38,12 @@ This platform provides a comprehensive environment for conducting technical asse
 - **MCQ Interface:** Optimized "Save on Next Button" HTTP architecture, avoiding heavy WebSocket overhead for better scalability.
 - **Seamless Navigation:** Bidirectional flow between MCQ and Coding sections for hybrid tests.
 
-### 📊 Admin Dashboard
+### 📊 Admin Dashboard & Assessment Repository
 - **Live Monitor:** Real-time WebRTC camera feed viewer and candidate status board.
+- **BullMQ Execution Board:** Embedded Queue Board to inspect active worker jobs, code submission queues, and failure traces in real-time.
+- **Assessment Management:** Edit test parameters on-the-fly (title, description, duration, proctoring violation limits) with live SSE candidate clock & limit sync.
+- **Single & Bulk Deletion:** Delete individual tests or select multiple tests in the Assessment Repository with automated cascaded deletion of candidate submissions.
+- **Groq AI Assistance:** Integrated AI assistant & experience analyzer with user-provided API key support.
 - **Batch Uploading:** Bulk import questions using Excel (`.xlsx`) files.
 - **Result Auditing:** Cohesive, mobile-first result cards providing a detailed candidate performance view.
 - **Interactive Walkthrough:** Onboarding tour built with `react-joyride` guiding new admins through the platform.
@@ -54,10 +63,11 @@ This platform provides a comprehensive environment for conducting technical asse
 
 ### Backend
 - **Framework:** Node.js with Express.js
-- **Real-Time Signaling:** Socket.IO (`socketService.js`)
+- **Queue & Async Job Processing:** BullMQ & Redis (`ioredis`)
+- **Real-Time Signaling:** Socket.IO (`socketService.js`) & Server-Sent Events (SSE)
+- **AI Integration:** Groq AI API (`@groq/sdk`)
 - **Database:** MongoDB (Mongoose)
 - **Authentication:** JSON Web Tokens (JWT) & bcryptjs
-- **Caching & Rate Limiting:** Redis (`ioredis`)
 - **Execution Engine:** Judge0 (`docker-compose.judge0.prod.yml` / `docker-compose.judge0.dev.yml`)
 
 ---
