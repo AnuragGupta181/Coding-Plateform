@@ -1,0 +1,23 @@
+# Service exposes the backend pods via NodePort.
+# Apply fifth: kubectl apply -f service.yml
+#
+# Access the backend at: http://<node-ip>:<nodePort>
+# Find the NodePort: kubectl get svc -n nextgen
+# On Minikube: minikube service backend-service -n nextgen --url
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: nextgen
+  labels:
+    app: coding-platform-backend
+spec:
+  type: NodePort
+  selector:
+    # This MUST match the pod template labels in deploy.yml
+    app: coding-platform-backend
+  ports:
+    - protocol: TCP
+      port: 5000         # Service port (cluster-internal)
+      targetPort: 5000   # Container port (matches EXPOSE in Dockerfile)
+      nodePort: 30500    # External port on the node (range: 30000-32767)

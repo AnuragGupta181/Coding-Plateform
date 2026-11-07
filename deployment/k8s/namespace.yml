@@ -1,0 +1,9 @@
+# Namespace isolates all coding-platform resources from the default namespace.
+# Apply first: kubectl apply -f namespace.yml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nextgen
+  labels:
+    app.kubernetes.io/part-of: coding-platform
+    app.kubernetes.io/managed-by: kubectl
