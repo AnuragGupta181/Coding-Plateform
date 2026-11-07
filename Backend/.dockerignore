@@ -7,7 +7,6 @@ yarn-debug.log*
 !.env.example
 .git
 .gitignore
-Dockerfile
 .dockerignore
 load-testing
 *.md
