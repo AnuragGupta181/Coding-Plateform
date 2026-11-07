@@ -1,0 +1,29 @@
+# Ingress routes external HTTP traffic for domain 'k8s.nextgen' to backend-service.
+# Requires: minikube addons enable ingress
+# Apply:    kubectl apply -f deployment/k8s/ingress.yml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: backend-ingress
+  namespace: nextgen
+  labels:
+    app: coding-platform-backend
+  annotations:
+    # Disable SSL redirect since we're testing on plain HTTP first
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    # Allow uploads up to 50MB (e.g. bulk excel question uploads)
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+spec:
+  # Minikube's ingress addon uses the 'nginx' IngressClass
+  ingressClassName: nginx
+  rules:
+    - host: k8s.nextgen
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 5000
