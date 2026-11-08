@@ -7,8 +7,8 @@ pipeline {
             steps {
                 dir('Backend') {
                     sh '''
-                        pnpm install --frozen-lockfile
-                        pnpm test
+                        npm install
+                        npm test
                         docker build -t nextgen-backend:latest .
                     '''
                 }
@@ -19,8 +19,8 @@ pipeline {
             steps {
                 dir('frontend') {
                     sh '''
-                        pnpm install --frozen-lockfile
-                        pnpm run build
+                        npm install
+                        npm run build
                         docker build -t nextgen-frontend:latest .
                     '''
                 }
