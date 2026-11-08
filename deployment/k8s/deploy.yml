@@ -1,5 +1,4 @@
-# Deployment manages the backend pods with rolling updates.
-# Apply fourth: kubectl apply -f deploy.yml
+# Backend Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -20,23 +19,15 @@ spec:
       containers:
         - name: backend
           image: nextgen-backend:latest
-          # If using Minikube: eval $(minikube docker-env) before building,
-          # then set imagePullPolicy to Never so it uses the local image.
           imagePullPolicy: Never
           ports:
             - containerPort: 5000
               protocol: TCP
-
-          # ── Approach 1: envFrom (injects all keys as env vars directly) ──
           envFrom:
             - configMapRef:
                 name: backend-config
             - secretRef:
                 name: backend-secrets
-
-          # ── Approach 2: Volume mounts (mounts each key as a file) ──
-          # ConfigMap → /etc/config/<KEY_NAME>  (one file per key)
-          # Secret   → /etc/secrets/<KEY_NAME>  (one file per key, tmpfs-backed)
           volumeMounts:
             - name: config-volume
               mountPath: /etc/config
@@ -44,8 +35,6 @@ spec:
             - name: secret-volume
               mountPath: /etc/secrets
               readOnly: true
-
-          # Liveness probe — restarts the container if it fails
           livenessProbe:
             httpGet:
               path: /health
@@ -54,7 +43,6 @@ spec:
             periodSeconds: 30
             timeoutSeconds: 5
             failureThreshold: 3
-          # Readiness probe — stops sending traffic if it fails
           readinessProbe:
             httpGet:
               path: /health
@@ -63,7 +51,6 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
-          # Resource limits — important on a single EC2 instance
           resources:
             requests:
               cpu: "100m"
@@ -71,17 +58,11 @@ spec:
             limits:
               cpu: "500m"
               memory: "512Mi"
-
-      # ── Volumes definition ──
-      # Declares the ConfigMap and Secret as volume sources.
-      # Each key in the ConfigMap/Secret becomes a file inside the mount path.
       volumes:
         - name: config-volume
           configMap:
             name: backend-config
-            # Example: key "PORT" → file /etc/config/PORT containing "5000"
         - name: secret-volume
           secret:
             secretName: backend-secrets
-            # K8s mounts secrets on a tmpfs (in-memory) — never written to disk
-            defaultMode: 0400  # read-only for owner (the app user)
+            defaultMode: 0400

@@ -1,12 +1,4 @@
-# Standalone Pod for quick testing / debugging.
-# Unlike a Deployment, a bare Pod won't restart if it crashes.
-# Use this to test your image, env vars, and volume mounts work correctly,
-# then delete it and use deploy.yml for the real thing.
-#
-# Apply:  kubectl apply -f pod.yml
-# Logs:   kubectl logs -n nextgen backend-test-pod
-# Shell:  kubectl exec -it -n nextgen backend-test-pod -- sh
-# Delete: kubectl delete pod -n nextgen backend-test-pod
+# Standalone backend test pod
 apiVersion: v1
 kind: Pod
 metadata:
@@ -16,8 +8,6 @@ metadata:
     app: coding-platform-backend
     purpose: testing
 spec:
-  # restartPolicy for a test pod — "Never" lets you inspect crash logs
-  # without the pod restarting in a loop. Change to "Always" if you want it to stay up.
   restartPolicy: Never
   containers:
     - name: backend
@@ -26,15 +16,11 @@ spec:
       ports:
         - containerPort: 5000
           protocol: TCP
-
-      # Env vars from ConfigMap + Secret
       envFrom:
         - configMapRef:
             name: backend-config
         - secretRef:
             name: backend-secrets
-
-      # Volume mounts (same as deploy.yml)
       volumeMounts:
         - name: config-volume
           mountPath: /etc/config
@@ -42,12 +28,10 @@ spec:
         - name: secret-volume
           mountPath: /etc/secrets
           readOnly: true
-
       resources:
         limits:
           cpu: "500m"
           memory: "512Mi"
-
   volumes:
     - name: config-volume
       configMap:
@@ -56,4 +40,3 @@ spec:
       secret:
         secretName: backend-secrets
         defaultMode: 0400
-

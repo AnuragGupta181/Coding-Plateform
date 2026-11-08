@@ -1,5 +1,4 @@
-# ConfigMap for non-secret backend configuration.
-# Apply second: kubectl apply -f configmap.yml
+# ConfigMap for backend configuration
 apiVersion: v1
 kind: ConfigMap
 metadata:
