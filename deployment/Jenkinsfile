@@ -1,0 +1,185 @@
+// ============================================================================
+// Jenkinsfile — Coding Platform CI/CD Pipeline
+// ============================================================================
+// Builds backend & frontend Docker images inside Minikube and deploys
+// to the local Minikube K8s cluster (namespace: nextgen).
+//
+// Prerequisites on Jenkins node:
+//   - minikube (running with a driver like docker/kvm2)
+//   - kubectl  (configured to talk to minikube)
+//   - Node.js 20 + pnpm 9  (or use a NodeJS tool installation)
+//
+// Jenkins credentials required:
+//   - 'k8s-backend-secrets' (Secret file) → deployment/k8s/secrets.yml
+// ============================================================================
+
+pipeline {
+    agent any
+
+    environment {
+        // ── Image Config ──
+        BACKEND_IMAGE   = 'nextgen-backend'
+        FRONTEND_IMAGE  = 'nextgen-frontend'
+        IMAGE_TAG       = "${env.BUILD_NUMBER}"     // e.g. 42
+        LATEST_TAG      = 'latest'
+
+        // ── K8s Config ──
+        K8S_NAMESPACE   = 'nextgen'
+        K8S_DIR         = 'deployment/k8s'
+
+        // ── Paths ──
+        BACKEND_DIR     = 'Backend'
+        FRONTEND_DIR    = 'frontend'
+    }
+
+    options {
+        // Abort old builds if a new commit arrives
+        disableConcurrentBuilds()
+        // Keep last 10 builds
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        // Timeout the entire pipeline after 30 min
+        timeout(time: 30, unit: 'MINUTES')
+        timestamps()
+    }
+
+    stages {
+
+        // ────────────────────────────────────────────
+        // 1. Checkout
+        // ────────────────────────────────────────────
+        stage('Checkout') {
+            steps {
+                checkout scm
+                sh 'echo "Commit: $(git rev-parse --short HEAD)"'
+            }
+        }
+
+        // ────────────────────────────────────────────
+        // 2. Backend — Lint & Syntax Check
+        // ────────────────────────────────────────────
+        stage('Backend: Test') {
+            steps {
+                dir(BACKEND_DIR) {
+                    sh '''
+                        pnpm install --frozen-lockfile
+                        pnpm test
+                    '''
+                }
+            }
+        }
+
+        // ────────────────────────────────────────────
+        // 3. Frontend — Build & Lint
+        // ────────────────────────────────────────────
+        stage('Frontend: Build') {
+            steps {
+                dir(FRONTEND_DIR) {
+                    sh '''
+                        pnpm install --frozen-lockfile
+                        pnpm run lint
+                        pnpm run build
+                    '''
+                }
+            }
+        }
+
+        // ────────────────────────────────────────────
+        // 4. Build Docker Images inside Minikube
+        // ────────────────────────────────────────────
+        stage('Build Images') {
+            parallel {
+                stage('Backend Image') {
+                    steps {
+                        sh """
+                            minikube image build \
+                                -t ${BACKEND_IMAGE}:${IMAGE_TAG} \
+                                -t ${BACKEND_IMAGE}:${LATEST_TAG} \
+                                ./${BACKEND_DIR}/
+                        """
+                    }
+                }
+                stage('Frontend Image') {
+                    steps {
+                        sh """
+                            minikube image build \
+                                --build-opt=build-arg=VITE_API_BASE_URL=http://k8s.nextgen/api \
+                                -t ${FRONTEND_IMAGE}:${IMAGE_TAG} \
+                                -t ${FRONTEND_IMAGE}:${LATEST_TAG} \
+                                ./${FRONTEND_DIR}/
+                        """
+                    }
+                }
+            }
+        }
+
+        // ────────────────────────────────────────────
+        // 5. Deploy to Minikube K8s Cluster
+        // ────────────────────────────────────────────
+        stage('Deploy') {
+            steps {
+                // Inject secrets.yml from Jenkins credentials store
+                withCredentials([file(credentialsId: 'k8s-backend-secrets', variable: 'SECRETS_FILE')]) {
+                    sh """
+                        # ── Ensure namespace exists ──
+                        kubectl apply -f ${K8S_DIR}/namespace.yml
+
+                        # ── Apply ConfigMap & Secrets ──
+                        kubectl apply -f ${K8S_DIR}/configmap.yml
+                        kubectl apply -f \$SECRETS_FILE
+
+                        # ── Update deployment image tag ──
+                        kubectl apply -f ${K8S_DIR}/deploy.yml
+                        kubectl set image deployment/backend \
+                            backend=${BACKEND_IMAGE}:${IMAGE_TAG} \
+                            -n ${K8S_NAMESPACE}
+
+                        # ── Apply Service & Ingress ──
+                        kubectl apply -f ${K8S_DIR}/service.yml
+                        kubectl apply -f ${K8S_DIR}/ingress.yml
+                    """
+                }
+            }
+        }
+
+        // ────────────────────────────────────────────
+        // 6. Verify Rollout
+        // ────────────────────────────────────────────
+        stage('Verify') {
+            steps {
+                sh """
+                    echo "=== Waiting for rollout ==="
+                    kubectl rollout status deployment/backend \
+                        -n ${K8S_NAMESPACE} --timeout=120s
+
+                    echo "=== Pod Status ==="
+                    kubectl get pods -n ${K8S_NAMESPACE} -o wide
+
+                    echo "=== Service ==="
+                    kubectl get svc -n ${K8S_NAMESPACE}
+                """
+            }
+        }
+    }
+
+    // ────────────────────────────────────────────
+    // Post Actions
+    // ────────────────────────────────────────────
+    post {
+        success {
+            echo "Pipeline #${env.BUILD_NUMBER} succeeded — deployed ${BACKEND_IMAGE}:${IMAGE_TAG} to ${K8S_NAMESPACE}"
+        }
+        failure {
+            echo "Pipeline #${env.BUILD_NUMBER} FAILED"
+            // Rollback to previous version on deployment failure
+            sh """
+                kubectl rollout undo deployment/backend \
+                    -n ${K8S_NAMESPACE} 2>/dev/null || true
+            """
+        }
+        always {
+            // Clean workspace
+            cleanWs()
+        }
+    }
+}
+
