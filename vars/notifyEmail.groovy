@@ -18,11 +18,15 @@ def call(Map config = [:]) {
         <p><a href="${env.BUILD_URL}">View Build</a> | <a href="${env.BUILD_URL}console">Console Output</a></p>
     """.stripIndent()
 
-    emailext(
-        to:       recipients,
-        subject:  subject,
-        body:     body,
-        mimeType: 'text/html'
-    )
+    try {
+        emailext(
+            to:       recipients,
+            subject:  subject,
+            body:     body,
+            mimeType: 'text/html'
+        )
+    } catch (Exception e) {
+        echo "⚠️ Email notification failed (check Jenkins Extended E-mail SMTP settings): ${e.message}"
+    }
 }
 
