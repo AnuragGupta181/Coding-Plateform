@@ -15,10 +15,11 @@ def call(Map config = [:]) {
 
     stage('Update K8s Manifest') {
         withCredentials([string(credentialsId: credentialId, variable: 'GITHUB_TOKEN')]) {
+            sh "rm -rf _cd_repo"
             dir('_cd_repo') {
                 sh """
                     # Clone the CD repo
-                    git clone https://\$GITHUB_TOKEN@github.com/${gitUserName}/${repoName}.git . || true
+                    git clone https://\$GITHUB_TOKEN@github.com/${gitUserName}/${repoName}.git .
                     git checkout ${branch} || git checkout -b ${branch}
 
                     git config user.email "${gitUserEmail}"

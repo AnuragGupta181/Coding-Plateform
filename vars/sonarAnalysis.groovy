@@ -14,16 +14,12 @@ def call(Map config = [:]) {
     stage('SonarQube Analysis') {
         withCredentials([string(credentialsId: credentialsId, variable: 'SONAR_AUTH_TOKEN')]) {
             sh """
-                # Locate sonar-scanner in standard paths or PATH
+                # Locate sonar-scanner binary (prioritizing /usr/local/bin and /opt/sonar-scanner)
                 SCANNER_BIN="sonar-scanner"
-                if ! command -v \$SCANNER_BIN &> /dev/null; then
-                    if [ -f "/opt/sonar-scanner/bin/sonar-scanner" ]; then
-                        SCANNER_BIN="/opt/sonar-scanner/bin/sonar-scanner"
-                    elif [ -f "/opt/sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner" ]; then
-                        SCANNER_BIN="/opt/sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner"
-                    elif [ -f "\$HOME/.sonar-scanner/bin/sonar-scanner" ]; then
-                        SCANNER_BIN="\$HOME/.sonar-scanner/bin/sonar-scanner"
-                    fi
+                if [ -f "/usr/local/bin/sonar-scanner" ]; then
+                    SCANNER_BIN="/usr/local/bin/sonar-scanner"
+                elif [ -f "/opt/sonar-scanner/bin/sonar-scanner" ]; then
+                    SCANNER_BIN="/opt/sonar-scanner/bin/sonar-scanner"
                 fi
 
                 echo "🔍 Running SonarQube analysis using \$SCANNER_BIN …"
