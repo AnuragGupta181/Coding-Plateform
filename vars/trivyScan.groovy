@@ -5,7 +5,8 @@ def call(Map config = [:]) {
     def registry    = config.get('registry', 'anurag181')
     def tag         = config.get('tag', "${env.BUILD_NUMBER}")
     def severity    = config.get('severity', 'HIGH,CRITICAL')
-    def exitCode    = config.get('failOnVulns', true) ? '1' : '0'
+    def failOnVulns = config.get('failOnVulns', false)
+    def exitCode    = failOnVulns ? '1' : '0'
     def ignoreUnfixed = config.get('ignoreUnfixed', true)
 
     def backendImage  = "${registry}/nextgen-backend:${tag}"

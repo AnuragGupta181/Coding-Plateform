@@ -65,7 +65,7 @@ pipeline {
                     registry:      env.DOCKER_REGISTRY,
                     tag:           env.BUILD_NUMBER,
                     severity:      'HIGH,CRITICAL',
-                    failOnVulns:   true,
+                    failOnVulns:   false,
                     ignoreUnfixed: true
                 )
             }

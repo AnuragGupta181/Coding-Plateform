@@ -3,14 +3,17 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json ./
-RUN npm install --omit=dev --no-audit --no-fund
+RUN apk update && apk upgrade --no-cache \
+    && npm install --omit=dev --no-audit --no-fund
 
 FROM node:20-alpine AS runner
 ENV NODE_ENV=production
 ENV PORT=5000
 WORKDIR /app
 
-RUN apk add --no-cache tini \
+RUN apk update && apk upgrade --no-cache \
+    && apk add --no-cache tini \
+    && rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx /opt/yarn* /usr/local/bin/yarn* /usr/local/bin/corepack \
     && addgroup -S app && adduser -S app -G app
 
 COPY --from=deps /app/node_modules ./node_modules
