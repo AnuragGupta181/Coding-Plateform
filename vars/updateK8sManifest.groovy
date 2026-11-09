@@ -18,8 +18,10 @@ def call(Map config = [:]) {
             sh "rm -rf _cd_repo"
             dir('_cd_repo') {
                 sh """
-                    # Clone the CD repo
-                    git clone https://\$GITHUB_TOKEN@github.com/${gitUserName}/${repoName}.git .
+                    export GIT_TERMINAL_PROMPT=0
+
+                    # Clone the CD repo using username:token authentication
+                    git clone https://${gitUserName}:\$GITHUB_TOKEN@github.com/${gitUserName}/${repoName}.git .
                     git checkout ${branch} || git checkout -b ${branch}
 
                     git config user.email "${gitUserEmail}"
@@ -37,7 +39,7 @@ def call(Map config = [:]) {
                     git diff --cached --quiet && echo "No changes to commit" && exit 0
 
                     git commit -m "ci: update backend & frontend images to build #${tag}"
-                    git push https://\$GITHUB_TOKEN@github.com/${gitUserName}/${repoName}.git HEAD:${branch}
+                    git push https://${gitUserName}:\$GITHUB_TOKEN@github.com/${gitUserName}/${repoName}.git HEAD:${branch}
                 """
             }
         }
