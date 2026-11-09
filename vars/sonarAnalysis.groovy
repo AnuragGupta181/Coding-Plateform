@@ -3,7 +3,7 @@
 
 def call(Map config = [:]) {
     def sonarUrl       = config.get('sonarUrl', 'http://15.207.14.85:9000')
-    def credentialsId  = config.get('credentialsId', 'sonarqube')
+    def credentialsId  = config.get('credentialsId', 'sonarqube1')
     def projectKey     = config.get('projectKey', 'coding-platform')
     def projectName    = config.get('projectName', 'Coding Platform')
     def sources        = config.get('sources', 'Backend,frontend/src')

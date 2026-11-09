@@ -41,7 +41,7 @@ pipeline {
             steps {
                 sonarAnalysis(
                     sonarUrl:      env.SONAR_URL,
-                    credentialsId: 'sonarqube',
+                    credentialsId: 'sonarqube1',
                     projectKey:    'coding-platform',
                     projectName:   'Coding Platform'
                 )
