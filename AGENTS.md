@@ -93,3 +93,5 @@ Frontend requires: `VITE_API_BASE_URL`. See `frontend/.env.example`. Falls back 
 - Mongoose models use embedded subdocuments (questions inside tests, not separate collections).
 - SSE connections require `Content-Type: text/event-stream`; compression is explicitly skipped for SSE paths.
 - The `DISABLE_CRON=true` env var prevents the expired-test interval on secondary instances when scaling horizontally.
+
+
