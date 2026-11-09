@@ -14,11 +14,13 @@ def call(Map config = [:]) {
     def ignoreFlag = ignoreUnfixed ? '--ignore-unfixed' : ''
 
     stage('Trivy Vulnerability Scan') {
-        // Install Trivy if not already available
+        // Ensure Trivy is available (POSIX compliant check + fallback to user local bin)
         sh '''
-            if ! command -v trivy &> /dev/null; then
-                echo "📥 Installing Trivy …"
-                curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+            export PATH="\$HOME/.local/bin:/usr/local/bin:/usr/bin:\$PATH"
+            if ! command -v trivy >/dev/null 2>&1; then
+                echo "📥 Installing Trivy to user local bin …"
+                mkdir -p "\$HOME/.local/bin"
+                curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b "\$HOME/.local/bin"
             fi
             trivy --version
         '''
