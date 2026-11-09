@@ -57,6 +57,18 @@ pipeline {
             }
         }
 
+        stage('Trivy Vulnerability Scan') {
+            steps {
+                trivyScan(
+                    registry:      env.DOCKER_REGISTRY,
+                    tag:           env.BUILD_NUMBER,
+                    severity:      'HIGH,CRITICAL',
+                    failOnVulns:   true,
+                    ignoreUnfixed: true
+                )
+            }
+        }
+
         stage('Update K8s Manifest') {
             steps {
                 updateK8sManifest(
