@@ -48,3 +48,4 @@ def call(Map config = [:]) {
         echo "✅ Trivy scan complete — no ${severity} vulnerabilities found"
     }
 }
+
