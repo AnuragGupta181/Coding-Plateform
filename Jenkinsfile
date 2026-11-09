@@ -10,6 +10,7 @@ pipeline {
     environment {
         DOCKER_REGISTRY  = 'anurag181'
         SONAR_URL        = 'http://15.207.14.85:9000'
+        VITE_API_BASE_URL= '/api'
         CD_REPO_URL      = 'https://github.com/AnuragGupta181/nextgen_cd.git'
         GIT_USER_NAME    = 'AnuragGupta181'
         GIT_USER_EMAIL   = 'nextgendeveloperteam@gmail.com'
@@ -52,7 +53,8 @@ pipeline {
                 dockerBuildPush(
                     registry:     env.DOCKER_REGISTRY,
                     credentialId: 'docker-cred',
-                    tag:          env.BUILD_NUMBER
+                    tag:          env.BUILD_NUMBER,
+                    apiBaseUrl:   env.VITE_API_BASE_URL
                 )
             }
         }

@@ -5,6 +5,7 @@ def call(Map config = [:]) {
     def registry     = config.get('registry', 'anurag181')
     def credentialId = config.get('credentialId', 'docker-cred')
     def tag          = config.get('tag', "${env.BUILD_NUMBER}")
+    def apiBaseUrl   = config.get('apiBaseUrl', env.VITE_API_BASE_URL ?: '/api')
 
     def backendImage  = "${registry}/nextgen-backend:${tag}"
     def frontendImage = "${registry}/nextgen-frontend:${tag}"
@@ -33,9 +34,9 @@ def call(Map config = [:]) {
         // ── Frontend image ──
         dir('frontend') {
             sh """
-                echo "🐳 Building frontend image: ${frontendImage}"
+                echo "🐳 Building frontend image: ${frontendImage} with VITE_API_BASE_URL=${apiBaseUrl}"
                 docker build \
-                  --build-arg VITE_API_BASE_URL=\${VITE_API_BASE_URL:-http://localhost:5000/api} \
+                  --build-arg VITE_API_BASE_URL=${apiBaseUrl} \
                   -t ${frontendImage} -t ${latestFrontend} .
                 docker push ${frontendImage}
                 docker push ${latestFrontend}
@@ -46,4 +47,3 @@ def call(Map config = [:]) {
         echo "✅ Pushed: ${backendImage}, ${frontendImage}"
     }
 }
-
