@@ -58,6 +58,7 @@ function mountHealthCheck(app) {
 
     res.json({
       status: 'ok',
+      version: '1.0.1',
       environment: config.env,
       serviceMode: process.env.SERVICE_MODE || 'both',
       uptime: Math.round(process.uptime()),
