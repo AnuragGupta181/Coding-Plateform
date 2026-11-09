@@ -1,4 +1,4 @@
-@Library('nextgen-shared-lib') _
+@Library('nextgen-shared-lib@main') _
 
 pipeline {
     agent any
